@@ -331,6 +331,7 @@ function CanvasInner() {
   const { fitView } = useReactFlow();
   const layoutRun = useRef(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const pendingFit = useRef(false);
 
   const refit = useCallback(() => {
     requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.12, duration: 250 })));
@@ -355,6 +356,7 @@ function CanvasInner() {
         if (!l) continue;
         next.push({ id: n.id, type: "product", position: { x: l.x, y: l.y }, width: NODE_W, height: NODE_H, parentId: l.parentId,  data: { id: n.id, kind: n.kind, label: n.label, direction: l.direction ?? diagram.direction } });
       }
+      pendingFit.current = true;
       setNodes(next);
       setEdges(
         diagram.edges.map((e, i) => ({
@@ -407,6 +409,19 @@ function CanvasInner() {
     }
     return changed ? [...next.values()] : all;
   }, []);
+
+  // Fit once React has committed a freshly laid-out node set (layout mode or
+  // document change). Calling fitView before the commit measures stale nodes.
+  useEffect(() => {
+    if (!pendingFit.current) return;
+    pendingFit.current = false;
+    const t1 = setTimeout(() => fitView({ padding: 0.12, duration: 250 }), 60);
+    const t2 = setTimeout(() => fitView({ padding: 0.12, duration: 200 }), 520);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [nodes, fitView]);
 
   const withSelection = useMemo(() => nodes.map((n) => ({ ...n, selected: n.id === selectedId })), [nodes, selectedId]);
 
