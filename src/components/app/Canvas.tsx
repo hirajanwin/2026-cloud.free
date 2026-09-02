@@ -463,7 +463,11 @@ function CanvasInner() {
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        onInit={() => refit()}
+        onInit={() => {
+          // First paint: the sidebars are still springing to their width, so fit
+          // a few times while the container settles.
+          for (const ms of [100, 400, 900, 1600]) setTimeout(() => fitView({ padding: 0.12, duration: 200 }), ms);
+        }}
         onNodesChange={(changes) => {
           for (const c of changes) {
             if (c.type === "select") studio.select(c.selected ? c.id : studio.get().selectedId === c.id ? null : studio.get().selectedId);
