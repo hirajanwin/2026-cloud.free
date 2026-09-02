@@ -11,6 +11,16 @@ Blueprint is a WebMCP-powered studio for the question "how would I vibecode this
 
 Everything an agent can do, a person can do, and the other way round. The diagram is a small text DSL; the canvas, the simulator and the exports are all views of it.
 
+## Flows
+
+- **Start**: pick a template, open a saved blueprint, or press *New blueprint* for an empty canvas. Remix any template or blueprint into a saved copy; blueprints autosave to the browser.
+- **Analyse a product**: ask the architect (or your browser agent) to analyse a URL or description. It proposes an architecture on the canvas and explains why each piece is there.
+- **Shape it**: click a product in the left rail to add it, drag a node's handle onto another to connect, double-click to inspect, Delete to remove. Every edit is also available as a tool and in the DSL panel.
+- **Load it**: set requests per day and the class mix. Scrub the timeline to see the day each quota is crossed; daily caps show the hour they hit.
+- **Protect it**: flip a gate's protection and watch blocked traffic, bills and search visibility change together.
+- **Price it**: switch Cloudflare/Vercel and Free/Paid in the top bar. Every bill line links to the pricing page it came from.
+- **Ship it**: export `wrangler.jsonc` or `vercel.json` plus stack notes, or copy the diagram into Eraser.
+
 ## WebMCP
 
 The page registers **19 tools** on `document.modelContext` (Chrome 149+ with `chrome://flags/#enable-webmcp-testing`). A browser agent such as Gemini in Chrome can read the diagram, rewrite it, change the provider, set traffic, toggle protections, read the bill, analyse a product URL and export configuration.
