@@ -21,6 +21,8 @@ import {
   ThinkingStepsHeader,
 } from "@/components/ui/thinking-steps";
 import { Button } from "@/components/ui/button";
+import { AskUserQuestions } from "@/components/ui/ask-user-questions";
+import type { ToolDef } from "@/tools/define";
 import { tools, toolByName } from "@/tools";
 import { toClientTools } from "@/tools/define";
 import { routeToolCall } from "@/tools/webmcp";
@@ -87,6 +89,13 @@ export function Chat() {
   // addToolOutput comes back from useChat but is needed inside onToolCall;
   // a ref closes the loop without re-creating the hook options.
   const addOutputRef = useRef<AddToolOutput | null>(null);
+  /** A destructive tool call waiting for the person's go-ahead. */
+  const [pending, setPending] = useState<{ toolCallId: string; def: ToolDef; input: unknown } | null>(null);
+  const runCall = (toolCallId: string, def: ToolDef, input: unknown) =>
+    void routeToolCall(def, input).then(
+      (output) => addOutputRef.current?.({ toolCallId, output }),
+      (err) => addOutputRef.current?.({ toolCallId, state: "output-error", errorText: err instanceof Error ? err.message : String(err) }),
+    );
 
   const { messages, sendMessage, status, stop, setMessages, error, addToolOutput } =
     useChat({
@@ -102,17 +111,11 @@ export function Chat() {
           });
           return;
         }
-        // Not awaited on purpose (AI SDK guidance); resolve then report.
-        void routeToolCall(def, toolCall.input).then(
-          (output) =>
-            addOutputRef.current?.({ toolCallId: toolCall.toolCallId, output }),
-          (err) =>
-            addOutputRef.current?.({
-              toolCallId: toolCall.toolCallId,
-              state: "output-error",
-              errorText: err instanceof Error ? err.message : String(err),
-            }),
-        );
+        if (def.needsApproval) {
+          setPending({ toolCallId: toolCall.toolCallId, def, input: toolCall.input });
+          return;
+        }
+        runCall(toolCall.toolCallId, def, toolCall.input);
       },
     });
   addOutputRef.current = addToolOutput as unknown as AddToolOutput;
@@ -156,6 +159,31 @@ export function Chat() {
           ))}
           {streaming && messages[messages.length - 1]?.role !== "assistant" && (
             <ThinkingIndicator />
+          )}
+          {pending && (
+            <div className="rounded-xl bg-surface-3 p-2 shadow-surface-2">
+              <AskUserQuestions
+                size="compact"
+                questions={[
+                  {
+                    id: "approve",
+                    title: `The architect wants to run ${pending.def.name}. This rewrites the canvas.`,
+                    options: [
+                      { id: "apply", title: "Apply it", description: "Replace the current architecture with the proposal." },
+                      { id: "skip", title: "Keep mine", description: "Deny this call; the architect will be told." },
+                    ],
+                    nextLabel: "Continue",
+                  },
+                ]}
+                onComplete={(answers) => {
+                  const p = pending;
+                  setPending(null);
+                  if (!p) return;
+                  if (answers.approve?.selectedIds.includes("apply")) runCall(p.toolCallId, p.def, p.input);
+                  else addOutputRef.current?.({ toolCallId: p.toolCallId, state: "output-error", errorText: "The person declined this change. Keep their current architecture." });
+                }}
+              />
+            </div>
           )}
           {error && (
             <div className="rounded-lg bg-destructive-light px-3 py-2 text-caption text-destructive">

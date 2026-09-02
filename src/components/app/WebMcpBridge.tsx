@@ -4,6 +4,7 @@
  * during SSR.
  */
 import { useEffect } from "react";
+import { useStudio } from "@/state/store";
 import { tools } from "@/tools";
 import { activeCaller, registerTools, webmcpSupported } from "@/tools/webmcp";
 import { studio } from "@/state/store";
@@ -11,12 +12,13 @@ import { toolLog } from "@/state/toollog";
 import { toWebMcpTool } from "@/tools/define";
 
 export function WebMcpBridge() {
+  const enabled = useStudio((s) => s.webmcp.enabled);
   useEffect(() => {
     let cancelled = false;
     let unregister = () => {};
     const supported = webmcpSupported();
     studio.setWebmcp({ supported, registered: 0 });
-    if (!supported) return;
+    if (!supported || !enabled) return;
 
     // Wrap execute so calls made by the browser agent show up in the log too.
     const logged = tools.map((def) => ({
@@ -46,12 +48,13 @@ export function WebMcpBridge() {
         return;
       }
       unregister = un;
-      studio.setWebmcp({ supported: true, registered });
+      studio.setWebmcp({ registered });
     });
     return () => {
       cancelled = true;
       unregister();
+      studio.setWebmcp({ registered: 0 });
     };
-  }, []);
+  }, [enabled]);
   return null;
 }

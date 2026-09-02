@@ -10,7 +10,8 @@
  */
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { BookOpen, Layers, PanelRight, Plus, Receipt, Save, Sliders, Sparkles, Terminal, Wrench } from "lucide-react";
+import { BookOpen, Layers, Moon, PanelRight, Plus, Receipt, Save, Sliders, Sparkles, Sun, SunMoon, Terminal, Wrench } from "lucide-react";
+import { useThemeContext } from "@/lib/theme-context";
 import {
   Sidebar,
   SidebarContent,
@@ -71,7 +72,7 @@ function RightTrigger() {
   if (!right) return null;
   return (
     <Tooltip content={`${right.open ? "Hide" : "Show"} panels  ]`}>
-      <Button variant="ghost" size="compact" aria-label="Toggle panels" active={right.open} onClick={right.toggle}>
+      <Button variant="ghost" size="compact" aria-label="Toggle panels" onClick={right.toggle}>
         <PanelRight className="size-4" />
       </Button>
     </Tooltip>
@@ -126,24 +127,43 @@ function RightRail() {
           </TabsList>
         </Tabs>
       </SidebarHeader>
-      <SidebarContent className="px-3 pb-3 pt-2">
-        <div key={panel} className="panel-in">
-          {panel === "inspect" && <Inspector />}
-          {panel === "traffic" && <TrafficPanel />}
-          {panel === "bill" && <BillPanel />}
-          {panel === "activity" && <ActivityPanel />}
-        </div>
-        {/* Kept mounted so the conversation and the draft survive switching. */}
-        <div hidden={panel !== "chat"} className="h-[calc(100svh-7.5rem)] min-h-[320px]">
-          <ClientOnly fallback={null}>
-            <Chat />
-          </ClientOnly>
-        </div>
-        <div hidden={panel !== "code"} className="h-[calc(100svh-7.5rem)] min-h-[320px]">
-          <DslEditor />
-        </div>
-      </SidebarContent>
+      {(panel === "inspect" || panel === "traffic" || panel === "bill" || panel === "activity") && (
+        <SidebarContent className="px-3 pb-3 pt-2">
+          <div key={panel} className="panel-in">
+            {panel === "inspect" && <Inspector />}
+            {panel === "traffic" && <TrafficPanel />}
+            {panel === "bill" && <BillPanel />}
+            {panel === "activity" && <ActivityPanel />}
+          </div>
+        </SidebarContent>
+      )}
+      {/* Kept mounted so the conversation and the draft survive switching. */}
+      <div hidden={panel !== "chat"} className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2">
+        <ClientOnly fallback={null}>
+          <Chat />
+        </ClientOnly>
+      </div>
+      <div hidden={panel !== "code"} className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2">
+        <DslEditor />
+      </div>
     </Sidebar>
+  );
+}
+
+function ThemeButton() {
+  const { theme, setTheme } = useThemeContext();
+  const Icon = theme === "system" ? SunMoon : theme === "light" ? Sun : Moon;
+  return (
+    <Tooltip content={`Theme: ${theme}. Press T to cycle.`} side="right">
+      <Button
+        variant="ghost"
+        size="compact"
+        aria-label="Cycle theme"
+        onClick={() => setTheme(theme === "system" ? "light" : theme === "light" ? "dark" : "system")}
+      >
+        <Icon className="size-4" />
+      </Button>
+    </Tooltip>
   );
 }
 
@@ -197,7 +217,12 @@ function AppSidebar() {
   return (
     <Sidebar variant="inset">
       <SidebarHeader>
-        <SidebarWorkspaceHeader name="Blueprint" tile={<WorkspaceTile>B</WorkspaceTile>} />
+        <div className="flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <SidebarWorkspaceHeader name="Blueprint" tile={<WorkspaceTile>B</WorkspaceTile>} />
+          </div>
+          <ThemeButton />
+        </div>
         <div className="flex flex-col gap-0.5">
           <SidebarSearchField placeholder="Search blueprints, products…" shortcut="/" value={query} onChange={(e) => setQuery(e.target.value)} />
           <SidebarMenu>

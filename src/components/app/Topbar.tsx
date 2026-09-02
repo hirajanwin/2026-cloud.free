@@ -3,13 +3,10 @@
  * clock controls, and the provider / plan switches.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Moon, Pause, Play, RotateCcw, Sun, SunMoon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabItem, TabsList } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useThemeContext } from "@/lib/theme-context";
 import { REQUEST_CLASSES, REQUEST_CLASS_LABEL } from "@/engine/types";
 import { formatCount, formatElapsed } from "@/lib/format";
 import { studio, useStudio } from "@/state/store";
@@ -46,25 +43,11 @@ function useGlide(target: number, ms = 220): number {
 
 export function TrafficStrip() {
   const snapshot = useStudio((s) => s.snapshot);
-  const running = useStudio((s) => s.running);
   const offered = REQUEST_CLASSES.reduce((s, c) => s + snapshot.offered[c], 0);
   const shown = useGlide(offered);
 
   return (
-    <div className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-5 border-b border-border bg-surface-2 px-3 py-2">
-      {/* clock controls */}
-      <div className="flex items-center gap-1">
-        <Tooltip content={running ? "Pause the clock" : "Resume the clock"}>
-          <Button variant="tertiary" size="compact" aria-label={running ? "Pause" : "Play"} onClick={() => studio.setRunning(!running)}>
-            {running ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
-          </Button>
-        </Tooltip>
-        <Tooltip content="Reset the clock">
-          <Button variant="ghost" size="compact" aria-label="Reset clock" onClick={() => studio.resetClock()}>
-            <RotateCcw className="size-3.5" />
-          </Button>
-        </Tooltip>
-      </div>
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-6 border-b border-border bg-surface-2 px-4 py-2">
 
       {/* headline number */}
       <div className="min-w-[132px]">
@@ -122,7 +105,6 @@ export function Topbar({ rightTrigger }: { rightTrigger?: ReactNode }) {
   const plan = useStudio((s) => s.plan);
   const title = useStudio((s) => s.diagram.title);
   const webmcp = useStudio((s) => s.webmcp);
-  const { theme, setTheme } = useThemeContext();
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-1.5 pr-2">
@@ -164,48 +146,23 @@ export function Topbar({ rightTrigger }: { rightTrigger?: ReactNode }) {
             />
           </TabsList>
         </Tabs>
-
         <Tooltip
           content={
             webmcp.supported
-              ? `${webmcp.registered} tools registered on document.modelContext. Ask the browser's agent to drive the canvas.`
+              ? `Expose the ${webmcp.registered || 18} tools on document.modelContext for your browser's agent.`
               : "No WebMCP in this browser. Enable chrome://flags/#enable-webmcp-testing in Chrome 149+. The in-page architect still works; its tools run directly."
           }
         >
-          <span>
-            <Badge
-              color={webmcp.supported ? "green" : "gray"}
-              variant="dot"
+          <div className="flex items-center gap-2 rounded-lg bg-surface-3 px-2.5 py-1 shadow-surface-1">
+            <Switch
               size="compact"
-            >
-              WebMCP {webmcp.supported ? `· ${webmcp.registered}` : "off"}
-            </Badge>
-          </span>
-        </Tooltip>
-
-        <Tooltip content={`Theme: ${theme}. Press T to cycle.`}>
-          <Button
-            variant="ghost"
-            size="compact"
-            aria-label="Cycle theme"
-            onClick={() =>
-              setTheme(
-                theme === "system"
-                  ? "light"
-                  : theme === "light"
-                    ? "dark"
-                    : "system",
-              )
-            }
-          >
-            {theme === "system" ? (
-              <SunMoon className="size-3.5" />
-            ) : theme === "light" ? (
-              <Sun className="size-3.5" />
-            ) : (
-              <Moon className="size-3.5" />
-            )}
-          </Button>
+              label={webmcp.supported ? `WebMCP${webmcp.enabled && webmcp.registered ? ` · ${webmcp.registered}` : ""}` : "WebMCP unavailable"}
+              checked={webmcp.supported && webmcp.enabled}
+              disabled={!webmcp.supported}
+              onToggle={() => studio.setWebmcp({ enabled: !webmcp.enabled })}
+            />
+            <span className={`inline-block size-1.5 rounded-full ${webmcp.supported && webmcp.enabled && webmcp.registered ? "bg-success" : "bg-muted-foreground/50"}`} aria-hidden />
+          </div>
         </Tooltip>
         {rightTrigger}
       </div>

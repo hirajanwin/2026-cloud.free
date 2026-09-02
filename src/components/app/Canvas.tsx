@@ -44,7 +44,7 @@ type ProductNodeData = {
   direction: Direction;
 };
 type GroupNodeData = { id: string; label?: string };
-type FlowEdgeData = { key: string; label?: string; style: string };
+type FlowEdgeData = { key: string; label?: string; style: string; outIndex: number };
 
 type RFNode = Node<ProductNodeData, "product"> | Node<GroupNodeData, "group">;
 type RFEdge = Edge<FlowEdgeData, "flow">;
@@ -203,7 +203,15 @@ const FlowEdge = memo(function FlowEdge({
   const flow = useStudio((s) =>
     data ? s.rates.edges[data.key]?.flow : undefined,
   );
-  const [path, labelX, labelY] = getSmoothStepPath({
+  // Labels sit on the first segment out of the source, stacked per sibling edge,
+  // so fan-outs never pile their labels on one midpoint.
+  const idx = data?.outIndex ?? 0;
+  const horizontal = sourcePosition === Position.Left || sourcePosition === Position.Right;
+  const dir = sourcePosition === Position.Left || sourcePosition === Position.Top ? -1 : 1;
+  const anchor = horizontal
+    ? { x: sourceX + dir * 44, y: sourceY - 12 - idx * 15, tx: dir > 0 ? "0, -100%" : "-100%, -100%" }
+    : { x: sourceX + 10, y: sourceY + dir * (28 + idx * 15), tx: "0, -50%" };
+  const [path] = getSmoothStepPath({
     sourceX,
     sourceY,
     targetX,
@@ -259,9 +267,9 @@ const FlowEdge = memo(function FlowEdge({
       {(data?.label || (total > 0 && selected)) && (
         <EdgeLabelRenderer>
           <div
-            className="pointer-events-none absolute rounded-md bg-surface-3 px-1.5 py-0.5 text-[10px] leading-3 text-muted-foreground shadow-surface-1"
+            className="pointer-events-none absolute whitespace-nowrap rounded-md bg-surface-3 px-1.5 py-0.5 text-[10px] leading-3 text-muted-foreground shadow-surface-1"
             style={{
-              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              transform: `translate(${anchor.tx}) translate(${anchor.x}px, ${anchor.y}px)`,
             }}
           >
             {data?.label}
@@ -385,13 +393,24 @@ function CanvasInner() {
       pendingFit.current = true;
       nodesRef.current = next;
       setNodes(next);
+      const outSeen = new Map<string, number>();
       setEdges(
         diagram.edges.map((e, i) => ({
           id: `${e.from}>${e.to}#${i}`,
           source: e.style === "back" ? e.to : e.from,
           target: e.style === "back" ? e.from : e.to,
           type: "flow",
-          data: { key: edgeKey(e.style === "back" ? { ...e, from: e.to, to: e.from } : e), label: e.label, style: e.style },
+          data: {
+            key: edgeKey(e.style === "back" ? { ...e, from: e.to, to: e.from } : e),
+            label: e.label,
+            style: e.style,
+            outIndex: (() => {
+              const src = e.style === "back" ? e.to : e.from;
+              const n = outSeen.get(src) ?? 0;
+              outSeen.set(src, n + 1);
+              return n;
+            })(),
+          },
         })),
       );
       refit();

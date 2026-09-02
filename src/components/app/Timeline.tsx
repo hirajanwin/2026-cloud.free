@@ -8,12 +8,14 @@ import { computeBill } from "@/engine/pricing";
 import { formatCount, formatUnit } from "@/lib/format";
 import { studio, useStudio } from "@/state/store";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Pause, Play, RotateCcw } from "lucide-react";
 
 const DAY = 86_400;
 const MONTH_DAYS = 30;
 
 export function Timeline() {
   const elapsed = useStudio((s) => s.snapshot.elapsedS);
+  const running = useStudio((s) => s.running);
   const rates = useStudio((s) => s.rates);
   const provider = useStudio((s) => s.provider);
   const plan = useStudio((s) => s.plan);
@@ -56,8 +58,26 @@ export function Timeline() {
 
   return (
     <div className="border-t border-border bg-surface-2 px-4 py-2.5">
-      <div className="flex items-baseline justify-between text-caption text-muted-foreground">
-        <span>
+      <div className="flex items-center justify-between gap-3 text-caption text-muted-foreground">
+        <span className="inline-flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={running ? "Pause" : "Play"}
+            title={running ? "Pause the clock" : "Resume the clock"}
+            onClick={() => studio.setRunning(!running)}
+            className="flex size-7 items-center justify-center rounded-md bg-surface-3 text-foreground shadow-surface-1 transition-colors hover:bg-hover"
+          >
+            {running ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
+          </button>
+          <button
+            type="button"
+            aria-label="Reset clock"
+            title="Reset to day 0"
+            onClick={() => studio.resetClock()}
+            className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+          >
+            <RotateCcw className="size-3.5" />
+          </button>
           Timeline · day{" "}
           <span className="text-numeric text-foreground">
             {(elapsed / DAY).toFixed(1)}

@@ -55,7 +55,7 @@ export interface StudioState {
   viewLayout: ViewLayout;
   analysis: ProductAnalysis | null;
   /** WebMCP status for the badge. */
-  webmcp: { supported: boolean; registered: number };
+  webmcp: { supported: boolean; registered: number; enabled: boolean };
   /** Monotonic revision, bumped on any document change. */
   revision: number;
 }
@@ -100,7 +100,7 @@ function createInitial(): StudioState {
     panel: "inspect",
     viewLayout: "flow",
     analysis: null,
-    webmcp: { supported: false, registered: 0 },
+    webmcp: { supported: false, registered: 0, enabled: true },
     revision: 0,
   };
 }
@@ -262,8 +262,8 @@ export const studio = {
     set({ analysis });
   },
 
-  setWebmcp(webmcp: StudioState["webmcp"]) {
-    set({ webmcp });
+  setWebmcp(webmcp: Partial<StudioState["webmcp"]>) {
+    set({ webmcp: { ...state.webmcp, ...webmcp } });
   },
 
   /** Rates for another provider or plan, without changing the studio. */
