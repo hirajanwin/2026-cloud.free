@@ -1,0 +1,465 @@
+{
+  "provider": "cloudflare",
+  "asOf": "2026-09-02",
+  "plans": {
+    "free": {
+      "label": "Free",
+      "monthlyUsd": 0,
+      "source": "https://developers.cloudflare.com/workers/platform/pricing/"
+    },
+    "paid": {
+      "label": "Workers Paid",
+      "monthlyUsd": 5,
+      "source": "https://developers.cloudflare.com/workers/platform/pricing/"
+    }
+  },
+  "meters": {
+    "cf.workers.requests": {
+      "label": "Workers requests",
+      "unit": "requests",
+      "free": {
+        "quota": 100000,
+        "period": "day",
+        "overage": "drop",
+        "note": "100,000 requests/day, reset at midnight UTC. Requests past the cap fail with Error 1027 (fail-open bypasses the Worker, fail-closed returns an error page)."
+      },
+      "paid": {
+        "included": 10000000,
+        "period": "month",
+        "pricePer": 0.3,
+        "per": 1000000,
+        "note": "10 million requests/month included, +$0.30 per additional million."
+      },
+      "source": "https://developers.cloudflare.com/workers/platform/pricing/",
+      "unverified": false
+    },
+    "cf.workers.cpu_ms": {
+      "label": "Workers CPU time",
+      "unit": "ms",
+      "free": {
+        "quota": null,
+        "period": "day",
+        "overage": "drop",
+        "note": "Free plan has no aggregate daily CPU quota; instead each invocation is capped at 10 ms CPU time (HTTP request and Cron Trigger). quota=null means not applicable, not unknown."
+      },
+      "paid": {
+        "included": 30000000,
+        "period": "month",
+        "pricePer": 0.02,
+        "per": 1000000,
+        "note": "30 million CPU-ms/month included, +$0.02 per additional million CPU-ms. Per-invocation cap default 30 s, configurable up to 5 min."
+      },
+      "source": "https://developers.cloudflare.com/workers/platform/pricing/",
+      "unverified": false
+    },
+    "cf.kv.reads": {
+      "label": "KV keys read",
+      "unit": "reads",
+      "free": {
+        "quota": 100000,
+        "period": "day",
+        "overage": "drop",
+        "note": "100,000 keys read/day; further operations fail with an error. Billed per key (bulk reads count each key)."
+      },
+      "paid": {
+        "included": 10000000,
+        "period": "month",
+        "pricePer": 0.5,
+        "per": 1000000
+      },
+      "source": "https://developers.cloudflare.com/kv/platform/pricing/",
+      "unverified": false
+    },
+    "cf.kv.writes": {
+      "label": "KV keys written",
+      "unit": "writes",
+      "free": {
+        "quota": 1000,
+        "period": "day",
+        "overage": "drop",
+        "note": "1,000 keys written/day."
+      },
+      "paid": {
+        "included": 1000000,
+        "period": "month",
+        "pricePer": 5,
+        "per": 1000000
+      },
+      "source": "https://developers.cloudflare.com/kv/platform/pricing/",
+      "unverified": false
+    },
+    "cf.kv.deletes": {
+      "label": "KV keys deleted",
+      "unit": "ops",
+      "free": {
+        "quota": 1000,
+        "period": "day",
+        "overage": "drop",
+        "note": "1,000 keys deleted/day."
+      },
+      "paid": {
+        "included": 1000000,
+        "period": "month",
+        "pricePer": 5,
+        "per": 1000000
+      },
+      "source": "https://developers.cloudflare.com/kv/platform/pricing/",
+      "unverified": false
+    },
+    "cf.kv.lists": {
+      "label": "KV list requests",
+      "unit": "ops",
+      "free": {
+        "quota": 1000,
+        "period": "day",
+        "overage": "drop",
+        "note": "1,000 list requests/day."
+      },
+      "paid": {
+        "included": 1000000,
+        "period": "month",
+        "pricePer": 5,
+        "per": 1000000
+      },
+      "source": "https://developers.cloudflare.com/kv/platform/pricing/",
+      "unverified": false
+    },
+    "cf.d1.rows_read": {
+      "label": "D1 rows read",
+      "unit": "rows",
+      "free": {
+        "quota": 5000000,
+        "period": "day",
+        "overage": "block",
+        "note": "5 million rows read/day. On hitting the daily limit you cannot run queries against D1; the API returns errors until the daily reset."
+      },
+      "paid": {
+        "included": 25000000000,
+        "period": "month",
+        "pricePer": 0.001,
+        "per": 1000000,
+        "note": "First 25 billion rows read/month included, +$0.001 per million rows."
+      },
+      "source": "https://developers.cloudflare.com/d1/platform/pricing/",
+      "unverified": false
+    },
+    "cf.d1.rows_written": {
+      "label": "D1 rows written",
+      "unit": "rows",
+      "free": {
+        "quota": 100000,
+        "period": "day",
+        "overage": "block",
+        "note": "100,000 rows written/day. Free storage 5 GB total across databases."
+      },
+      "paid": {
+        "included": 50000000,
+        "period": "month",
+        "pricePer": 1,
+        "per": 1000000,
+        "note": "First 50 million rows written/month included, +$1.00 per million rows. Storage: first 5 GB included, +$0.75/GB-month."
+      },
+      "source": "https://developers.cloudflare.com/d1/platform/pricing/",
+      "unverified": false
+    },
+    "cf.r2.class_a": {
+      "label": "R2 Class A operations",
+      "unit": "ops",
+      "free": {
+        "quota": 1000000,
+        "period": "month",
+        "overage": "block",
+        "note": "Free tier: 1 million Class A requests/month (Standard storage only; monthly, not daily). The pricing page does not state what happens on a free account beyond the tier; the overage enum here is a placeholder."
+      },
+      "paid": {
+        "included": 1000000,
+        "period": "month",
+        "pricePer": 4.5,
+        "per": 1000000,
+        "note": "$4.50 per million Class A requests (Standard storage) beyond the free tier. Infrequent Access: $9.00/million, no free tier."
+      },
+      "source": "https://developers.cloudflare.com/r2/pricing/",
+      "unverified": true
+    },
+    "cf.r2.class_b": {
+      "label": "R2 Class B operations",
+      "unit": "ops",
+      "free": {
+        "quota": 10000000,
+        "period": "month",
+        "overage": "block",
+        "note": "Free tier: 10 million Class B requests/month (Standard storage only). Behaviour beyond the free tier on a free account is not stated on the pricing page; overage enum is a placeholder."
+      },
+      "paid": {
+        "included": 10000000,
+        "period": "month",
+        "pricePer": 0.36,
+        "per": 1000000,
+        "note": "$0.36 per million Class B requests (Standard storage). Infrequent Access: $0.90/million, no free tier."
+      },
+      "source": "https://developers.cloudflare.com/r2/pricing/",
+      "unverified": true
+    },
+    "cf.r2.egress_gb": {
+      "label": "R2 egress",
+      "unit": "GB",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "R2 egress is free: zero egress fees on all storage classes. quota=null means unmetered."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1,
+        "note": "Egress: Free. $0 per GB."
+      },
+      "source": "https://developers.cloudflare.com/r2/pricing/",
+      "unverified": false
+    },
+    "cf.r2.storage_gb": {
+      "label": "R2 storage",
+      "unit": "GB",
+      "free": {
+        "quota": 10,
+        "period": "month",
+        "overage": "block",
+        "note": "Free tier: 10 GB-month/month of Standard storage. Behaviour beyond the free tier on a free account is not stated on the pricing page; overage enum is a placeholder."
+      },
+      "paid": {
+        "included": 10,
+        "period": "month",
+        "pricePer": 0.015,
+        "per": 1,
+        "note": "$0.015 per GB-month (Standard). Infrequent Access: $0.01/GB-month plus $0.01/GB data retrieval, 30-day minimum, no free tier."
+      },
+      "source": "https://developers.cloudflare.com/r2/pricing/",
+      "unverified": true
+    },
+    "cf.queues.ops": {
+      "label": "Queues operations",
+      "unit": "ops",
+      "free": {
+        "quota": 10000,
+        "period": "day",
+        "overage": "drop",
+        "note": "Workers Free: 10,000 operations/day, 24-hour non-configurable retention. One operation per 64 KB written, read or deleted; a delivered message is typically 3 operations (write, read, delete)."
+      },
+      "paid": {
+        "included": 1000000,
+        "period": "month",
+        "pricePer": 0.4,
+        "per": 1000000,
+        "note": "1,000,000 operations/month included, +$0.40 per million."
+      },
+      "source": "https://developers.cloudflare.com/queues/platform/pricing/",
+      "unverified": false
+    },
+    "cf.do.requests": {
+      "label": "Durable Objects requests",
+      "unit": "requests",
+      "free": {
+        "quota": 100000,
+        "period": "day",
+        "overage": "drop",
+        "note": "100,000 requests/day. Free plan supports SQLite-backed objects only."
+      },
+      "paid": {
+        "included": 1000000,
+        "period": "month",
+        "pricePer": 0.15,
+        "per": 1000000,
+        "note": "1 million requests/month included, +$0.15 per million."
+      },
+      "source": "https://developers.cloudflare.com/durable-objects/platform/pricing/",
+      "unverified": false
+    },
+    "cf.do.duration_gbs": {
+      "label": "Durable Objects duration",
+      "unit": "GB-s",
+      "free": {
+        "quota": 13000,
+        "period": "day",
+        "overage": "drop",
+        "note": "13,000 GB-s/day."
+      },
+      "paid": {
+        "included": 400000,
+        "period": "month",
+        "pricePer": 12.5,
+        "per": 1000000,
+        "note": "400,000 GB-s/month included, +$12.50 per million GB-s. SQLite storage billed separately: rows read 25 billion/month then $0.001/million; rows written 50 million/month then $1.00/million; 5 GB-month then $0.20/GB-month."
+      },
+      "source": "https://developers.cloudflare.com/durable-objects/platform/pricing/",
+      "unverified": false
+    },
+    "cf.vectorize.queried_dims": {
+      "label": "Vectorize queried vector dimensions",
+      "unit": "dims",
+      "free": {
+        "quota": 30000000,
+        "period": "month",
+        "overage": "drop",
+        "note": "30 million queried vector dimensions/month on Workers Free."
+      },
+      "paid": {
+        "included": 50000000,
+        "period": "month",
+        "pricePer": 0.01,
+        "per": 1000000,
+        "note": "First 50 million queried vector dimensions/month included, +$0.01 per million."
+      },
+      "source": "https://developers.cloudflare.com/vectorize/platform/pricing/",
+      "unverified": false
+    },
+    "cf.vectorize.stored_dims": {
+      "label": "Vectorize stored vector dimensions",
+      "unit": "dims",
+      "free": {
+        "quota": 5000000,
+        "period": "month",
+        "overage": "drop",
+        "note": "5 million stored vector dimensions (total stored, not per-month consumption)."
+      },
+      "paid": {
+        "included": 10000000,
+        "period": "month",
+        "pricePer": 0.05,
+        "per": 100000000,
+        "note": "First 10 million stored vector dimensions included, +$0.05 per 100 million stored dimensions."
+      },
+      "source": "https://developers.cloudflare.com/vectorize/platform/pricing/",
+      "unverified": false
+    },
+    "cf.workers_ai.neurons": {
+      "label": "Workers AI neurons",
+      "unit": "neurons",
+      "free": {
+        "quota": 10000,
+        "period": "day",
+        "overage": "drop",
+        "note": "10,000 Neurons per day at no charge; further operations fail with an error. Resets daily at 00:00 UTC."
+      },
+      "paid": {
+        "included": 10000,
+        "period": "day",
+        "pricePer": 0.011,
+        "per": 1000,
+        "note": "The included allocation on Paid is 10,000 Neurons per DAY (same daily free allocation), not per month; usage beyond it is billed at $0.011 per 1,000 Neurons. Simulator should treat 'included' as a daily figure."
+      },
+      "source": "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "unverified": false
+    },
+    "cf.ai_gateway.requests": {
+      "label": "AI Gateway requests",
+      "unit": "requests",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "AI Gateway core features are free; no per-request charge. Persistent log storage: 100,000 logs total across all gateways on Workers Free."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1000000,
+        "note": "No per-request charge. Logs: 10,000,000 per gateway on Workers Paid. Logpush (Paid only): 10 million/month then +$0.05/million. Guardrails billed as Workers AI inference. Unified Billing adds a 5% fee on credit purchases."
+      },
+      "source": "https://developers.cloudflare.com/ai-gateway/reference/pricing/",
+      "unverified": false
+    },
+    "cf.cache.requests": {
+      "label": "CDN cache requests",
+      "unit": "requests",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "Cache is 'Available on all plans' including Free; no per-request or bandwidth charge is listed. quota=null means unmetered."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1000000,
+        "note": "Included; no request metering."
+      },
+      "source": "https://developers.cloudflare.com/cache/",
+      "unverified": false
+    },
+    "cf.waf.requests": {
+      "label": "WAF requests",
+      "unit": "requests",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "Free plan includes the Cloudflare Free Managed Ruleset (WAF Managed Rules) and 5 custom rules; no per-request WAF charge. Pro 20, Business 100, Enterprise 1,000 custom rules."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1000000,
+        "note": "Workers Paid does not change zone WAF entitlements; WAF tier follows the zone plan (Free/Pro/Business/Enterprise), not the Workers plan."
+      },
+      "source": "https://developers.cloudflare.com/waf/custom-rules/",
+      "unverified": false
+    },
+    "cf.bot_fight.requests": {
+      "label": "Bot Fight Mode requests",
+      "unit": "requests",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "Bot Fight Mode: availability 'All Free customers', free. Super Bot Fight Mode requires Pro ('All Pro customers') or Business; Bot Management is Enterprise."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1000000,
+        "note": "No per-request charge; entitlement follows zone plan, not Workers plan."
+      },
+      "source": "https://developers.cloudflare.com/bots/plans/free/",
+      "unverified": false
+    },
+    "cf.rate_limit.requests": {
+      "label": "Rate limiting rules requests",
+      "unit": "requests",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "Rate limiting rules included at no per-request cost; rule count by plan: Free 1, Pro 2, Business 5, Enterprise (app security / Advanced Rate Limiting) 100."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1000000,
+        "note": "No per-request charge; rule count follows zone plan, not Workers plan."
+      },
+      "source": "https://developers.cloudflare.com/waf/rate-limiting-rules/",
+      "unverified": false
+    }
+  },
+  "notes": [
+    "Workers Free plan CPU time limit is 10 ms per invocation (HTTP request and Cron Trigger); Workers Paid default is 30 s per HTTP request, configurable up to 5 min (300,000 ms). Source: https://developers.cloudflare.com/workers/platform/limits/",
+    "Workers Free daily request limit is 100,000/day, resetting at midnight UTC; requests beyond the cap return Error 1027 (or bypass the Worker if fail-open is configured). Source: https://developers.cloudflare.com/workers/platform/limits/",
+    "Workers AI free allocation is PER DAY: 10,000 Neurons/day at no charge on both Free and Paid, resetting at 00:00 UTC; beyond that, Paid is billed at $0.011 per 1,000 Neurons and Free fails with an error. Source: https://developers.cloudflare.com/workers-ai/platform/pricing/",
+    "R2 egress is free ($0) on all storage classes. R2 free tier (10 GB-month, 1M Class A, 10M Class B per month) applies to Standard storage only and is monthly, not daily. The R2 pricing page does not state whether a free account is blocked or billed beyond the free tier; the cf.r2.* free.overage values are placeholders and those meters are marked unverified for that reason only (all numeric values are verified).",
+    "Workers Paid is $5 USD per month minimum. Source: https://developers.cloudflare.com/workers/platform/pricing/",
+    "Convention: quota/included = null with overage 'none' and pricePer 0 means unmetered/included, not unknown. Only meters with unverified=true carry an uncertain value.",
+    "Overage semantics: 'drop' = individual operations beyond the cap fail with an error; 'block' = the service refuses queries until the daily reset (D1 wording: 'you will not be able to run queries against D1').",
+    "Cache, WAF, Bot Fight Mode and rate limiting entitlements are governed by the zone plan (Free/Pro/Business/Enterprise), not the Workers Free/Paid subscription; the Workers Paid plan does not change them.",
+    "Durable Objects Free plan supports SQLite-backed objects only; SQLite storage on Free: 5M rows read/day, 100k rows written/day, 5 GB total. Key-Value backend is Paid only. Source: https://developers.cloudflare.com/durable-objects/platform/pricing/",
+    "Queues on Workers Free: 10,000 operations/day with 24-hour non-configurable retention; Paid allows retention up to 14 days. Source: https://developers.cloudflare.com/queues/platform/pricing/",
+    "Vectorize stored dimensions is a total-stored figure (5M on Free, 10M included on Paid) rather than monthly consumption; the schema period 'month' is nominal for it.",
+    "All values fetched 2026-09-02 from developers.cloudflare.com pages listed in each meter's source field."
+  ]
+}

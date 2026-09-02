@@ -1,0 +1,355 @@
+{
+  "provider": "vercel",
+  "asOf": "2026-09-02",
+  "plans": {
+    "free": {
+      "label": "Hobby",
+      "monthlyUsd": 0,
+      "source": "https://vercel.com/pricing"
+    },
+    "paid": {
+      "label": "Pro",
+      "monthlyUsd": 20,
+      "source": "https://vercel.com/docs/plans/pro-plan",
+      "creditUsd": 20,
+      "note": "Pro fee includes a $20/month usage credit shared across all metered resources."
+    }
+  },
+  "meters": {
+    "vc.functions.invocations": {
+      "label": "Function invocations",
+      "unit": "invocations",
+      "free": {
+        "quota": 1000000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby cannot purchase additional usage; when a Hobby limit is exceeded the feature is unavailable until 30 days have passed, and sustained over-limit usage can lead to a paused deployment."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.6,
+        "per": 1000000,
+        "note": "No per-meter allowance on Pro; billed on demand, offset by the $20/month Pro usage credit shared across all infrastructure meters."
+      },
+      "source": "https://vercel.com/docs/functions/usage-and-pricing",
+      "unverified": false
+    },
+    "vc.functions.active_cpu_hrs": {
+      "label": "Fluid Active CPU",
+      "unit": "hours",
+      "free": {
+        "quota": 4,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby cannot purchase additional usage; feature unavailable until 30 days pass once exceeded."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.128,
+        "per": 1,
+        "note": "iad1/cle1/pdx1 rate; regional range $0.128 (US) to $0.221 (gru1) per CPU-hour. Billed only while code is executing, not during I/O. Offset by $20 Pro credit."
+      },
+      "source": "https://vercel.com/docs/functions/usage-and-pricing",
+      "unverified": false
+    },
+    "vc.functions.provisioned_memory_gbhrs": {
+      "label": "Fluid Provisioned Memory",
+      "unit": "GB-hours",
+      "free": {
+        "quota": 360,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby cannot purchase additional usage; feature unavailable until 30 days pass once exceeded."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.0106,
+        "per": 1,
+        "note": "iad1/cle1/pdx1 rate; regional range $0.0106 to $0.0183 per GB-hr. Billed for instance lifetime including I/O wait. Offset by $20 Pro credit."
+      },
+      "source": "https://vercel.com/docs/functions/usage-and-pricing",
+      "unverified": false
+    },
+    "vc.edge.requests": {
+      "label": "Edge Requests (CDN requests)",
+      "unit": "requests",
+      "free": {
+        "quota": 1000000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby cannot purchase additional usage. WAF/Attack Mode mitigated requests do not count."
+      },
+      "paid": {
+        "included": 10000000,
+        "period": "month",
+        "pricePer": 2,
+        "per": 1000000,
+        "note": "iad1 rate; regional range $2.00 to $3.20 per 1M. Explicit Pro allowance (first 10,000,000), then charged against $20 credit, then on demand."
+      },
+      "source": "https://vercel.com/docs/pricing/regional-pricing/iad1",
+      "unverified": false
+    },
+    "vc.data_transfer.fast_gb": {
+      "label": "Fast Data Transfer (CDN to visitor)",
+      "unit": "GB",
+      "free": {
+        "quota": 100,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby cannot purchase additional usage."
+      },
+      "paid": {
+        "included": 1000,
+        "period": "month",
+        "pricePer": 0.15,
+        "per": 1,
+        "note": "Included is stated as 'First 1 TB' (recorded as 1000 GB). iad1 rate; regional range $0.15 to $0.35 per GB. Explicit Pro allowance, then $20 credit, then on demand."
+      },
+      "source": "https://vercel.com/docs/pricing/regional-pricing/iad1",
+      "unverified": false
+    },
+    "vc.origin_transfer.fast_gb": {
+      "label": "Fast Origin Transfer (CDN to Functions/Blob/ISR)",
+      "unit": "GB",
+      "free": {
+        "quota": 10,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby cannot purchase additional usage."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.06,
+        "per": 1,
+        "note": "iad1 rate; regional range $0.06 to $0.43 per GB. vercel.com/pricing and the Pro plan page list no Pro allowance (credit-based), but the Blob pricing example on docs still says '100 GB included' for FOT; treated as 0 included + credit."
+      },
+      "source": "https://vercel.com/docs/pricing/regional-pricing/iad1",
+      "unverified": true
+    },
+    "vc.blob.simple_ops": {
+      "label": "Blob Simple Operations (cache-MISS URL reads, head())",
+      "unit": "ops",
+      "free": {
+        "quota": 10000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: no charge for overage but Blob access is blocked once limits are exceeded; must wait 30 days."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.4,
+        "per": 1000000,
+        "note": "iad1 rate ($0.40/1M on vercel.com/pricing); regional-pricing summary shows range $0.35 to $0.56. Pro allowance conflict: pricing page shows none (credit-based) while the docs pricing example says '100K included'; treated as 0 + $20 credit."
+      },
+      "source": "https://vercel.com/docs/vercel-blob/usage-and-pricing",
+      "unverified": true
+    },
+    "vc.blob.advanced_ops": {
+      "label": "Blob Advanced Operations (put/copy/list)",
+      "unit": "ops",
+      "free": {
+        "quota": 2000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: Blob access blocked once limits are exceeded; wait 30 days. Dashboard interactions count as advanced ops; del() is free."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 5,
+        "per": 1000000,
+        "note": "iad1 rate; regional range $4.50 to $7.00 per 1M. Pro allowance conflict: pricing page shows none while docs example says '10K included'; treated as 0 + $20 credit."
+      },
+      "source": "https://vercel.com/docs/vercel-blob/usage-and-pricing",
+      "unverified": true
+    },
+    "vc.blob.data_transfer_gb": {
+      "label": "Blob Data Transfer",
+      "unit": "GB",
+      "free": {
+        "quota": 10,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: Blob access blocked once limits are exceeded; wait 30 days."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.05,
+        "per": 1,
+        "note": "iad1 rate; regional range $0.05 to $0.117 per GB. Pro allowance conflict: pricing page shows none while docs example says '100 GB included'; treated as 0 + $20 credit. Blob URL accesses also incur Edge Requests, and cache MISSes incur Fast Origin Transfer."
+      },
+      "source": "https://vercel.com/docs/vercel-blob/usage-and-pricing",
+      "unverified": true
+    },
+    "vc.blob.storage_gb": {
+      "label": "Blob Storage (monthly average GB)",
+      "unit": "GB",
+      "free": {
+        "quota": 1,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: Blob access blocked once limits are exceeded; wait 30 days."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.023,
+        "per": 1,
+        "note": "Per GB-month, iad1 rate; regional range $0.023 to $0.041. Pro allowance conflict: pricing page shows none while docs example says '5 GB included'; treated as 0 + $20 credit."
+      },
+      "source": "https://vercel.com/docs/vercel-blob/usage-and-pricing",
+      "unverified": true
+    },
+    "vc.isr.reads": {
+      "label": "ISR Reads (8 KB read units from durable ISR cache)",
+      "unit": "reads",
+      "free": {
+        "quota": 1000000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby cannot purchase additional usage. CDN cache reads are free; only durable-cache reads are metered."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.4,
+        "per": 1000000,
+        "note": "iad1 rate; regional range $0.40 to $0.64 per 1M read units. Priced by the project's Function region; iad1 is always chosen if it is one of the regions. Offset by $20 credit."
+      },
+      "source": "https://vercel.com/docs/incremental-static-regeneration/limits-and-pricing",
+      "unverified": false
+    },
+    "vc.isr.writes": {
+      "label": "ISR Writes (8 KB write units to durable ISR cache)",
+      "unit": "writes",
+      "free": {
+        "quota": 200000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby cannot purchase additional usage. Revalidations that produce unchanged content incur no write units."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 4,
+        "per": 1000000,
+        "note": "iad1 rate; regional range $4.00 to $6.40 per 1M write units. Offset by $20 credit."
+      },
+      "source": "https://vercel.com/docs/incremental-static-regeneration/limits-and-pricing",
+      "unverified": false
+    },
+    "vc.image.transformations": {
+      "label": "Image Optimization transformations",
+      "unit": "transformations",
+      "free": {
+        "quota": 5000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: once exceeded, new images fail to optimize and return a 402 error (alt text shown); previously cached images keep working; no charge; deployments are no longer paused for this meter."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.05,
+        "per": 1000,
+        "note": "iad1 rate; regional range $0.05 to $0.0812 per 1K. Billed per cache MISS/STALE. Separate meters exist for image cache reads ($0.40/1M, Hobby 300K included) and cache writes ($4.00/1M, Hobby 100K included). Offset by $20 credit."
+      },
+      "source": "https://vercel.com/docs/image-optimization/limits-and-pricing",
+      "unverified": false
+    },
+    "vc.firewall.requests": {
+      "label": "Vercel Firewall / WAF (DDoS mitigation, IP blocking, custom rules)",
+      "unit": "requests",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "Unmetered (null = no request quota, verified). Free on Hobby: DDoS mitigation, up to 3 custom rules, up to 3 project-level IP blocks, 1 rate-limit rule with 1,000,000 allowed requests/month included. Mitigated (deny/challenge/rate-limited) traffic does not count toward Edge Requests or Fast Data Transfer."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1,
+        "note": "Unmetered (null = no request quota, verified). Free on Pro: DDoS mitigation, up to 40 custom rules, up to 100 IP blocks. Separately priced WAF features: rate limiting $0.50 per 1M allowed requests (iad1; range to $0.80), and OWASP CRS managed ruleset (Enterprise only) $0.80 per 1M inspected requests + $0.20 per GB payload beyond 4 KB/request."
+      },
+      "source": "https://vercel.com/docs/vercel-firewall/vercel-waf/usage-and-pricing",
+      "unverified": false
+    },
+    "vc.bot_protection.requests": {
+      "label": "Bot protection (Bot Protection managed ruleset, Attack Challenge Mode, BotID Basic)",
+      "unit": "requests",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "Unmetered (null = no request quota, verified). Attack Mode is free on all plans and blocked requests do not count toward usage limits. BotID Basic is free on all plans. Bot Protection managed ruleset is GA for all users at no additional cost (Vercel changelog). BotID Deep Analysis is not available on Hobby."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1,
+        "note": "Unmetered for Attack Mode, BotID Basic, and Bot Protection managed ruleset. BotID Deep Analysis (Pro) is separately priced at $1 per 1,000 checkBotId() Deep Analysis calls; passive page views are not charged."
+      },
+      "source": "https://vercel.com/docs/botid",
+      "unverified": false
+    },
+    "vc.kv.commands": {
+      "label": "Redis/KV commands (Upstash via Vercel Marketplace)",
+      "unit": "ops",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "partner-billed via Vercel Marketplace; Vercel docs do not publish Upstash prices or quotas."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": null,
+        "per": 1,
+        "note": "partner-billed via Vercel Marketplace (unified billing on the Vercel invoice; plan and prices set by Upstash)."
+      },
+      "source": "https://vercel.com/docs/marketplace-storage",
+      "unverified": true
+    },
+    "vc.postgres.compute_hrs": {
+      "label": "Postgres compute hours (Neon via Vercel Marketplace)",
+      "unit": "hours",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "partner-billed via Vercel Marketplace; Vercel docs do not publish Neon prices or quotas."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": null,
+        "per": 1,
+        "note": "partner-billed via Vercel Marketplace (unified billing on the Vercel invoice; plan and prices set by Neon)."
+      },
+      "source": "https://vercel.com/docs/marketplace-storage",
+      "unverified": true
+    }
+  },
+  "notes": [
+    "All prices USD, excluding VAT/GST. Prices recorded are the lowest-tier region (iad1 Washington D.C.; also cle1/pdx1 for compute). Most meters are regionally priced; ranges are noted per meter (source: https://vercel.com/docs/pricing/regional-pricing).",
+    "Hobby commercial use: NOT permitted. 'Hobby teams are restricted to non-commercial personal use only. All commercial usage of the platform requires either a Pro or Enterprise plan.' Ads, payments, affiliate links, donations, and paid work on the site all count as commercial (https://vercel.com/docs/limits/fair-use-guidelines#commercial-usage).",
+    "Hobby overage behaviour: 'If you have a free Hobby account, you are limited to the usage caps and cannot purchase additional usage.' 'In most cases, if you exceed your usage limits on the Hobby plan, you will have to wait until 30 days have passed before you can use the feature again.' Vercel's KB adds that sustained usage past limits can lead to a paused deployment. Blob: access blocked until 30 days pass. Image Optimization: new transformations return 402 (no longer pauses deployments).",
+    "Hobby function limits (Fluid compute, default since 2025-04-23): default and max duration 300s (5 min); CPU config Standard only = 2 GB / 1 vCPU, not configurable (Vercel manages CPU with a minimum of 1 vCPU). Pro: 300s default, configurable to 800s, extended 1800s in beta; Standard or Performance (4 GB / 2 vCPU). Legacy non-Fluid projects (pre 2025-04-23): Hobby 10s default / 60s max; Pro 15s / 300s. Middleware on the edge runtime is limited to 50 ms average CPU (fair-use). Hobby build: 2 vCPU / 8 GB, 1 concurrent build, 100 deployments/day, 200 projects.",
+    "Pro billing model: $20/month platform fee includes 1 deploying seat and $20/month of usage credit; extra Owner/Member seats $20/month each, Viewer seats free. The ONLY explicit per-meter Pro allowances are 1 TB Fast Data Transfer and 10,000,000 Edge Requests per month; every other meter is billed on demand and first drawn from the $20 credit. Simulators should model 'paid.included: 0' meters as covered by a shared $20 credit pool, not as free. Credit expires monthly. Spend Management (opt-in) can pause projects at a set spend amount.",
+    "Data-conflict flag: the Blob pricing example on docs (https://vercel.com/docs/vercel-blob/usage-and-pricing#pricing-example) still cites Pro per-meter allowances (5 GB storage, 100K simple ops, 10K advanced ops, 100 GB blob transfer, 100 GB Fast Origin Transfer) that vercel.com/pricing and the Pro plan page no longer list (credit-based since the 'Included Pro usage is now credit-based' change). Those meters are marked unverified with included 0.",
+    "Firewall: DDoS mitigation, IP blocking, custom rules (log/deny/challenge/bypass), and Attack Challenge Mode are free on Hobby and Pro with no per-request charge; mitigated traffic does not incur Edge Requests or Fast Data Transfer. Priced WAF features: rate limiting (Hobby 1M allowed requests/month included, 1 rule; Pro usage-based $0.50/1M allowed, iad1) and OWASP CRS managed ruleset (Enterprise). BotID Basic free on all plans; BotID Deep Analysis Pro-only at $1 per 1,000 checkBotId() calls. Bot Protection managed ruleset is stated as free for all users in the Vercel changelog (not a docs/pricing page).",
+    "Additional metered resources not in this file: Image cache reads (Hobby 300K, $0.40/1M) and writes (Hobby 100K, $4.00/1M); Edge Request CPU Duration ($0.30/hour iad1, Pro 1 hour included); Runtime Cache reads/writes (same rates as ISR); Build CPU minutes ($0.0035/CPU-min, Hobby builds free); Global Config reads $3/1M, writes $10/1K; Web Analytics (Hobby 50K events, Pro $0.03/1K); Speed Insights; Observability Plus $1.20/1M events; Private Data Transfer $0.15/GB.",
+    "URL notes: https://vercel.com/docs/pricing/networking redirects to https://vercel.com/docs/manage-cdn-usage (explanatory only, no prices); https://vercel.com/docs/incremental-static-regeneration/usage-and-pricing returned 404 and the live page is https://vercel.com/docs/incremental-static-regeneration/limits-and-pricing; Attack Challenge Mode is documented at https://vercel.com/docs/vercel-firewall/attack-mode. Hobby ISR included amounts (1M reads, 200K writes) and Hobby Blob included amounts come from https://vercel.com/pricing; the ISR docs page itself lists no per-plan allowances.",
+    "Marketplace storage (Neon Postgres, Upstash Redis, Supabase, AWS Aurora, Prisma Postgres): provisioned from the Vercel dashboard or 'vercel install', with 'Unified billing: Pay for storage resources through your Vercel account'; plans and prices are set by the provider and are not published in Vercel docs, so vc.kv.commands and vc.postgres.compute_hrs are null/unverified."
+  ]
+}

@@ -1,0 +1,773 @@
+/*
+  Design tokens ported from Fluid Functionalism (MIT, © 2026 Micka Touillaud)
+  https://github.com/mickadesign/fluid-functionalism — app/globals.css sections 1–6.
+  Site-specific rules (bento grid, shiki) are omitted. Inter is loaded from
+  Google Fonts with the opsz axis so the font-weight tokens keep advance width.
+*/
+@import url("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap");
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+   1. DESIGN TOKENS
+   Every color token is written ONCE, as light-dark(light, dark). Which side
+   renders is driven by `color-scheme`: the root follows the OS, and a `.light`
+   or `.dark` class on <html> pins it.
+============================================================================ */
+
+:root {
+  color-scheme: light dark;
+}
+
+:root,
+.light,
+.dark {
+  /* ── Surfaces (8-level ladder) ── */
+  --surface-1: light-dark(#fafafa, #171717);
+  --surface-2: light-dark(#fcfcfc, #1e1e1e);
+  --surface-3: light-dark(#ffffff, #252525);
+  --surface-4: light-dark(#ffffff, #2c2c2c);
+  --surface-5: light-dark(#ffffff, #333333);
+  --surface-6: light-dark(#ffffff, #3a3a3a);
+  --surface-7: light-dark(#ffffff, #414141);
+  --surface-8: light-dark(#ffffff, #484848);
+
+  /* ── Semantic tokens ── */
+  --background: var(--surface-1);
+  --foreground: light-dark(#171717, #f5f5f5);
+  --card: var(--surface-3);
+  --card-foreground: light-dark(#171717, #f5f5f5);
+  --muted: light-dark(#f4f4f5, #1e1e1e);
+  --muted-foreground: light-dark(#737373, #a3a3a3);
+
+  /* ── Interactive states ── */
+  --accent: light-dark(#e5e5e5, #525252);
+  --accent-foreground: light-dark(#171717, #f5f5f5);
+  --selected: light-dark(#d4d4d4, #525252);
+
+  /* ── Borders ── */
+  --border: color-mix(in oklab, var(--foreground) 12%, transparent);
+  --ring: light-dark(#e5e5e5, #404040);
+  --input: light-dark(#e5e5e5, #404040);
+
+  /* ── Error / Destructive ── */
+  --destructive: light-dark(#ef4444, #f87171);
+  --destructive-light: light-dark(#fef2f2, #450a0a);
+
+  /* ── Status (app additions, same light-dark discipline) ── */
+  --success: light-dark(#16a34a, #4ade80);
+  --success-light: light-dark(#f0fdf4, #052e16);
+  --warning: light-dark(#d97706, #fbbf24);
+  --warning-light: light-dark(#fffbeb, #451a03);
+  --info: light-dark(#2563eb, #60a5fa);
+  --info-light: light-dark(#eff6ff, #172554);
+
+  /* ── Provider brand accents (used only as small identity marks) ── */
+  --brand-cloudflare: #f6821f;
+  --brand-vercel: light-dark(#000000, #ffffff);
+
+  /* ── Focus indicator ── */
+  --focus-ring: #6b97ff;
+
+  /* ── Alpha checkerboard ── */
+  --checker-a: light-dark(#bbbbbb, #1f1f1f);
+  --checker-b: light-dark(#ffffff, #2a2a2a);
+
+  /* ── Surface-relative interactive overlays ── */
+  --overlay: 0 0 0;
+  --hover: light-dark(rgb(0 0 0 / 0.04), rgb(255 255 255 / 0.06));
+  --active: light-dark(rgb(0 0 0 / 0.07), rgb(255 255 255 / 0.1));
+
+  /* ── Shadow recipes ── */
+  --shadow-color: rgb(0 0 0 / 0.06);
+  --shadow-light-1: 0 0 0 1px var(--shadow-color);
+  --shadow-light-2:
+    0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color);
+  --shadow-light-3:
+    0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+    0 3px 3px -1.5px var(--shadow-color);
+  --shadow-light-4:
+    0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+    0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color);
+  --shadow-light-5:
+    0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+    0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color),
+    0 12px 12px -6px var(--shadow-color);
+  --shadow-light-6:
+    0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+    0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color),
+    0 12px 12px -6px var(--shadow-color), 0 24px 24px -12px var(--shadow-color);
+  --shadow-light-7:
+    0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+    0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color),
+    0 12px 12px -6px var(--shadow-color), 0 24px 24px -12px var(--shadow-color),
+    0 48px 48px -24px var(--shadow-color);
+  --shadow-light-8:
+    0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+    0 3px 3px -1.5px var(--shadow-color), 0 6px 6px -3px var(--shadow-color),
+    0 12px 12px -6px var(--shadow-color), 0 24px 24px -12px var(--shadow-color),
+    0 48px 48px -24px var(--shadow-color), 0 96px 96px -48px var(--shadow-color);
+  --shadow-light-2-inset:
+    inset 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color);
+  --shadow-light-3-inset:
+    inset 0 0 0 1px var(--shadow-color), 0 1px 1px -0.5px var(--shadow-color),
+    0 3px 3px -1.5px var(--shadow-color);
+
+  --dm-hi-base: rgba(255, 255, 255, 0.01);
+  --dm-hi-mid: rgba(255, 255, 255, 0.02);
+  --dm-hi-high: rgba(255, 255, 255, 0.04);
+  --dm-hi-peak: rgba(255, 255, 255, 0.06);
+  --dm-ring-base: rgba(255, 255, 255, 0.02);
+  --dm-ring-mid: rgba(255, 255, 255, 0.04);
+  --dm-ring-high: rgba(255, 255, 255, 0.06);
+  --dm-drop: rgba(0, 0, 0, 0.18);
+  --shadow-dark-1: inset 0 0 0 1px var(--dm-ring-base);
+  --shadow-dark-2:
+    inset 0 1px 0 0 var(--dm-hi-base), inset 0 0 0 1px var(--dm-ring-base),
+    0 1px 1px -0.5px var(--dm-drop);
+  --shadow-dark-3:
+    inset 0 1px 0 0 var(--dm-hi-mid), inset 0 0 0 1px var(--dm-ring-base),
+    0 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 1px -0.5px var(--dm-drop),
+    0 3px 3px -1.5px var(--dm-drop);
+  --shadow-dark-4:
+    inset 0 1px 0 0 var(--dm-hi-mid), inset 0 0 0 1px var(--dm-ring-mid),
+    0 0 0 1px rgba(0, 0, 0, 0.14), 0 1px 1px -0.5px var(--dm-drop),
+    0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop);
+  --shadow-dark-5:
+    inset 0 1px 0 0 var(--dm-hi-high), inset 0 0 0 1px var(--dm-ring-mid),
+    0 0 0 1px rgba(0, 0, 0, 0.16), 0 1px 1px -0.5px var(--dm-drop),
+    0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop),
+    0 12px 12px -6px var(--dm-drop);
+  --shadow-dark-6:
+    inset 0 1px 0 0 var(--dm-hi-high), inset 0 0 0 1px var(--dm-ring-high),
+    0 0 0 1px rgba(0, 0, 0, 0.18), 0 1px 1px -0.5px var(--dm-drop),
+    0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop),
+    0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop);
+  --shadow-dark-7:
+    inset 0 1px 0 0 var(--dm-hi-peak), inset 0 0 0 1px var(--dm-ring-high),
+    0 0 0 1px rgba(0, 0, 0, 0.2), 0 1px 1px -0.5px var(--dm-drop),
+    0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop),
+    0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop),
+    0 48px 48px -24px var(--dm-drop);
+  --shadow-dark-8:
+    inset 0 1px 0 0 var(--dm-hi-peak), inset 0 0 0 1px var(--dm-ring-high),
+    0 0 0 1px rgba(0, 0, 0, 0.22), 0 1px 1px -0.5px var(--dm-drop),
+    0 3px 3px -1.5px var(--dm-drop), 0 6px 6px -3px var(--dm-drop),
+    0 12px 12px -6px var(--dm-drop), 0 24px 24px -12px var(--dm-drop),
+    0 48px 48px -24px var(--dm-drop), 0 96px 96px -48px var(--dm-drop);
+
+  --shadow-1: var(--shadow-light-1);
+  --shadow-2: var(--shadow-light-2);
+  --shadow-3: var(--shadow-light-3);
+  --shadow-4: var(--shadow-light-4);
+  --shadow-5: var(--shadow-light-5);
+  --shadow-6: var(--shadow-light-6);
+  --shadow-7: var(--shadow-light-7);
+  --shadow-8: var(--shadow-light-8);
+  --shadow-2-inset: var(--shadow-light-2-inset);
+  --shadow-3-inset: var(--shadow-light-3-inset);
+}
+
+/* ============================================================================
+   2. THEME SWITCHING
+============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --overlay: 255 255 255;
+    --shadow-1: var(--shadow-dark-1);
+    --shadow-2: var(--shadow-dark-2);
+    --shadow-3: var(--shadow-dark-3);
+    --shadow-4: var(--shadow-dark-4);
+    --shadow-5: var(--shadow-dark-5);
+    --shadow-6: var(--shadow-dark-6);
+    --shadow-7: var(--shadow-dark-7);
+    --shadow-8: var(--shadow-dark-8);
+    --shadow-2-inset: var(--shadow-dark-2);
+    --shadow-3-inset: var(--shadow-dark-3);
+  }
+}
+
+.light {
+  color-scheme: light;
+  --overlay: 0 0 0;
+  --shadow-2-inset: var(--shadow-light-2-inset);
+  --shadow-3-inset: var(--shadow-light-3-inset);
+  --shadow-1: var(--shadow-light-1);
+  --shadow-2: var(--shadow-light-2);
+  --shadow-3: var(--shadow-light-3);
+  --shadow-4: var(--shadow-light-4);
+  --shadow-5: var(--shadow-light-5);
+  --shadow-6: var(--shadow-light-6);
+  --shadow-7: var(--shadow-light-7);
+  --shadow-8: var(--shadow-light-8);
+}
+
+.dark {
+  color-scheme: dark;
+  --overlay: 255 255 255;
+  --shadow-2-inset: var(--shadow-dark-2);
+  --shadow-3-inset: var(--shadow-dark-3);
+  --shadow-1: var(--shadow-dark-1);
+  --shadow-2: var(--shadow-dark-2);
+  --shadow-3: var(--shadow-dark-3);
+  --shadow-4: var(--shadow-dark-4);
+  --shadow-5: var(--shadow-dark-5);
+  --shadow-6: var(--shadow-dark-6);
+  --shadow-7: var(--shadow-dark-7);
+  --shadow-8: var(--shadow-dark-8);
+}
+
+/* ============================================================================
+   3. TAILWIND THEME MAPPING
+============================================================================ */
+
+@theme inline {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-selected: var(--selected);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-destructive: var(--destructive);
+  --color-destructive-light: var(--destructive-light);
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
+  --color-info: var(--info);
+  --color-info-light: var(--info-light);
+  --color-brand-cloudflare: var(--brand-cloudflare);
+  --color-brand-vercel: var(--brand-vercel);
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-surface-5: var(--surface-5);
+  --color-surface-6: var(--surface-6);
+  --color-surface-7: var(--surface-7);
+  --color-surface-8: var(--surface-8);
+
+  --shadow-surface-1: var(--shadow-1);
+  --shadow-surface-2: var(--shadow-2);
+  --shadow-surface-3: var(--shadow-3);
+  --shadow-surface-4: var(--shadow-4);
+  --shadow-surface-5: var(--shadow-5);
+  --shadow-surface-6: var(--shadow-6);
+  --shadow-surface-7: var(--shadow-7);
+  --shadow-surface-8: var(--shadow-8);
+
+  /* shadcn compatibility aliases so stock shadcn / AI Elements components
+     land on the FF ladder instead of undefined variables. */
+  --color-primary: var(--foreground);
+  --color-primary-foreground: var(--background);
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--foreground);
+  --color-popover: var(--surface-3);
+  --color-popover-foreground: var(--foreground);
+  --color-destructive-foreground: light-dark(#ffffff, #171717);
+  --color-sidebar: var(--surface-1);
+  --color-sidebar-foreground: var(--foreground);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-accent: var(--accent);
+  --color-sidebar-accent-foreground: var(--accent-foreground);
+}
+
+/* ============================================================================
+   4. BASE STYLES
+============================================================================ */
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body[data-scroll-locked][data-scroll-locked] {
+  margin-right: 0 !important;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  overscroll-behavior-y: none;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  code:not(pre code) {
+    background: light-dark(#ebebed, #2c2c2c);
+    border-radius: 4px;
+    padding: 1px 4px;
+    font-size: var(--fs-caption, 12px);
+    color: var(--color-foreground, inherit);
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--focus-ring, #6b97ff);
+    outline-offset: 2px;
+    border-radius: var(--shape-input-radius, 8px);
+  }
+
+  a:focus-visible {
+    border-radius: 2px;
+  }
+}
+
+/* ── Type-scale roles ── must stay in sync with typeScale in lib/size-context */
+:root {
+  --fs-display: 22px;
+  --fs-title: 16px;
+  --fs-subtitle: 14px;
+  --fs-body: 13px;
+  --fs-caption: 12px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --fs-display: 28px;
+  }
+}
+
+html[data-size="compact"] {
+  --fs-display: 20px;
+  --fs-title: 15px;
+  --fs-subtitle: 13px;
+  --fs-body: 12px;
+  --fs-caption: 11px;
+}
+
+@media (min-width: 640px) {
+  html[data-size="compact"] {
+    --fs-display: 24px;
+  }
+}
+
+@utility text-display {
+  font-size: var(--fs-display, 28px);
+}
+@utility text-title {
+  font-size: var(--fs-title, 16px);
+}
+@utility text-subtitle {
+  font-size: var(--fs-subtitle, 14px);
+}
+@utility text-body {
+  font-size: var(--fs-body, 13px);
+}
+@utility text-caption {
+  font-size: var(--fs-caption, 12px);
+}
+
+/* Numbers: mono stack with tabular figures, so meters never jitter. */
+@utility text-numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+html.transitioning *,
+html.transitioning *::before,
+html.transitioning *::after {
+  transition:
+    border-radius 180ms ease-in-out,
+    background-color 180ms ease-in-out,
+    color 180ms ease-in-out,
+    border-color 180ms ease-in-out,
+    fill 180ms ease-in-out,
+    stroke 180ms ease-in-out !important;
+}
+
+/* ============================================================================
+   5. NATIVE SCROLLBAR THEME
+============================================================================ */
+
+@media (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--overlay) / 0.08) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--overlay) / 0.08);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:vertical {
+    border-left-width: 1px;
+    border-right-width: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb:horizontal {
+    border-top-width: 1px;
+    border-bottom-width: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--overlay) / 0.12);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background-color: rgb(var(--overlay) / 0.16);
+  }
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================================
+   6. UTILITIES
+============================================================================ */
+
+@keyframes shimmer {
+  0% {
+    background-position: 0% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+.shimmer-text {
+  color: transparent;
+  background: linear-gradient(
+    90deg,
+    light-dark(#a3a3a3, #525252) 0%,
+    light-dark(#a3a3a3, #525252) 35%,
+    light-dark(#525252, #a3a3a3) 50%,
+    light-dark(#a3a3a3, #525252) 65%,
+    light-dark(#a3a3a3, #525252) 100%
+  );
+  background-size: 300% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes spinner-move {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes spinner-dash {
+  0%,
+  100% {
+    stroke-dasharray: 15 85;
+  }
+  50% {
+    stroke-dasharray: 40 60;
+  }
+}
+
+.xl-fade-flex,
+.xl-fade-block {
+  display: none;
+  opacity: 0;
+  transition:
+    opacity 0.16s ease-out,
+    display 0.16s allow-discrete;
+}
+
+@media (min-width: 1280px) {
+  .xl-fade-flex {
+    display: flex;
+  }
+  .xl-fade-block {
+    display: block;
+  }
+  .xl-fade-flex,
+  .xl-fade-block {
+    opacity: 1;
+    transition:
+      opacity 0.24s ease-out,
+      display 0.24s allow-discrete;
+  }
+  @starting-style {
+    .xl-fade-flex,
+    .xl-fade-block {
+      opacity: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xl-fade-flex,
+  .xl-fade-block {
+    transition: none;
+  }
+}
+
+/* ── scroll-fade ── */
+@property --sf-start {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --sf-end {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+@keyframes sf-reveal-start {
+  from {
+    --sf-start: 1;
+  }
+  to {
+    --sf-start: 0;
+  }
+}
+@keyframes sf-reveal-end {
+  from {
+    --sf-end: 0;
+  }
+  to {
+    --sf-end: 1;
+  }
+}
+
+.scroll-fade,
+.scroll-fade-x {
+  --scroll-fade-size: 48px;
+}
+
+.scroll-fade {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--scroll-fade-size),
+    #000 calc(100% - var(--scroll-fade-size)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--scroll-fade-size),
+    #000 calc(100% - var(--scroll-fade-size)),
+    transparent 100%
+  );
+}
+.scroll-fade-x {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--scroll-fade-size),
+    #000 calc(100% - var(--scroll-fade-size)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--scroll-fade-size),
+    #000 calc(100% - var(--scroll-fade-size)),
+    transparent 100%
+  );
+}
+
+@keyframes sf-divider-start {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sf-divider-end {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@supports (timeline-scope: --sf) {
+  .scroll-divider {
+    position: relative;
+    timeline-scope: --sf-scroller;
+    --scroll-divider-size: 48px;
+  }
+  .scroll-divider .scroll-fade {
+    scroll-timeline-name: --sf-scroller;
+  }
+  .scroll-divider::before,
+  .scroll-divider::after {
+    content: "";
+    position: absolute;
+    left: var(--scroll-divider-inset, 0px);
+    right: var(--scroll-divider-inset, 0px);
+    height: 1px;
+    background-color: var(--border);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+  }
+  .scroll-divider::before {
+    top: 0;
+    animation: sf-divider-start both linear;
+    animation-timeline: --sf-scroller;
+    animation-range: 0 var(--scroll-divider-size);
+  }
+  .scroll-divider:first-child::before {
+    content: none;
+  }
+  .scroll-divider::after {
+    bottom: 0;
+    animation: sf-divider-end both linear;
+    animation-timeline: --sf-scroller;
+    animation-range: calc(100% - var(--scroll-divider-size)) 100%;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .scroll-fade {
+    mask-image: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, var(--sf-start)) 0,
+      #000 var(--scroll-fade-size),
+      #000 calc(100% - var(--scroll-fade-size)),
+      rgba(0, 0, 0, var(--sf-end)) 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, var(--sf-start)) 0,
+      #000 var(--scroll-fade-size),
+      #000 calc(100% - var(--scroll-fade-size)),
+      rgba(0, 0, 0, var(--sf-end)) 100%
+    );
+    animation:
+      sf-reveal-start both linear,
+      sf-reveal-end both linear;
+    animation-timeline: scroll(self), scroll(self);
+    animation-range-start: 0, calc(100% - var(--scroll-fade-size));
+    animation-range-end: var(--scroll-fade-size), 100%;
+  }
+  .scroll-fade-x {
+    mask-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, var(--sf-start)) 0,
+      #000 var(--scroll-fade-size),
+      #000 calc(100% - var(--scroll-fade-size)),
+      rgba(0, 0, 0, var(--sf-end)) 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, var(--sf-start)) 0,
+      #000 var(--scroll-fade-size),
+      #000 calc(100% - var(--scroll-fade-size)),
+      rgba(0, 0, 0, var(--sf-end)) 100%
+    );
+    animation:
+      sf-reveal-start both linear,
+      sf-reveal-end both linear;
+    animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range-start: 0, calc(100% - var(--scroll-fade-size));
+    animation-range-end: var(--scroll-fade-size), 100%;
+  }
+}
+
+/* ============================================================================
+   7. CANVAS (React Flow) — themed onto the surface ladder
+============================================================================ */
+
+.react-flow {
+  --xy-background-color: var(--surface-1);
+  --xy-background-pattern-color: rgb(var(--overlay) / 0.08);
+  --xy-edge-stroke: color-mix(in oklab, var(--foreground) 28%, transparent);
+  --xy-edge-stroke-selected: var(--foreground);
+  --xy-edge-stroke-width: 1.25;
+  --xy-minimap-background-color: var(--surface-2);
+  --xy-minimap-mask-background-color: rgb(var(--overlay) / 0.06);
+  --xy-controls-button-background-color: var(--surface-3);
+  --xy-controls-button-background-color-hover: var(--surface-4);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-border-color: var(--border);
+  --xy-handle-background-color: var(--surface-1);
+  --xy-handle-border-color: var(--foreground);
+  --xy-selection-background-color: rgb(107 151 255 / 0.08);
+  --xy-selection-border: 1px solid var(--focus-ring);
+  --xy-attribution-background-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__edge-path,
+  .react-flow__node {
+    transition: none !important;
+  }
+}
+
+/* Animated traffic dashes on canvas edges. Duration is set inline per edge. */
+@keyframes flow-dash {
+  to { stroke-dashoffset: -16; }
+}
+.flow-dash {
+  animation-name: flow-dash;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-dash { animation: none; }
+}
+
+/* Assistant markdown: compact, on the type ladder, tables scroll instead of overflowing. */
+.prose-chat { font-size: var(--fs-body); line-height: 1.5; }
+.prose-chat > * + * { margin-top: 0.5em; }
+.prose-chat p { margin: 0; }
+.prose-chat ul, .prose-chat ol { padding-left: 1.25em; margin: 0; }
+.prose-chat li + li { margin-top: 0.15em; }
+.prose-chat h1, .prose-chat h2, .prose-chat h3 { font-size: var(--fs-subtitle); font-weight: 550; margin: 0; }
+.prose-chat strong { font-weight: 550; }
+.prose-chat a { color: var(--info); text-underline-offset: 2px; }
+.prose-chat pre { overflow-x: auto; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); box-shadow: var(--shadow-1); font-size: var(--fs-caption); }
+.prose-chat pre code { background: transparent; padding: 0; }
+.prose-chat table { display: block; overflow-x: auto; border-collapse: collapse; font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
+.prose-chat th, .prose-chat td { padding: 3px 8px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.prose-chat th { color: var(--muted-foreground); font-weight: 500; }
+
+/* Chat column: long tables must scroll inside the bubble, never widen the panel. */
+.prose-chat { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.prose-chat table { max-width: 100%; }
+.prose-chat th, .prose-chat td { white-space: nowrap; }

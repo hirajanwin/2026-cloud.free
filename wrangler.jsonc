@@ -1,0 +1,24 @@
+/**
+ * Wrangler configuration.
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "blueprint",
+	"compatibility_date": "2026-08-31",
+	"compatibility_flags": ["nodejs_compat"],
+	// Custom entry: routes Agents SDK traffic before the TanStack Start handler
+	// and exports the Durable Object class. See src/server.ts.
+	"main": "src/server.ts",
+	"observability": { "enabled": true },
+	"upload_source_maps": true,
+	"ai": { "binding": "AI" },
+	"durable_objects": {
+		"bindings": [{ "name": "ArchitectAgent", "class_name": "ArchitectAgent" }]
+	},
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["ArchitectAgent"] }],
+	"vars": {
+		// Workers AI model used by the in-page architect. Override per environment.
+		"ARCHITECT_MODEL": "@cf/openai/gpt-oss-120b"
+	}
+}

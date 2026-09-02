@@ -1,0 +1,427 @@
+/**
+ * The inspector: the selected node's product on the current provider, its
+ * knobs, and the numbers flowing through it. With nothing selected it shows
+ * the document's summary and the template's lesson.
+ */
+import { Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { KINDS, PRODUCTS, isProductKind } from "@/engine/catalog";
+import { applyPatch } from "@/engine/dsl";
+import { PRICING } from "@/engine/pricing";
+import { defaultProtection } from "@/engine/sim";
+import { templateById } from "@/engine/templates";
+import {
+  PROTECTION_MODES,
+  PROTECTION_MODE_LABEL,
+  REQUEST_CLASSES,
+  REQUEST_CLASS_LABEL,
+  type ProtectionMode,
+} from "@/engine/types";
+import { formatCount } from "@/lib/format";
+import { studio, useStudio } from "@/state/store";
+import { Glyph } from "./Glyph";
+
+const ATTR_HELP: Record<string, string> = {
+  hit: "Cache hit rate for humans (0..1). Crawlers and bots hit less.",
+  cpuMs:
+    "CPU milliseconds per request. Wall time waiting on I/O is not billed.",
+  bytesKb: "Response size in KB, for data transfer meters.",
+  rowsRead: "Rows scanned per query. Indexes make this small.",
+  rowsWritten: "Rows written per write query.",
+  writeShare: "Share of operations that are writes (0..1).",
+  limitRps: "Requests per second allowed per class before shedding.",
+  neurons: "Workers AI neurons per request; depends on model and tokens.",
+  dims: "Vector dimensions.",
+  indexVectors: "Vectors in the index (queried dims = dims × vectors).",
+  durationMs: "Active time per request for GB-second billing.",
+  memGb: "Memory in GB for GB-second billing.",
+  steps: "Steps per workflow run.",
+  runsPerDay: "Scheduled runs per day.",
+  opsPerMessage: "Queue operations per message (write + read + ack).",
+  queryMs: "Database compute time per query (Neon bills compute hours).",
+};
+
+export function Inspector() {
+  const selectedId = useStudio((s) => s.selectedId);
+  const node = useStudio((s) =>
+    s.diagram.nodes.find((n) => n.id === s.selectedId),
+  );
+  const group = useStudio((s) =>
+    s.diagram.groups.find((g) => g.id === s.selectedId),
+  );
+  if (!selectedId || (!node && !group)) return <Overview />;
+  if (group) return <GroupView id={group.id} label={group.label} />;
+  return <NodeView id={node!.id} />;
+}
+
+function Overview() {
+  const diagram = useStudio((s) => s.diagram);
+  const warnings = useStudio((s) => s.rates.warnings);
+  const templateId = useStudio((s) => s.templateId);
+  const analysis = useStudio((s) => s.analysis);
+  const t = templateId ? templateById(templateId) : undefined;
+  return (
+    <div className="flex flex-col gap-4 text-body">
+      <div>
+        <div className="text-title font-medium">
+          {diagram.title ?? "Untitled architecture"}
+        </div>
+        <div className="text-caption text-muted-foreground">
+          {diagram.nodes.length} nodes · {diagram.edges.length} edges ·{" "}
+          {diagram.groups.length} groups
+        </div>
+      </div>
+      {t && (
+        <div className="rounded-xl bg-surface-2 p-3 shadow-surface-1">
+          <div className="text-caption font-medium text-muted-foreground">
+            What to watch
+          </div>
+          <p className="mt-1 text-body">{t.lesson}</p>
+        </div>
+      )}
+      {analysis && (
+        <div className="rounded-xl bg-surface-2 p-3 shadow-surface-1">
+          <div className="flex items-center justify-between">
+            <div className="text-caption font-medium text-muted-foreground">
+              Last analysis · {analysis.name}
+            </div>
+            <Badge
+              color={
+                analysis.call === "yes"
+                  ? "green"
+                  : analysis.call === "kinda"
+                    ? "amber"
+                    : "red"
+              }
+              size="compact"
+            >
+              {analysis.call}
+            </Badge>
+          </div>
+          <p className="mt-1 text-body">{analysis.summary}</p>
+          <div className="mt-2 text-caption text-muted-foreground">
+            Core: {analysis.core.join(" · ")}
+          </div>
+          {analysis.source === "heuristic" && (
+            <div className="mt-1 text-caption text-warning">
+              Keyword-based guess; the model was unavailable.
+            </div>
+          )}
+        </div>
+      )}
+      {warnings.length > 0 && (
+        <ul className="rounded-lg bg-warning-light px-3 py-2 text-caption text-foreground">
+          {warnings.map((w, i) => (
+            <li key={i}>{w}</li>
+          ))}
+        </ul>
+      )}
+      <p className="text-caption text-muted-foreground">
+        Select a node to see its product, knobs and traffic. Add products from
+        the sidebar, or ask the assistant.
+      </p>
+    </div>
+  );
+}
+
+function GroupView({ id, label }: { id: string; label?: string }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="text-title font-medium">{label ?? id}</div>
+      <p className="text-caption text-muted-foreground">
+        A group is a visual boundary. It carries no traffic and no cost.
+      </p>
+      <Button
+        variant="tertiary"
+        size="compact"
+        leadingIcon={Trash2}
+        onClick={() => {
+          const { diagram } = applyPatch(studio.get().diagram, [
+            { op: "remove_group", id },
+          ]);
+          studio.setDiagram(diagram);
+          studio.select(null);
+        }}
+      >
+        Remove group
+      </Button>
+    </div>
+  );
+}
+
+function NodeView({ id }: { id: string }) {
+  const node = useStudio((s) => s.diagram.nodes.find((n) => n.id === id))!;
+  const provider = useStudio((s) => s.provider);
+  const rates = useStudio((s) => s.rates.nodes[id]);
+  const cap = useStudio((s) => s.rates.caps[id]);
+  const protection = useStudio((s) => s.protections[id]);
+  const spec = isProductKind(node.kind) ? KINDS[node.kind] : undefined;
+  const product = isProductKind(node.kind) ? PRODUCTS[provider][node.kind] : undefined;
+  const attrs = {
+    ...(spec?.defaults ?? {}),
+    ...Object.fromEntries(
+      Object.entries(node.attrs).filter(([, v]) => typeof v === "number"),
+    ),
+  } as Record<string, number>;
+  const mode =
+    spec?.role === "gate" ? (protection ?? defaultProtection(node.kind)) : null;
+
+  const setAttr = (key: string, value: number) => {
+    const { diagram } = applyPatch(studio.get().diagram, [
+      { op: "set_node", id, attrs: { [key]: value } },
+    ]);
+    studio.setDiagram(diagram);
+  };
+  const setLabel = (label: string) => {
+    const { diagram } = applyPatch(studio.get().diagram, [
+      { op: "set_node", id, label },
+    ]);
+    studio.setDiagram(diagram);
+  };
+
+  return (
+    <div className="flex flex-col gap-4 text-body">
+      <div className="flex items-start gap-3">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
+          <Glyph kind={node.kind} size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <input
+            value={node.label ?? ""}
+            placeholder={product?.name ?? node.kind}
+            onChange={(e) => setLabel(e.target.value)}
+            className="w-full bg-transparent text-title font-medium outline-none placeholder:text-muted-foreground"
+            aria-label="Node label"
+          />
+          <div className="text-caption text-muted-foreground">
+            {product?.name ?? node.kind} · <code>{id}</code>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="compact"
+          aria-label="Remove node"
+          onClick={() => {
+            const { diagram } = applyPatch(studio.get().diagram, [
+              { op: "remove_node", id },
+            ]);
+            studio.setDiagram(diagram);
+            studio.select(null);
+          }}
+        >
+          <Trash2 className="size-3.5" />
+        </Button>
+      </div>
+
+      {product && (
+        <div className="rounded-xl bg-surface-2 p-3 shadow-surface-1">
+          <p className="text-body">{product.tagline}</p>
+          <p className="mt-2 text-caption text-muted-foreground">
+            <span className="font-medium text-foreground">When to use.</span>{" "}
+            {product.whenToUse}
+          </p>
+          {product.limits && (
+            <p className="mt-1 text-caption text-muted-foreground">
+              <span className="font-medium text-foreground">Limits.</span>{" "}
+              {product.limits}
+            </p>
+          )}
+          {product.stack && product.stack.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {product.stack.map((s) => (
+                <Badge key={s} color="gray" variant="dot" size="compact">
+                  {s}
+                </Badge>
+              ))}
+            </div>
+          )}
+          {product.gap && (
+            <div
+              className={`mt-2 rounded-md px-2 py-1.5 text-caption ${product.gap.severity === "missing" ? "bg-destructive-light text-destructive" : "bg-warning-light text-warning"}`}
+            >
+              {product.gap.note}
+            </div>
+          )}
+          {product.docs && (
+            <a
+              href={product.docs}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-caption text-info underline-offset-2 hover:underline"
+            >
+              Documentation
+            </a>
+          )}
+        </div>
+      )}
+
+      {mode && (
+        <div>
+          <div className="mb-1 text-caption font-medium text-muted-foreground">
+            Protection
+          </div>
+          <Select
+            value={mode}
+            onValueChange={(v) => studio.setProtection(id, v as ProtectionMode)}
+            size="compact"
+          >
+            <SelectTrigger placeholder="Mode" />
+            <SelectContent>
+              {PROTECTION_MODES.map((m, i) => (
+                <SelectItem key={m} index={i} value={m}>
+                  {PROTECTION_MODE_LABEL[m]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="mt-1 text-caption text-muted-foreground">
+            {node.kind === "rate-limit"
+              ? "Sheds scraper and botnet traffic above the per-class limit. Humans and verified crawlers are untouched."
+              : node.kind === "waf"
+                ? "Managed rules stop the botnet class. Everything else passes."
+                : "Blocks the named classes before anything downstream is billed. Blocking search crawlers removes you from search."}
+          </p>
+        </div>
+      )}
+
+      {Object.keys(attrs).length > 0 && (
+        <div>
+          <div className="mb-1 text-caption font-medium text-muted-foreground">
+            Knobs
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(attrs).map(([k, v]) => (
+              <label
+                key={k}
+                className="flex flex-col gap-0.5 rounded-lg bg-surface-2 px-2.5 py-1.5 shadow-surface-1"
+                title={ATTR_HELP[k]}
+              >
+                <span className="text-[11px] text-muted-foreground">{k}</span>
+                <input
+                  type="number"
+                  value={v}
+                  step={k === "hit" || k === "writeShare" ? 0.05 : 1}
+                  min={0}
+                  onChange={(e) => setAttr(k, Number(e.target.value))}
+                  className="w-full bg-transparent text-numeric text-[13px] text-foreground outline-none"
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {rates && (
+        <div>
+          <div className="mb-1 text-caption font-medium text-muted-foreground">
+            Per day
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <Stat label="arrive" value={sumOf(rates.arrivals)} />
+            <Stat
+              label="blocked"
+              value={sumOf(rates.blocked)}
+              tone="text-destructive"
+            />
+            <Stat
+              label="dropped"
+              value={sumOf(rates.dropped)}
+              tone="text-warning"
+            />
+          </div>
+          <div className="mt-2 flex flex-col gap-1">
+            {REQUEST_CLASSES.filter((c) => rates.arrivals[c] > 0).map((c) => (
+              <div
+                key={c}
+                className="flex items-center justify-between text-caption"
+              >
+                <span className="text-muted-foreground">
+                  {REQUEST_CLASS_LABEL[c]}
+                </span>
+                <span className="text-numeric">
+                  {formatCount(rates.arrivals[c])}
+                  {rates.blocked[c] > 0 ? (
+                    <span className="text-destructive">
+                      {" "}
+                      −{formatCount(rates.blocked[c])}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+            ))}
+          </div>
+          {cap && (
+            <div className="mt-2 rounded-md bg-warning-light px-2 py-1.5 text-caption text-warning">
+              Free plan cap on{" "}
+              {PRICING[provider].meters[cap.meter]?.label ?? cap.meter}: only{" "}
+              {Math.round(cap.fraction * 100)}% of requests are served here.
+            </div>
+          )}
+        </div>
+      )}
+
+      {rates && Object.keys(rates.meters).length > 0 && (
+        <div>
+          <div className="mb-1 text-caption font-medium text-muted-foreground">
+            Meters this node drives (per day)
+          </div>
+          <div className="flex flex-col gap-1">
+            {Object.entries(rates.meters)
+              .sort((a, b) => b[1] - a[1])
+              .map(([m, v]) => {
+                const spec = PRICING[provider].meters[m];
+                const use = product?.meters.find((u) => u.meter === m);
+                return (
+                  <div
+                    key={m}
+                    className="flex items-center justify-between gap-2 text-caption"
+                  >
+                    <span
+                      className="truncate text-muted-foreground"
+                      title={use?.note}
+                    >
+                      {spec?.label ?? m}
+                      {use?.estimate ? " (est.)" : ""}
+                    </span>
+                    <span className="shrink-0 text-numeric">
+                      {formatCount(v)}
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function sumOf(r: Record<string, number>) {
+  return Object.values(r).reduce((s, v) => s + v, 0);
+}
+
+function Stat({
+  label,
+  value,
+  tone = "text-foreground",
+}: {
+  label: string;
+  value: number;
+  tone?: string;
+}) {
+  return (
+    <div className="rounded-lg bg-surface-2 px-2 py-1.5 shadow-surface-1">
+      <div className={`text-numeric text-[15px] font-medium ${tone}`}>
+        {formatCount(value)}
+      </div>
+      <div className="text-[10.5px] text-muted-foreground">{label}</div>
+    </div>
+  );
+}
