@@ -792,3 +792,4 @@ html.transitioning *::after {
 @media (prefers-reduced-motion: reduce) {
   .react-flow__node, .node-in, .panel-in, .react-flow__handle { transition: none; animation: none; }
 }
+.prose-chat { overflow-x: auto; }

@@ -5,7 +5,7 @@
  */
 import { useEffect } from "react";
 import { tools } from "@/tools";
-import { registerTools, webmcpSupported } from "@/tools/webmcp";
+import { activeCaller, registerTools, webmcpSupported } from "@/tools/webmcp";
 import { studio } from "@/state/store";
 import { toolLog } from "@/state/toollog";
 import { toWebMcpTool } from "@/tools/define";
@@ -30,7 +30,7 @@ export function WebMcpBridge() {
             name: def.name,
             input,
             via: "webmcp",
-            caller: "browser-agent",
+            caller: activeCaller ?? "browser-agent",
             at: Date.now(),
             durationMs: Math.round(performance.now() - started),
           });

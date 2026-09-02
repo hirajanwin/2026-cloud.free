@@ -222,7 +222,7 @@ function Message({ message }: { message: UIMessage }) {
   const toolParts = message.parts.filter(isToolPart);
 
   return (
-    <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden">
+    <div className="flex min-w-0 max-w-full flex-col gap-2">
       {toolParts.length > 0 && (
         <ThinkingSteps defaultOpen={false} size="compact">
           <ThinkingStepsHeader>

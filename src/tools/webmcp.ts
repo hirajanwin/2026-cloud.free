@@ -12,6 +12,9 @@ import { toolLog } from "@/state/toollog";
 
 export type ToolRoute = "webmcp" | "direct";
 
+/** Who is currently driving a WebMCP execution from inside the page. */
+export let activeCaller: "assistant" | null = null;
+
 type ExecuteCapable = WebMCP.ModelContext & {
   executeTool?: (
     tool: WebMCP.RegisteredTool | string,
