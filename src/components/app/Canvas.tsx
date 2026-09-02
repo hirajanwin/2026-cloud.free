@@ -335,6 +335,7 @@ function CanvasInner() {
   const refit = useCallback(() => {
     requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.12, duration: 250 })));
     setTimeout(() => fitView({ padding: 0.12, duration: 200 }), 400);
+    setTimeout(() => fitView({ padding: 0.12, duration: 200 }), 900);
   }, [fitView]);
 
   useEffect(() => {
@@ -370,12 +371,11 @@ function CanvasInner() {
   useEffect(() => {
     const el = containerRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    let last = 0;
+    // Trailing debounce: the sidebars animate their width, so wait for the last size.
+    let timer: ReturnType<typeof setTimeout> | null = null;
     const ro = new ResizeObserver(() => {
-      const now = performance.now();
-      if (now - last < 200) return;
-      last = now;
-      refit();
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => refit(), 180);
     });
     ro.observe(el);
     return () => ro.disconnect();
