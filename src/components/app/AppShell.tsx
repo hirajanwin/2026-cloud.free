@@ -39,7 +39,7 @@ import { TEMPLATES } from "@/engine/templates";
 import { studio, useStudio, type PanelId } from "@/state/store";
 import { blueprints, useBlueprints } from "@/state/blueprints";
 import { Glyph, ProviderDot } from "./Glyph";
-import { Topbar } from "./Topbar";
+import { Topbar, TrafficStrip } from "./Topbar";
 import { Inspector } from "./Inspector";
 import { TrafficPanel } from "./TrafficPanel";
 import { BillPanel } from "./BillPanel";
@@ -92,7 +92,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <SidebarProvider peek="hover" className="min-h-svh min-w-0 flex-1">
           <AppSidebar />
           <SidebarInset className={`flex min-h-svh flex-col ${isStudio ? "!mr-0" : ""}`}>
-            <Topbar rightTrigger={isStudio ? <RightTrigger /> : null} showTraffic={isStudio} />
+            <Topbar rightTrigger={isStudio ? <RightTrigger /> : null} />
+            {isStudio && <TrafficStrip />}
             <div className="flex min-h-0 flex-1 flex-col">{children}</div>
           </SidebarInset>
         </SidebarProvider>
@@ -174,7 +175,7 @@ function AppSidebar() {
     let nid: string = kind;
     let i = 2;
     while (s.diagram.nodes.some((n) => n.id === nid) || s.diagram.groups.some((g) => g.id === nid)) nid = `${kind}-${i++}`;
-    const { diagram } = applyPatch(s.diagram, [{ op: "add_node", id: nid, kind, label: PRODUCTS[s.provider][kind].name }]);
+    const { diagram } = applyPatch(s.diagram, [{ op: "add_node", id: nid, kind }]);
     studio.setDiagram(diagram);
     studio.select(nid);
     studio.setPanel("inspect");

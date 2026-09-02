@@ -793,3 +793,9 @@ html.transitioning *::after {
   .react-flow__node, .node-in, .panel-in, .react-flow__handle { transition: none; animation: none; }
 }
 .prose-chat { overflow-x: auto; }
+
+/* React Flow chrome: our group shell draws the box; RF's defaults must not. */
+.react-flow__node-group { background: transparent !important; border: none !important; padding: 0 !important; box-shadow: none !important; outline: none !important; }
+.react-flow__node.selected, .react-flow__node:focus, .react-flow__node:focus-visible { outline: none !important; box-shadow: none !important; }
+.react-flow__edge.selected .react-flow__edge-path { stroke: var(--foreground) !important; }
+.react-flow__edge-path { transition: stroke 150ms ease, stroke-width 150ms ease; }

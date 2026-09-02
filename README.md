@@ -7,7 +7,7 @@ Blueprint is a WebMCP-powered studio for the question "how would I vibecode this
 - Paste a product URL or describe an app. The architect splits it into a core loop and polish, decides which platform primitives the core loop needs, and draws the architecture.
 - Flip one switch to price the same design on **Cloudflare** or **Vercel**, free tier or paid. Every number comes from the official pricing pages, with a source link and an as-of date on every line.
 - Drag the traffic mix (humans, search crawlers, AI crawlers, scrapers, botnet) and watch requests flow through the diagram. Turn on bot protection and see the bill fall; block every bot and see search disappear too.
-- Export `wrangler.jsonc` or `vercel.json` plus the recommended stack, or copy the diagram into Eraser.
+- Export `wrangler.jsonc` or `vercel.json` plus the recommended stack.
 
 Everything an agent can do, a person can do, and the other way round. The diagram is a small text DSL; the canvas, the simulator and the exports are all views of it.
 
@@ -19,11 +19,11 @@ Everything an agent can do, a person can do, and the other way round. The diagra
 - **Load it**: set requests per day and the class mix. Scrub the timeline to see the day each quota is crossed; daily caps show the hour they hit.
 - **Protect it**: flip a gate's protection and watch blocked traffic, bills and search visibility change together.
 - **Price it**: switch Cloudflare/Vercel and Free/Paid in the top bar. Every bill line links to the pricing page it came from.
-- **Ship it**: export `wrangler.jsonc` or `vercel.json` plus stack notes, or copy the diagram into Eraser.
+- **Ship it**: export `wrangler.jsonc` or `vercel.json` plus stack notes.
 
 ## WebMCP
 
-The page registers **19 tools** on `document.modelContext` (Chrome 149+ with `chrome://flags/#enable-webmcp-testing`). A browser agent such as Gemini in Chrome can read the diagram, rewrite it, change the provider, set traffic, toggle protections, read the bill, analyse a product URL and export configuration.
+The page registers **18 tools** on `document.modelContext` (Chrome 149+ with `chrome://flags/#enable-webmcp-testing`). A browser agent such as Gemini in Chrome can read the diagram, rewrite it, change the provider, set traffic, toggle protections, read the bill, analyse a product URL and export configuration.
 
 The in-page architect (an Agents SDK `Agent` on a Durable Object, streaming over HTTP through the AI SDK, with Workers AI) uses **the same tool definitions**. Its tools have no server-side `execute`: the stream stops at each call, the browser runs it, and the AI SDK continues the turn. Its tool calls are routed through `document.modelContext.executeTool` when the browser exposes it, so WebMCP is the single execution path for both agents. Without WebMCP the assistant runs the identical tools directly, and the badge in the top bar says so. The **Tools** tab lists every call, who made it, and which path it took.
 
@@ -38,7 +38,7 @@ Tool definitions live in [`src/tools/index.ts`](src/tools/index.ts); the schema 
 | `set_traffic_mix`, `set_protection`                               | Drive the simulator                        |
 | `get_snapshot`, `get_bill`, `compare_providers`, `explain_charge` | Read what happened and why it costs that   |
 | `analyze_product`, `propose_architecture`                         | URL or description → breakdown → diagram   |
-| `export_config`, `export_eraser`                                  | Deployable config, Eraser syntax           |
+| `export_config`                                                   | Deployable config and stack notes          |
 
 ## How the numbers work
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyPatch, parse, print, toEraser } from "./dsl";
+import { applyPatch, parse, print } from "./dsl";
 
 const SAMPLE = `
 // A comment
@@ -144,13 +144,3 @@ describe("applyPatch", () => {
   });
 });
 
-describe("toEraser", () => {
-  it("emits Eraser-compatible syntax", () => {
-    const { diagram } = parse(SAMPLE);
-    const out = toEraser(diagram);
-    expect(out).toContain("direction right");
-    expect(out).toContain('api [icon: server, label: "API Worker"]');
-    expect(out).toContain("client > cache: GET /");
-    expect(out).not.toContain("kind:");
-  });
-});

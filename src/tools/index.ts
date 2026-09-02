@@ -7,7 +7,7 @@
  * agent can quote; numbers about money always come from computeBill.
  */
 import { z } from "zod";
-import { applyPatch, parse, toEraser, type PatchOp } from "@/engine/dsl";
+import { applyPatch, parse, type PatchOp } from "@/engine/dsl";
 import {
   gapsIn,
   CATEGORY_LABEL,
@@ -594,15 +594,6 @@ export const tools: ToolDef[] = [
     annotations: { readOnlyHint: true },
     execute: ({ provider }) =>
       exportConfig(studio.get().diagram, provider ?? studio.get().provider),
-  }),
-
-  defineTool({
-    name: "export_eraser",
-    description:
-      "Export the diagram in Eraser's cloud-architecture syntax so it can be pasted into eraser.io.",
-    schema: z.object({}),
-    annotations: { readOnlyHint: true },
-    execute: () => ({ eraser: toEraser(studio.get().diagram) }),
   }),
 ];
 

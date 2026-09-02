@@ -5,26 +5,22 @@
 import { useEffect, useState } from "react";
 import { studio, useStudio } from "@/state/store";
 import { Button } from "@/components/ui/button";
-import { toEraser } from "@/engine/dsl";
 
 export function DslEditor() {
   const source = useStudio((s) => s.source);
   const errors = useStudio((s) => s.parseErrors);
-  const diagram = useStudio((s) => s.diagram);
   const [draft, setDraft] = useState(source);
-  const [copied, setCopied] = useState<"dsl" | "eraser" | null>(null);
+  const [copied, setCopied] = useState(false);
   const dirty = draft !== source;
 
   useEffect(() => setDraft(source), [source]);
 
   const apply = () => studio.setSource(draft);
-  const copy = async (kind: "dsl" | "eraser") => {
+  const copy = async () => {
     try {
-      await navigator.clipboard.writeText(
-        kind === "dsl" ? source : toEraser(diagram),
-      );
-      setCopied(kind);
-      setTimeout(() => setCopied(null), 1200);
+      await navigator.clipboard.writeText(source);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
     } catch {
       /* clipboard unavailable */
     }
@@ -70,11 +66,8 @@ export function DslEditor() {
           Revert
         </Button>
         <span className="ml-auto flex gap-1">
-          <Button variant="ghost" size="compact" onClick={() => copy("dsl")}>
-            {copied === "dsl" ? "Copied" : "Copy DSL"}
-          </Button>
-          <Button variant="ghost" size="compact" onClick={() => copy("eraser")}>
-            {copied === "eraser" ? "Copied" : "Copy for Eraser"}
+          <Button variant="ghost" size="compact" onClick={copy}>
+            {copied ? "Copied" : "Copy DSL"}
           </Button>
         </span>
       </div>

@@ -85,82 +85,73 @@ const ProductNode = memo(function ProductNode({
   const dropped = rates ? sum(rates.dropped) : 0;
   const answered = rates ? sum(rates.answeredHere) : 0;
   const gap = product?.gap;
-  const mode =
-    role === "gate" ? (protection ?? defaultProtection(data.kind)) : null;
+  const mode = role === "gate" ? (protection ?? defaultProtection(data.kind)) : null;
+  const title = data.label ?? product?.name ?? data.kind;
+  const subtitle = data.label ? (product?.name ?? data.kind) : (isProductKind(data.kind) ? KINDS[data.kind].name : data.kind);
+
+  const iconTone =
+    role === "gate"
+      ? "bg-info-light text-info"
+      : role === "cache"
+        ? "bg-success-light text-success"
+        : role === "source"
+          ? "bg-muted text-foreground"
+          : "bg-muted text-foreground";
 
   return (
     <div
       className={[
-        "node-in group/node relative flex h-[60px] w-[172px] items-center gap-2.5 rounded-xl bg-surface-3 px-3 text-left shadow-surface-2 transition-[box-shadow,background-color] duration-150",
-        selected
-          ? "ring-1 ring-foreground/60 shadow-surface-4"
-          : "hover:shadow-surface-3",
-        gap?.severity === "missing"
-          ? "outline outline-1 outline-dashed outline-destructive/60"
-          : "",
+        "node-in group/node relative grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-xl bg-surface-3 px-3 shadow-surface-2 transition-[box-shadow,background-color] duration-150",
+        selected ? "ring-1 ring-foreground/70 shadow-surface-4" : "hover:shadow-surface-3",
+        gap?.severity === "missing" ? "outline outline-1 outline-dashed outline-destructive/60" : "",
       ].join(" ")}
       style={{ width: NODE_W, height: NODE_H }}
     >
-      <Handle
-        type="target"
-        position={pos.target}
-        className="!h-2 !w-2 !border !border-foreground/40 !bg-surface-1"
-      />
-      <Handle
-        type="source"
-        position={pos.source}
-        className="!h-2 !w-2 !border !border-foreground/40 !bg-surface-1"
-      />
-      <div
-        className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${role === "gate" ? "bg-info-light text-info" : role === "cache" ? "bg-success-light text-success" : role === "store" ? "bg-muted text-foreground" : "bg-muted text-foreground"}`}
-      >
-        <Glyph kind={data.kind} size={18} />
+      <Handle type="target" position={pos.target} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
+      <Handle type="source" position={pos.source} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
+
+      <div className={`flex size-9 items-center justify-center rounded-lg ${iconTone}`}>
+        <Glyph kind={data.kind} size={19} />
       </div>
-      <div className="min-w-0 flex-1">
-        <div
-          className="truncate text-[12.5px] font-medium leading-4 text-foreground"
-          style={{ fontVariationSettings: "'wght' 550, 'opsz' 18" }}
-        >
-          {data.label ?? product?.name ?? data.kind}
+
+      <div className="min-w-0">
+        <div className="truncate text-[13px] leading-[18px] text-foreground" style={{ fontVariationSettings: "'wght' 550, 'opsz' 18" }} title={title}>
+          {title}
         </div>
-        <div className="truncate text-[11px] leading-4 text-muted-foreground">
-          {product?.name ?? data.kind}
+        <div className="truncate text-[11px] leading-[16px] text-muted-foreground" title={subtitle}>
+          {subtitle}
         </div>
-        {role !== "source" && (
-          <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] leading-3 text-numeric text-muted-foreground">
-            <span>{formatCount(arrivals)}/d</span>
-            {blocked > 0 && (
-              <span className="text-destructive">−{formatCount(blocked)}</span>
-            )}
-            {dropped > 0 && (
-              <span className="text-warning">✕{formatCount(dropped)}</span>
-            )}
-            {role === "cache" && answered > 0 && arrivals > 0 && (
-              <span className="text-success">
-                {Math.round((answered / arrivals) * 100)}% hit
-              </span>
-            )}
-          </div>
-        )}
-        {role === "source" && rates && (
-          <div className="mt-0.5 text-[10.5px] leading-3 text-numeric text-muted-foreground">
-            {formatCount(arrivals)} req/day
-          </div>
+      </div>
+
+      <div className="flex flex-col items-end justify-center text-numeric leading-[16px]">
+        {role === "source" ? (
+          <>
+            <span className="text-[12px] text-foreground">{formatCount(arrivals)}</span>
+            <span className="text-[10px] text-muted-foreground">req/day</span>
+          </>
+        ) : (
+          <>
+            <span className="text-[12px] text-foreground">{formatCount(arrivals)}<span className="text-muted-foreground">/d</span></span>
+            <span className="flex gap-1.5 text-[10px]">
+              {blocked > 0 && <span className="text-destructive">⊘{formatCount(blocked)}</span>}
+              {dropped > 0 && <span className="text-warning">✕{formatCount(dropped)}</span>}
+              {role === "cache" && arrivals > 0 && <span className="text-success">{Math.round((answered / arrivals) * 100)}% hit</span>}
+              {blocked === 0 && dropped === 0 && role !== "cache" && <span className="text-muted-foreground">&nbsp;</span>}
+            </span>
+          </>
         )}
       </div>
+
       {mode && (
         <span
-          className={`absolute -top-2 right-2 rounded-full px-1.5 py-px text-[9.5px] leading-3 shadow-surface-1 ${mode === "off" ? "bg-surface-2 text-muted-foreground" : "bg-info-light text-info"}`}
+          className={`absolute -top-2 right-3 rounded-full px-1.5 py-px text-[9.5px] leading-3 shadow-surface-1 ${mode === "off" ? "bg-surface-2 text-muted-foreground" : "bg-info-light text-info"}`}
           title={PROTECTION_MODE_LABEL[mode]}
         >
-          {mode === "off" ? "off" : mode}
+          {mode === "off" ? "protection off" : mode}
         </span>
       )}
       {cap && (
-        <span
-          className="absolute -bottom-2 right-2 rounded-full bg-warning-light px-1.5 py-px text-[9.5px] leading-3 text-warning shadow-surface-1"
-          title={`Free plan cap: ${Math.round(cap.fraction * 100)}% served`}
-        >
+        <span className="absolute -bottom-2 right-3 rounded-full bg-warning-light px-1.5 py-px text-[9.5px] leading-3 text-warning shadow-surface-1" title={`Free plan cap: ${Math.round(cap.fraction * 100)}% served`}>
           cap {Math.round(cap.fraction * 100)}%
         </span>
       )}
@@ -172,10 +163,11 @@ const GroupNode = memo(function GroupNode({
   data,
   width,
   height,
+  selected,
 }: NodeProps<Node<GroupNodeData, "group">>) {
   return (
     <div
-      className="h-full w-full rounded-2xl border border-dashed border-foreground/15 bg-surface-2/60"
+      className={`group-shell h-full w-full rounded-2xl border border-dashed bg-surface-2/70 transition-[border-color,box-shadow] duration-150 ${selected ? "border-foreground/50 shadow-surface-3" : "border-foreground/20"}`}
       style={{ width, height }}
     >
       <div className="px-3 pt-2 text-caption font-medium text-muted-foreground">
@@ -188,7 +180,7 @@ const GroupNode = memo(function GroupNode({
 /* ------------------------------------------------------------------ */
 
 const CLASS_COLOR: Record<string, string> = {
-  human: "var(--foreground)",
+  human: "var(--success)",
   googlebot: "var(--info)",
   "ai-crawler": "var(--warning)",
   scraper: "var(--destructive)",
@@ -223,7 +215,7 @@ const FlowEdge = memo(function FlowEdge({
   const width = isAnnotation
     ? 1
     : total <= 0
-      ? 1
+      ? 1.25
       : Math.min(4, 1 + Math.log10(Math.max(1, total)) / 2);
   // Dash speed follows the log of traffic so a busy edge visibly moves faster.
   const duration =
@@ -244,10 +236,10 @@ const FlowEdge = memo(function FlowEdge({
       <BaseEdge
         id={id}
         path={path}
+        markerEnd={isAnnotation ? undefined : "url(#flow-arrow)"}
         style={{
-          stroke,
-          strokeWidth: width,
-          opacity: isAnnotation ? 0.5 : total > 0 ? 0.8 : 0.35,
+          stroke: isAnnotation ? "var(--muted-foreground)" : "color-mix(in oklab, var(--foreground) 28%, transparent)",
+          strokeWidth: width + 0.5,
           strokeDasharray: isAnnotation ? "3 4" : undefined,
         }}
       />
@@ -257,9 +249,9 @@ const FlowEdge = memo(function FlowEdge({
           fill="none"
           stroke={stroke}
           strokeWidth={width}
-          strokeDasharray="6 10"
+          strokeDasharray="7 11"
           className="flow-dash"
-          style={{ animationDuration: `${duration}s`, opacity: 0.9 }}
+          style={{ animationDuration: `${duration}s`, opacity: 1 }}
         />
       )}
       {(data?.label || (total > 0 && selected)) && (
@@ -314,7 +306,7 @@ function CanvasInner() {
       for (const n of diagram.nodes) {
         const l = byId.get(n.id);
         if (!l) continue;
-        next.push({ id: n.id, type: "product", position: { x: l.x, y: l.y }, width: NODE_W, height: NODE_H, parentId: l.parentId, extent: l.parentId ? "parent" : undefined, data: { id: n.id, kind: n.kind, label: n.label, direction: diagram.direction } });
+        next.push({ id: n.id, type: "product", position: { x: l.x, y: l.y }, width: NODE_W, height: NODE_H, parentId: l.parentId,  data: { id: n.id, kind: n.kind, label: n.label, direction: diagram.direction } });
       }
       setNodes(next);
       setEdges(
@@ -344,6 +336,33 @@ function CanvasInner() {
     ro.observe(el);
     return () => ro.disconnect();
   }, [refit]);
+
+  const fitGroups = useCallback((all: RFNode[]): RFNode[] => {
+    const PAD = { top: 40, left: 16, right: 16, bottom: 16 };
+    const byId = new Map(all.map((n) => [n.id, n]));
+    let changed = false;
+    const next = new Map(byId);
+    for (const g of all) {
+      if (g.type !== "group") continue;
+      const kids = all.filter((n) => n.parentId === g.id);
+      if (kids.length === 0) continue;
+      const minX = Math.min(...kids.map((k) => k.position.x)) - PAD.left;
+      const minY = Math.min(...kids.map((k) => k.position.y)) - PAD.top;
+      const maxX = Math.max(...kids.map((k) => k.position.x + (k.width ?? NODE_W))) + PAD.right;
+      const maxY = Math.max(...kids.map((k) => k.position.y + (k.height ?? NODE_H))) + PAD.bottom;
+      const dx = Math.min(0, minX);
+      const dy = Math.min(0, minY);
+      const w = Math.max(maxX, g.width ?? 0) - dx;
+      const h = Math.max(maxY, g.height ?? 0) - dy;
+      if (dx !== 0 || dy !== 0 || w !== g.width || h !== g.height) {
+        changed = true;
+        next.set(g.id, { ...g, position: { x: g.position.x + dx, y: g.position.y + dy }, width: w, height: h } as RFNode);
+        if (dx !== 0 || dy !== 0)
+          for (const k of kids) next.set(k.id, { ...k, position: { x: k.position.x - dx, y: k.position.y - dy } } as RFNode);
+      }
+    }
+    return changed ? [...next.values()] : all;
+  }, []);
 
   const withSelection = useMemo(() => nodes.map((n) => ({ ...n, selected: n.id === selectedId })), [nodes, selectedId]);
 
@@ -409,6 +428,7 @@ function CanvasInner() {
           studio.setPanel("inspect");
         }}
         onPaneClick={() => studio.select(null)}
+        onNodeDragStop={() => setNodes((prev) => fitGroups(prev))}
         onConnect={onConnect}
         isValidConnection={isValidConnection}
         onNodesDelete={onNodesDelete}
@@ -422,6 +442,13 @@ function CanvasInner() {
         className="bg-surface-1"
         style={{ background: "var(--surface-1)" }}
       >
+        <svg style={{ position: "absolute", width: 0, height: 0 }} aria-hidden>
+          <defs>
+            <marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="color-mix(in oklab, var(--foreground) 45%, transparent)" />
+            </marker>
+          </defs>
+        </svg>
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--muted-foreground)" style={{ opacity: 0.35 }} />
         <Controls showInteractive={false} className="!shadow-surface-2" />
         <MiniMap pannable zoomable className="!hidden lg:!block" nodeStrokeWidth={2} />

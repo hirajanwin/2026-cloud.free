@@ -51,7 +51,7 @@ export function TrafficStrip() {
   const shown = useGlide(offered);
 
   return (
-    <div className="flex min-w-[260px] flex-1 items-center gap-3 rounded-lg bg-surface-3 px-3 py-1.5 shadow-surface-1">
+    <div className="flex items-center gap-4 border-b border-border bg-surface-2 px-3 py-2">
       <div className="flex items-center gap-1">
         <Tooltip content={running ? "Pause the clock" : "Resume the clock"}>
           <Button
@@ -111,7 +111,15 @@ export function TrafficStrip() {
           ))}
         </div>
       </div>
-      <div className="hidden shrink-0 gap-2 text-[11px] text-numeric xl:flex">
+      <div className="hidden shrink-0 flex-wrap gap-x-3 text-[11px] text-numeric text-muted-foreground lg:flex">
+        {REQUEST_CLASSES.map((c) => (
+          <span key={c} className="inline-flex items-center gap-1">
+            <span className="inline-block size-1.5 rounded-full" style={{ background: CLASS_TONE[c], opacity: c === "botnet" ? 0.6 : 1 }} />
+            {REQUEST_CLASS_LABEL[c]} {formatCount(snapshot.offered[c])}
+          </span>
+        ))}
+      </div>
+      <div className="flex shrink-0 gap-3 text-[11px] text-numeric">
         <span className="text-success">
           ✓ {formatCount(snapshot.outcomes.served)}
         </span>
@@ -149,7 +157,6 @@ export function Topbar({
         {title ?? "Untitled"}
       </div>
 
-      {showTraffic && <TrafficStrip />}
 
       <div className="ml-auto flex items-center gap-2">
         <Tabs

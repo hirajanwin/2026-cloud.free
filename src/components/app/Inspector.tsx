@@ -12,7 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { KINDS, PRODUCTS, isProductKind } from "@/engine/catalog";
+import { KINDS, PRODUCTS, isProductKind, type ProductKind } from "@/engine/catalog";
 import { applyPatch } from "@/engine/dsl";
 import { PRICING } from "@/engine/pricing";
 import { defaultProtection } from "@/engine/sim";
@@ -66,7 +66,10 @@ function Overview() {
   const warnings = useStudio((s) => s.rates.warnings);
   const templateId = useStudio((s) => s.templateId);
   const analysis = useStudio((s) => s.analysis);
+  const provider = useStudio((s) => s.provider);
   const t = templateId ? templateById(templateId) : undefined;
+  const other = provider === "cloudflare" ? "vercel" : "cloudflare";
+  const kinds = [...new Set(diagram.nodes.map((n) => n.kind).filter(isProductKind))].filter((k) => k !== "client") as ProductKind[];
   return (
     <div className="flex flex-col gap-4 text-body">
       <div>
@@ -114,6 +117,34 @@ function Overview() {
               Keyword-based guess; the model was unavailable.
             </div>
           )}
+        </div>
+      )}
+      {kinds.length > 0 && (
+        <div className="rounded-xl bg-surface-2 p-3 shadow-surface-1">
+          <div className="text-caption font-medium text-muted-foreground">
+            On {provider === "cloudflare" ? "Cloudflare" : "Vercel"} · switch to see {other === "cloudflare" ? "Cloudflare" : "Vercel"}
+          </div>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {kinds.map((k) => {
+              const here = PRODUCTS[provider][k];
+              const there = PRODUCTS[other][k];
+              return (
+                <li key={k} className="flex items-start gap-2 text-caption">
+                  <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-muted-foreground">
+                    <Glyph kind={k} size={13} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className={here.gap?.severity === "missing" ? "text-destructive" : "text-foreground"}>{here.name}</span>
+                    {here.gap && <span className="text-muted-foreground"> · {here.gap.severity}</span>}
+                    <span className="block truncate text-muted-foreground" title={there.name}>
+                      {other === "cloudflare" ? "Cloudflare" : "Vercel"}: {there.name}
+                      {there.gap ? ` (${there.gap.severity})` : ""}
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
       {warnings.length > 0 && (
