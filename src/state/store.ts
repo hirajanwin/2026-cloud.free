@@ -31,6 +31,8 @@ export interface ProductAnalysis {
 }
 
 export type PanelId = "inspect" | "traffic" | "bill" | "chat" | "code" | "activity";
+/** How the canvas arranges nodes. "flow" follows the DSL direction; "snake" wraps the flow into rows. */
+export type ViewLayout = "flow" | "snake";
 
 export interface StudioState {
   source: string;
@@ -50,6 +52,7 @@ export interface StudioState {
   /** Saved blueprint this document belongs to, if any. */
   blueprintId: string | null;
   panel: PanelId;
+  viewLayout: ViewLayout;
   analysis: ProductAnalysis | null;
   /** WebMCP status for the badge. */
   webmcp: { supported: boolean; registered: number };
@@ -95,6 +98,7 @@ function createInitial(): StudioState {
     templateId: DEFAULT_TEMPLATE.id,
     blueprintId: null,
     panel: "inspect",
+    viewLayout: "flow",
     analysis: null,
     webmcp: { supported: false, registered: 0 },
     revision: 0,
@@ -223,6 +227,16 @@ export const studio = {
 
   setPanel(panel: PanelId) {
     set({ panel });
+  },
+
+  setViewLayout(viewLayout: ViewLayout) {
+    set({ viewLayout, revision: state.revision + 1 });
+  },
+
+  setDirection(direction: Diagram["direction"]) {
+    const diagram = { ...state.diagram, direction };
+    state = { ...state, source: print(diagram) };
+    reconfigure({ diagram }, { keepClock: true });
   },
 
   setSpeed(speed: number) {

@@ -10,18 +10,15 @@
  */
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Activity, BookOpen, Copy, Layers, PanelRight, Plus, Receipt, Save, Sliders, Sparkles, Terminal, Trash2, Wand2, Wrench } from "lucide-react";
+import { BookOpen, Layers, PanelRight, Plus, Receipt, Save, Sliders, Sparkles, Terminal, Wrench } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuActions,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -87,14 +84,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const isStudio = pathname === "/";
   return (
-    <SidebarProvider peek="hover" shortcut="]" width="24rem" className="min-h-svh">
+    <SidebarProvider peek="hover" shortcut="]" width="24rem" className="h-svh overflow-hidden">
       <RightSidebarBridge>
-        <SidebarProvider peek="hover" className="min-h-svh min-w-0 flex-1">
+        <SidebarProvider peek="hover" className="h-svh min-w-0 flex-1 overflow-hidden">
           <AppSidebar />
-          <SidebarInset className={`flex min-h-svh flex-col ${isStudio ? "!mr-0" : ""}`}>
+          <SidebarInset className={`flex min-h-0 flex-col overflow-hidden ${isStudio ? "!mr-0" : ""}`}>
             <Topbar rightTrigger={isStudio ? <RightTrigger /> : null} />
             {isStudio && <TrafficStrip />}
-            <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+            <div className={`flex min-h-0 flex-1 flex-col ${isStudio ? "" : "overflow-y-auto"}`}>{children}</div>
           </SidebarInset>
         </SidebarProvider>
         {isStudio && <RightRail />}
@@ -246,14 +243,6 @@ function AppSidebar() {
                     <span className="truncate">{b.name}</span>
                     {blueprintId === b.id && pathname === "/" && <SidebarMenuBadge>{nodeCount}</SidebarMenuBadge>}
                   </SidebarMenuButton>
-                  <SidebarMenuActions>
-                    <SidebarMenuAction showOnHover aria-label="Remix" title="Remix" onClick={() => { blueprints.remix(b.id); goStudio(); }}>
-                      <Copy className="size-3.5" />
-                    </SidebarMenuAction>
-                    <SidebarMenuAction showOnHover aria-label="Delete" title="Delete" onClick={() => blueprints.remove(b.id)}>
-                      <Trash2 className="size-3.5" />
-                    </SidebarMenuAction>
-                  </SidebarMenuActions>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -266,9 +255,7 @@ function AppSidebar() {
             <SidebarMenu>
               {starters.map((t) => (
                 <SidebarMenuItem key={t.id}>
-                  <SidebarMenuButton
-                    icon={Wand2}
-                    isActive={templateId === t.id && pathname === "/"}
+                  <SidebarMenuButton isActive={templateId === t.id && pathname === "/"}
                     onClick={() => {
                       studio.loadTemplate(t.id);
                       studio.setPanel("inspect");
@@ -277,11 +264,6 @@ function AppSidebar() {
                   >
                     {t.name}
                   </SidebarMenuButton>
-                  <SidebarMenuActions>
-                    <SidebarMenuAction showOnHover aria-label="Remix into a blueprint" title="Remix" onClick={() => { blueprints.remixTemplate(t.id); goStudio(); }}>
-                      <Copy className="size-3.5" />
-                    </SidebarMenuAction>
-                  </SidebarMenuActions>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -337,13 +319,6 @@ function AppSidebar() {
           <div className="px-3 py-2 text-caption text-muted-foreground">Nothing matches “{query}”.</div>
         )}
       </SidebarContent>
-
-      <SidebarFooter>
-        <div className="flex items-center gap-2 px-2 py-1 text-caption text-muted-foreground">
-          <Activity className="size-3.5" />
-          <span>Click a product to add it to the canvas. Drag a node's handle onto another to connect.</span>
-        </div>
-      </SidebarFooter>
     </Sidebar>
   );
 }

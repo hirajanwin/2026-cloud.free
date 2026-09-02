@@ -16,6 +16,8 @@ const GROUP_PAD = { top: 44, left: 16, right: 16, bottom: 16 };
 
 export interface LaidOutNode {
   id: string;
+  /** Flow direction for this node's handles; snake rows alternate. */
+  direction?: Direction;
   x: number;
   y: number;
   width: number;
@@ -43,7 +45,11 @@ function getElk() {
   return elk;
 }
 
-export async function layoutDiagram(diagram: Diagram): Promise<Layout> {
+export async function layoutDiagram(
+  diagram: Diagram,
+  mode: "flow" | "snake" = "flow",
+  viewport?: { width: number; height: number },
+): Promise<Layout> {
   const groupsById = new Map(diagram.groups.map((g) => [g.id, g] as const));
 
   const children = (scope: string | undefined): ElkNode[] => {
@@ -113,5 +119,86 @@ export async function layoutDiagram(diagram: Diagram): Promise<Layout> {
     }
   };
   visit(result);
+  if (mode === "snake" && (diagram.direction === "right" || diagram.direction === "left")) return snake(nodes, viewport);
   return { nodes, width: result.width ?? 0, height: result.height ?? 0 };
+}
+
+/**
+ * Wrap a left-to-right layered layout into a zigzag so a long chain fits a
+ * wide-but-short canvas without zooming out. Top-level items (nodes and
+ * whole groups) are clustered into columns by x, columns are dealt into rows
+ * that fit the viewport width, and odd rows run right-to-left. Children keep
+ * their positions relative to their group.
+ */
+function snake(all: LaidOutNode[], viewport?: { width: number; height: number }): Layout {
+  const top = all.filter((n) => !n.parentId);
+  if (top.length < 4) return { nodes: all, width: 0, height: 0 };
+  const sorted = [...top].sort((a, b) => a.x - b.x);
+  // Cluster into columns: a new column starts when x moves past the previous column's right edge.
+  const columns: LaidOutNode[][] = [];
+  let colRight = -Infinity;
+  for (const n of sorted) {
+    if (n.x >= colRight - 1 || columns.length === 0) {
+      columns.push([n]);
+      colRight = n.x + n.width;
+    } else {
+      columns[columns.length - 1].push(n);
+      colRight = Math.max(colRight, n.x + n.width);
+    }
+  }
+  const GAP_X = 72;
+  const GAP_Y = 96;
+  const colWidth = (c: LaidOutNode[]) => Math.max(...c.map((n) => n.width));
+  const colHeight = (c: LaidOutNode[]) => {
+    const minY = Math.min(...c.map((n) => n.y));
+    const maxY = Math.max(...c.map((n) => n.y + n.height));
+    return maxY - minY;
+  };
+  // Row capacity from the viewport aspect: aim for rows roughly as wide as the canvas at zoom 1.
+  const targetWidth = Math.max(640, (viewport?.width ?? 1200) - 80);
+  const rows: LaidOutNode[][][] = [];
+  let row: LaidOutNode[][] = [];
+  let rowW = 0;
+  for (const c of columns) {
+    const w = colWidth(c) + (row.length ? GAP_X : 0);
+    if (row.length > 0 && rowW + w > targetWidth) {
+      rows.push(row);
+      row = [];
+      rowW = 0;
+    }
+    row.push(c);
+    rowW += w;
+  }
+  if (row.length) rows.push(row);
+  if (rows.length < 2) return { nodes: all, width: 0, height: 0 };
+
+  const out = new Map(all.map((n) => [n.id, { ...n }]));
+  let y = 0;
+  let totalW = 0;
+  rows.forEach((cols, r) => {
+    const reverse = r % 2 === 1;
+    const rowH = Math.max(...cols.map(colHeight));
+    const widths = cols.map(colWidth);
+    const rowW = widths.reduce((s, w) => s + w, 0) + GAP_X * (cols.length - 1);
+    totalW = Math.max(totalW, rowW);
+    // Odd rows run right-to-left, aligned to the right edge so the chain bends back.
+    let x = reverse ? rowW : 0;
+    cols.forEach((c, i) => {
+      const w = widths[i];
+      const left = reverse ? x - w : x;
+      const minY = Math.min(...c.map((n) => n.y));
+      const h = colHeight(c);
+      for (const n of c) {
+        const o = out.get(n.id)!;
+        o.x = left + (w - n.width) / 2;
+        o.y = y + (rowH - h) / 2 + (n.y - minY);
+        o.direction = reverse ? "left" : "right";
+      }
+      x = reverse ? left - GAP_X : x + w + GAP_X;
+    });
+    y += rowH + GAP_Y;
+  });
+  // Children inherit their group's direction so handles face the right way.
+  for (const n of out.values()) if (n.parentId) n.direction = out.get(n.parentId)?.direction ?? n.direction;
+  return { nodes: [...out.values()], width: totalW, height: y - GAP_Y };
 }

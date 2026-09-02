@@ -12,6 +12,7 @@ import {
   EdgeLabelRenderer,
   Handle,
   MiniMap,
+  Panel,
   Position,
   ReactFlow,
   ReactFlowProvider,
@@ -273,6 +274,48 @@ const FlowEdge = memo(function FlowEdge({
 });
 
 const nodeTypes = { product: ProductNode, group: GroupNode };
+
+/** Horizontal, vertical, or snake. The first two write the DSL direction; snake is a view. */
+function LayoutToggle() {
+  const direction = useStudio((s) => s.diagram.direction);
+  const viewLayout = useStudio((s) => s.viewLayout);
+  const mode = viewLayout === "snake" ? "snake" : direction === "down" || direction === "up" ? "vertical" : "horizontal";
+  const set = (m: "horizontal" | "vertical" | "snake") => {
+    if (m === "snake") {
+      if (direction !== "right") studio.setDirection("right");
+      studio.setViewLayout("snake");
+    } else {
+      studio.setViewLayout("flow");
+      studio.setDirection(m === "vertical" ? "down" : "right");
+    }
+  };
+  return (
+    <div className="flex items-center gap-0.5 rounded-lg bg-surface-3 p-0.5 shadow-surface-2" role="radiogroup" aria-label="Canvas layout">
+      {(
+        [
+          ["horizontal", "Horizontal", "M4 12h16M14 6l6 6-6 6"],
+          ["vertical", "Vertical", "M12 4v16M6 14l6 6 6-6"],
+          ["snake", "Snake", "M4 6h12a3 3 0 0 1 0 6H8a3 3 0 0 0 0 6h12"],
+        ] as const
+      ).map(([m, label, d]) => (
+        <button
+          key={m}
+          type="button"
+          role="radio"
+          aria-checked={mode === m}
+          title={`${label} layout`}
+          onClick={() => set(m)}
+          className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-[11px] transition-colors ${mode === m ? "bg-surface-5 text-foreground shadow-surface-1" : "text-muted-foreground hover:bg-hover hover:text-foreground"}`}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d={d} />
+          </svg>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
 const edgeTypes = { flow: FlowEdge };
 
 /* ------------------------------------------------------------------ */
@@ -280,12 +323,14 @@ const edgeTypes = { flow: FlowEdge };
 function CanvasInner() {
   const diagram = useStudio((s) => s.diagram);
   const revision = useStudio((s) => s.revision);
+  const viewLayout = useStudio((s) => s.viewLayout);
   const selectedId = useStudio((s) => s.selectedId);
   const theme = useResolvedTheme();
   const [nodes, setNodes] = useState<RFNode[]>([]);
   const [edges, setEdges] = useState<RFEdge[]>([]);
   const { fitView } = useReactFlow();
   const layoutRun = useRef(0);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const refit = useCallback(() => {
     requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.12, duration: 250 })));
@@ -294,7 +339,8 @@ function CanvasInner() {
 
   useEffect(() => {
     const run = ++layoutRun.current;
-    layoutDiagram(diagram).then((layout) => {
+    const el = containerRef.current;
+    layoutDiagram(diagram, viewLayout, el ? { width: el.clientWidth, height: el.clientHeight } : undefined).then((layout) => {
       if (run !== layoutRun.current) return;
       const byId = new Map(layout.nodes.map((n) => [n.id, n]));
       const next: RFNode[] = [];
@@ -306,7 +352,7 @@ function CanvasInner() {
       for (const n of diagram.nodes) {
         const l = byId.get(n.id);
         if (!l) continue;
-        next.push({ id: n.id, type: "product", position: { x: l.x, y: l.y }, width: NODE_W, height: NODE_H, parentId: l.parentId,  data: { id: n.id, kind: n.kind, label: n.label, direction: diagram.direction } });
+        next.push({ id: n.id, type: "product", position: { x: l.x, y: l.y }, width: NODE_W, height: NODE_H, parentId: l.parentId,  data: { id: n.id, kind: n.kind, label: n.label, direction: l.direction ?? diagram.direction } });
       }
       setNodes(next);
       setEdges(
@@ -320,9 +366,7 @@ function CanvasInner() {
       );
       refit();
     });
-  }, [diagram, revision, refit]);
-
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  }, [diagram, revision, viewLayout, refit]);
   useEffect(() => {
     const el = containerRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
@@ -451,6 +495,9 @@ function CanvasInner() {
         </svg>
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--muted-foreground)" style={{ opacity: 0.35 }} />
         <Controls showInteractive={false} className="!shadow-surface-2" />
+        <Panel position="top-left">
+          <LayoutToggle />
+        </Panel>
         <MiniMap pannable zoomable className="!hidden lg:!block" nodeStrokeWidth={2} />
       </ReactFlow>
     </div>

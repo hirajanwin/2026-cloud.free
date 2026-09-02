@@ -51,78 +51,67 @@ export function TrafficStrip() {
   const shown = useGlide(offered);
 
   return (
-    <div className="flex items-center gap-4 border-b border-border bg-surface-2 px-3 py-2">
+    <div className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-5 border-b border-border bg-surface-2 px-3 py-2">
+      {/* clock controls */}
       <div className="flex items-center gap-1">
         <Tooltip content={running ? "Pause the clock" : "Resume the clock"}>
-          <Button
-            variant="tertiary"
-            size="compact"
-            aria-label={running ? "Pause" : "Play"}
-            onClick={() => studio.setRunning(!running)}
-          >
-            {running ? (
-              <Pause className="size-3.5" />
-            ) : (
-              <Play className="size-3.5" />
-            )}
+          <Button variant="tertiary" size="compact" aria-label={running ? "Pause" : "Play"} onClick={() => studio.setRunning(!running)}>
+            {running ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
           </Button>
         </Tooltip>
         <Tooltip content="Reset the clock">
-          <Button
-            variant="ghost"
-            size="compact"
-            aria-label="Reset clock"
-            onClick={() => studio.resetClock()}
-          >
+          <Button variant="ghost" size="compact" aria-label="Reset clock" onClick={() => studio.resetClock()}>
             <RotateCcw className="size-3.5" />
           </Button>
         </Tooltip>
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2 text-caption">
-          <span className="text-muted-foreground">
-            Requests so far{" "}
-            <span className="text-numeric text-foreground">
-              {formatElapsed(snapshot.elapsedS)}
-            </span>
-          </span>
-          <span
-            className="text-numeric text-[13px] font-medium text-foreground"
-            style={{ fontVariationSettings: "'wght' 550, 'opsz' 18" }}
-          >
-            {formatCount(shown)}
-          </span>
+
+      {/* headline number */}
+      <div className="min-w-[132px]">
+        <div className="text-numeric text-[18px] leading-6 text-foreground" style={{ fontVariationSettings: "'wght' 550, 'opsz' 18" }}>
+          {formatCount(shown)}
         </div>
-        <div
-          className="mt-1 flex h-1.5 w-full overflow-hidden rounded-full bg-muted"
-          aria-hidden
-        >
+        <div className="whitespace-nowrap text-[11px] leading-4 text-muted-foreground">
+          requests · <span className="text-numeric text-foreground">{formatElapsed(snapshot.elapsedS)}</span>
+        </div>
+      </div>
+
+      {/* mix bar + legend */}
+      <div className="min-w-0">
+        <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted" aria-hidden>
           {REQUEST_CLASSES.map((c) => (
             <span
               key={c}
               title={REQUEST_CLASS_LABEL[c]}
               className="transition-[width] duration-200"
-              style={{
-                width: `${offered > 0 ? (snapshot.offered[c] / offered) * 100 : 0}%`,
-                background: CLASS_TONE[c],
-                opacity: c === "botnet" ? 0.6 : 1,
-              }}
+              style={{ width: `${offered > 0 ? (snapshot.offered[c] / offered) * 100 : 0}%`, background: CLASS_TONE[c], opacity: c === "botnet" ? 0.6 : 1 }}
             />
           ))}
         </div>
+        <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] leading-4 text-numeric text-muted-foreground">
+          {REQUEST_CLASSES.map((c) => (
+            <span key={c} className="inline-flex items-center gap-1 whitespace-nowrap">
+              <span className="inline-block size-1.5 rounded-full" style={{ background: CLASS_TONE[c], opacity: c === "botnet" ? 0.6 : 1 }} />
+              {REQUEST_CLASS_LABEL[c]} <span className="text-foreground">{formatCount(snapshot.offered[c])}</span>
+            </span>
+          ))}
+        </div>
       </div>
-      <div className="hidden shrink-0 flex-wrap gap-x-3 text-[11px] text-numeric text-muted-foreground lg:flex">
-        {REQUEST_CLASSES.map((c) => (
-          <span key={c} className="inline-flex items-center gap-1">
-            <span className="inline-block size-1.5 rounded-full" style={{ background: CLASS_TONE[c], opacity: c === "botnet" ? 0.6 : 1 }} />
-            {REQUEST_CLASS_LABEL[c]} {formatCount(snapshot.offered[c])}
-          </span>
+
+      {/* outcomes */}
+      <div className="grid grid-cols-3 gap-x-4 text-numeric">
+        {(
+          [
+            ["served", snapshot.outcomes.served, "text-success", "Served"],
+            ["blocked", snapshot.outcomes.blocked, "text-destructive", "Blocked by gates"],
+            ["dropped", snapshot.outcomes.dropped, "text-warning", "Dropped by free-plan caps"],
+          ] as const
+        ).map(([k, v, tone, title]) => (
+          <div key={k} className="text-right" title={title}>
+            <div className={`text-[13px] leading-5 ${tone}`}>{formatCount(v)}</div>
+            <div className="text-[10.5px] leading-3 text-muted-foreground">{k}</div>
+          </div>
         ))}
-      </div>
-      <div className="flex shrink-0 gap-3 text-[11px] text-numeric">
-        <span className="text-success" title="Served">✓ {formatCount(snapshot.outcomes.served)} served</span>
-        <span className="text-destructive" title="Blocked by gates">⊘ {formatCount(snapshot.outcomes.blocked)} blocked</span>
-        <span className="text-warning" title="Dropped by free-plan caps">✕ {formatCount(snapshot.outcomes.dropped)} dropped</span>
       </div>
     </div>
   );

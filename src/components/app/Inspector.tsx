@@ -3,7 +3,8 @@
  * knobs, and the numbers flowing through it. With nothing selected it shows
  * the document's summary and the template's lesson.
  */
-import { Trash2 } from "lucide-react";
+import { Copy, Save, Trash2 } from "lucide-react";
+import { blueprints, useBlueprints } from "@/state/blueprints";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,18 +68,45 @@ function Overview() {
   const templateId = useStudio((s) => s.templateId);
   const analysis = useStudio((s) => s.analysis);
   const provider = useStudio((s) => s.provider);
+  const blueprintId = useStudio((s) => s.blueprintId);
+  const saved = useBlueprints();
+  const open = blueprintId ? saved.find((b) => b.id === blueprintId) : undefined;
   const t = templateId ? templateById(templateId) : undefined;
   const other = provider === "cloudflare" ? "vercel" : "cloudflare";
   const kinds = [...new Set(diagram.nodes.map((n) => n.kind).filter(isProductKind))].filter((k) => k !== "client") as ProductKind[];
   return (
     <div className="flex flex-col gap-4 text-body">
       <div>
-        <div className="text-title font-medium">
-          {diagram.title ?? "Untitled architecture"}
-        </div>
+        {open ? (
+          <input
+            value={open.name}
+            onChange={(e) => blueprints.rename(open.id, e.target.value)}
+            aria-label="Blueprint name"
+            className="w-full bg-transparent text-title font-medium outline-none"
+          />
+        ) : (
+          <div className="text-title font-medium">{diagram.title ?? "Untitled architecture"}</div>
+        )}
         <div className="text-caption text-muted-foreground">
-          {diagram.nodes.length} nodes · {diagram.edges.length} edges ·{" "}
-          {diagram.groups.length} groups
+          {diagram.nodes.length} nodes · {diagram.edges.length} edges · {diagram.groups.length} groups
+          {open ? " · saved blueprint" : t ? " · template" : ""}
+          {open?.from ? ` · remixed from ${open.from.name}` : ""}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {open ? (
+            <>
+              <Button variant="tertiary" size="compact" leadingIcon={Copy} onClick={() => blueprints.remix(open.id)}>
+                Remix
+              </Button>
+              <Button variant="ghost" size="compact" leadingIcon={Trash2} onClick={() => blueprints.remove(open.id)}>
+                Delete
+              </Button>
+            </>
+          ) : (
+            <Button variant="tertiary" size="compact" leadingIcon={Save} onClick={() => blueprints.saveCurrent()}>
+              Save as blueprint
+            </Button>
+          )}
         </div>
       </div>
       {t && (
