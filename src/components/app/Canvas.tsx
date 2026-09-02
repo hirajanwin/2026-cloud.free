@@ -30,6 +30,9 @@ import { defaultProtection, edgeKey } from "@/engine/sim";
 import { PROTECTION_MODE_LABEL, REQUEST_CLASSES } from "@/engine/types";
 import { formatCount } from "@/lib/format";
 import { studio, useStudio } from "@/state/store";
+import { applyPatch } from "@/engine/dsl";
+import { useResolvedTheme } from "@/lib/use-resolved-theme";
+import { type Connection, type IsValidConnection } from "@xyflow/react";
 import { Glyph } from "./Glyph";
 
 type ProductNodeData = {
@@ -88,7 +91,7 @@ const ProductNode = memo(function ProductNode({
   return (
     <div
       className={[
-        "group/node relative flex h-[60px] w-[172px] items-center gap-2.5 rounded-xl bg-surface-3 px-3 text-left shadow-surface-2 transition-[box-shadow,background-color] duration-150",
+        "node-in group/node relative flex h-[60px] w-[172px] items-center gap-2.5 rounded-xl bg-surface-3 px-3 text-left shadow-surface-2 transition-[box-shadow,background-color] duration-150",
         selected
           ? "ring-1 ring-foreground/60 shadow-surface-4"
           : "hover:shadow-surface-3",
@@ -286,15 +289,14 @@ function CanvasInner() {
   const diagram = useStudio((s) => s.diagram);
   const revision = useStudio((s) => s.revision);
   const selectedId = useStudio((s) => s.selectedId);
+  const theme = useResolvedTheme();
   const [nodes, setNodes] = useState<RFNode[]>([]);
   const [edges, setEdges] = useState<RFEdge[]>([]);
   const { fitView } = useReactFlow();
   const layoutRun = useRef(0);
 
   const refit = useCallback(() => {
-    // Two frames: one for React to commit the nodes, one for React Flow to measure them.
     requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.12, duration: 250 })));
-    // First paint: React Flow may not have measured the viewport yet.
     setTimeout(() => fitView({ padding: 0.12, duration: 200 }), 400);
   }, [fitView]);
 
@@ -304,36 +306,15 @@ function CanvasInner() {
       if (run !== layoutRun.current) return;
       const byId = new Map(layout.nodes.map((n) => [n.id, n]));
       const next: RFNode[] = [];
-      // Groups first so React Flow has parents before children.
       for (const g of diagram.groups) {
         const l = byId.get(g.id);
         if (!l) continue;
-        next.push({
-          id: g.id,
-          type: "group",
-          position: { x: l.x, y: l.y },
-          width: l.width,
-          height: l.height,
-          parentId: l.parentId,
-          data: { id: g.id, label: g.label },
-          selectable: true,
-          draggable: false,
-          zIndex: -1,
-        });
+        next.push({ id: g.id, type: "group", position: { x: l.x, y: l.y }, width: l.width, height: l.height, parentId: l.parentId, data: { id: g.id, label: g.label }, selectable: true, draggable: false, connectable: false, zIndex: -1 });
       }
       for (const n of diagram.nodes) {
         const l = byId.get(n.id);
         if (!l) continue;
-        next.push({
-          id: n.id,
-          type: "product",
-          position: { x: l.x, y: l.y },
-          width: NODE_W,
-          height: NODE_H,
-          parentId: l.parentId,
-          extent: l.parentId ? "parent" : undefined,
-          data: { id: n.id, kind: n.kind, label: n.label, direction: diagram.direction },
-        });
+        next.push({ id: n.id, type: "product", position: { x: l.x, y: l.y }, width: NODE_W, height: NODE_H, parentId: l.parentId, extent: l.parentId ? "parent" : undefined, data: { id: n.id, kind: n.kind, label: n.label, direction: diagram.direction } });
       }
       setNodes(next);
       setEdges(
@@ -342,18 +323,13 @@ function CanvasInner() {
           source: e.style === "back" ? e.to : e.from,
           target: e.style === "back" ? e.from : e.to,
           type: "flow",
-          data: {
-            key: edgeKey(e.style === "back" ? { ...e, from: e.to, to: e.from } : e),
-            label: e.label,
-            style: e.style,
-          },
+          data: { key: edgeKey(e.style === "back" ? { ...e, from: e.to, to: e.from } : e), label: e.label, style: e.style },
         })),
       );
       refit();
     });
   }, [diagram, revision, refit]);
 
-  // Refit when the canvas itself changes size (panel toggles, window resize).
   const containerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = containerRef.current;
@@ -369,14 +345,41 @@ function CanvasInner() {
     return () => ro.disconnect();
   }, [refit]);
 
-  const withSelection = useMemo(
-    () => nodes.map((n) => ({ ...n, selected: n.id === selectedId })),
-    [nodes, selectedId],
+  const withSelection = useMemo(() => nodes.map((n) => ({ ...n, selected: n.id === selectedId })), [nodes, selectedId]);
+
+  const isValidConnection: IsValidConnection = useCallback(
+    (c) => {
+      if (!c.source || !c.target || c.source === c.target) return false;
+      const d = studio.get().diagram;
+      return !d.edges.some((e) => e.from === c.source && e.to === c.target);
+    },
+    [],
   );
+
+  const onConnect = useCallback((c: Connection) => {
+    if (!c.source || !c.target) return;
+    const { diagram: d, errors } = applyPatch(studio.get().diagram, [{ op: "add_edge", from: c.source, to: c.target }]);
+    if (errors.length === 0) studio.setDiagram(d);
+  }, []);
+
+  const onNodesDelete = useCallback((deleted: Node[]) => {
+    const d0 = studio.get().diagram;
+    const ops = deleted.map((n) => (d0.groups.some((g) => g.id === n.id) ? ({ op: "remove_group", id: n.id } as const) : ({ op: "remove_node", id: n.id } as const)));
+    const { diagram: d } = applyPatch(d0, ops);
+    studio.setDiagram(d);
+    studio.select(null);
+  }, []);
+
+  const onEdgesDelete = useCallback((deleted: Edge[]) => {
+    const ops = deleted.map((e) => ({ op: "remove_edge", from: e.source, to: e.target }) as const);
+    const { diagram: d } = applyPatch(studio.get().diagram, ops);
+    studio.setDiagram(d);
+  }, []);
 
   return (
     <div ref={containerRef} className="h-full w-full">
       <ReactFlow
+        colorMode={theme}
         nodes={withSelection}
         edges={edges}
         nodeTypes={nodeTypes}
@@ -386,7 +389,6 @@ function CanvasInner() {
           for (const c of changes) {
             if (c.type === "select") studio.select(c.selected ? c.id : studio.get().selectedId === c.id ? null : studio.get().selectedId);
           }
-          // Allow dragging for manual nudges; layout re-runs on document change.
           setNodes((prev) => {
             let changed = false;
             const map = new Map(prev.map((n) => [n.id, n]));
@@ -402,15 +404,25 @@ function CanvasInner() {
             return changed ? [...map.values()] : prev;
           });
         }}
+        onNodeDoubleClick={(_, n) => {
+          studio.select(n.id);
+          studio.setPanel("inspect");
+        }}
         onPaneClick={() => studio.select(null)}
+        onConnect={onConnect}
+        isValidConnection={isValidConnection}
+        onNodesDelete={onNodesDelete}
+        onEdgesDelete={onEdgesDelete}
+        deleteKeyCode={["Backspace", "Delete"]}
+        nodesConnectable
+        connectionRadius={28}
         minZoom={0.2}
         maxZoom={1.6}
         proOptions={{ hideAttribution: true }}
-        nodesConnectable={false}
-        deleteKeyCode={null}
         className="bg-surface-1"
+        style={{ background: "var(--surface-1)" }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--muted-foreground)" style={{ opacity: 0.35 }} />
         <Controls showInteractive={false} className="!shadow-surface-2" />
         <MiniMap pannable zoomable className="!hidden lg:!block" nodeStrokeWidth={2} />
       </ReactFlow>

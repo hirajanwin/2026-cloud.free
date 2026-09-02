@@ -169,6 +169,7 @@ gateway [kind: ai-gateway]
 embed [kind: llm, label: "Embeddings", neurons: 40]
 index [kind: vector, label: "Docs index", indexVectors: 20000]
 model [kind: llm, label: "Chat model", neurons: 900]
+openai [kind: external, label: "OpenAI API (tokens billed by OpenAI)"]
 docs [kind: sql, label: "Documents"]
 
 client > shield
@@ -178,6 +179,7 @@ app > gateway: "ask" [ops: 0.4]
 gateway > embed
 embed > index: "top-k"
 gateway > model
+gateway > openai: "frontier models" [ops: 0.3]
 app > docs
 `,
   },

@@ -392,6 +392,11 @@ export class Engine {
     this.elapsedS = 0;
   }
 
+  /** Jump the clock to an absolute simulated time. */
+  seek(simSeconds: number) {
+    if (Number.isFinite(simSeconds)) this.elapsedS = Math.max(0, simSeconds);
+  }
+
   get currentRates(): Rates {
     return this.rates;
   }

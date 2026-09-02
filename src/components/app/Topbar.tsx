@@ -1,0 +1,230 @@
+/**
+ * The top bar: sidebar triggers at both ends, the live traffic strip with the
+ * clock controls, and the provider / plan switches.
+ */
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Moon, Pause, Play, RotateCcw, Sun, SunMoon } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Tabs, TabItem, TabsList } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
+import { useThemeContext } from "@/lib/theme-context";
+import { REQUEST_CLASSES, REQUEST_CLASS_LABEL } from "@/engine/types";
+import { formatCount, formatElapsed } from "@/lib/format";
+import { studio, useStudio } from "@/state/store";
+
+const CLASS_TONE: Record<string, string> = {
+  human: "var(--foreground)",
+  googlebot: "var(--info)",
+  "ai-crawler": "var(--warning)",
+  scraper: "var(--destructive)",
+  botnet: "var(--destructive)",
+};
+
+/** Tween a number towards its target so counters glide instead of jumping. */
+function useGlide(target: number, ms = 220): number {
+  const [value, setValue] = useState(target);
+  const from = useRef(target);
+  const start = useRef(0);
+  useEffect(() => {
+    from.current = value;
+    start.current = performance.now();
+    let raf = 0;
+    const step = (t: number) => {
+      const k = Math.min(1, (t - start.current) / ms);
+      const eased = 1 - (1 - k) * (1 - k);
+      setValue(from.current + (target - from.current) * eased);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, ms]);
+  return value;
+}
+
+export function TrafficStrip() {
+  const snapshot = useStudio((s) => s.snapshot);
+  const running = useStudio((s) => s.running);
+  const offered = REQUEST_CLASSES.reduce((s, c) => s + snapshot.offered[c], 0);
+  const shown = useGlide(offered);
+
+  return (
+    <div className="flex min-w-[260px] flex-1 items-center gap-3 rounded-lg bg-surface-3 px-3 py-1.5 shadow-surface-1">
+      <div className="flex items-center gap-1">
+        <Tooltip content={running ? "Pause the clock" : "Resume the clock"}>
+          <Button
+            variant="tertiary"
+            size="compact"
+            aria-label={running ? "Pause" : "Play"}
+            onClick={() => studio.setRunning(!running)}
+          >
+            {running ? (
+              <Pause className="size-3.5" />
+            ) : (
+              <Play className="size-3.5" />
+            )}
+          </Button>
+        </Tooltip>
+        <Tooltip content="Reset the clock">
+          <Button
+            variant="ghost"
+            size="compact"
+            aria-label="Reset clock"
+            onClick={() => studio.resetClock()}
+          >
+            <RotateCcw className="size-3.5" />
+          </Button>
+        </Tooltip>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2 text-caption">
+          <span className="text-muted-foreground">
+            Requests so far{" "}
+            <span className="text-numeric text-foreground">
+              {formatElapsed(snapshot.elapsedS)}
+            </span>
+          </span>
+          <span
+            className="text-numeric text-[13px] font-medium text-foreground"
+            style={{ fontVariationSettings: "'wght' 550, 'opsz' 18" }}
+          >
+            {formatCount(shown)}
+          </span>
+        </div>
+        <div
+          className="mt-1 flex h-1.5 w-full overflow-hidden rounded-full bg-muted"
+          aria-hidden
+        >
+          {REQUEST_CLASSES.map((c) => (
+            <span
+              key={c}
+              title={REQUEST_CLASS_LABEL[c]}
+              className="transition-[width] duration-200"
+              style={{
+                width: `${offered > 0 ? (snapshot.offered[c] / offered) * 100 : 0}%`,
+                background: CLASS_TONE[c],
+                opacity: c === "botnet" ? 0.6 : 1,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="hidden shrink-0 gap-2 text-[11px] text-numeric xl:flex">
+        <span className="text-success">
+          ✓ {formatCount(snapshot.outcomes.served)}
+        </span>
+        <span className="text-destructive">
+          ⊘ {formatCount(snapshot.outcomes.blocked)}
+        </span>
+        <span className="text-warning">
+          ✕ {formatCount(snapshot.outcomes.dropped)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function Topbar({
+  rightTrigger,
+  showTraffic,
+}: {
+  rightTrigger?: ReactNode;
+  showTraffic: boolean;
+}) {
+  const provider = useStudio((s) => s.provider);
+  const plan = useStudio((s) => s.plan);
+  const title = useStudio((s) => s.diagram.title);
+  const webmcp = useStudio((s) => s.webmcp);
+  const { theme, setTheme } = useThemeContext();
+
+  return (
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-1.5 pr-2">
+      <SidebarTrigger />
+      <div
+        className="hidden min-w-0 max-w-[220px] truncate text-subtitle font-medium md:block"
+        title={title}
+      >
+        {title ?? "Untitled"}
+      </div>
+
+      {showTraffic && <TrafficStrip />}
+
+      <div className="ml-auto flex items-center gap-2">
+        <Tabs
+          value={provider}
+          onValueChange={(v) => studio.setProvider(v as typeof provider)}
+          size="compact"
+          aria-label="Provider"
+        >
+          <TabsList>
+            <TabItem value="cloudflare" label="Cloudflare" />
+            <TabItem value="vercel" label="Vercel" />
+          </TabsList>
+        </Tabs>
+        <Tabs
+          value={plan}
+          onValueChange={(v) => studio.setPlan(v as typeof plan)}
+          size="compact"
+          aria-label="Plan"
+        >
+          <TabsList>
+            <TabItem
+              value="free"
+              label={provider === "cloudflare" ? "Free" : "Hobby"}
+            />
+            <TabItem
+              value="paid"
+              label={provider === "cloudflare" ? "Paid" : "Pro"}
+            />
+          </TabsList>
+        </Tabs>
+
+        <Tooltip
+          content={
+            webmcp.supported
+              ? `${webmcp.registered} tools registered on document.modelContext. Ask the browser's agent to drive the canvas.`
+              : "No WebMCP in this browser. Enable chrome://flags/#enable-webmcp-testing in Chrome 149+. The in-page architect still works; its tools run directly."
+          }
+        >
+          <span>
+            <Badge
+              color={webmcp.supported ? "green" : "gray"}
+              variant="dot"
+              size="compact"
+            >
+              WebMCP {webmcp.supported ? `· ${webmcp.registered}` : "off"}
+            </Badge>
+          </span>
+        </Tooltip>
+
+        <Tooltip content={`Theme: ${theme}. Press T to cycle.`}>
+          <Button
+            variant="ghost"
+            size="compact"
+            aria-label="Cycle theme"
+            onClick={() =>
+              setTheme(
+                theme === "system"
+                  ? "light"
+                  : theme === "light"
+                    ? "dark"
+                    : "system",
+              )
+            }
+          >
+            {theme === "system" ? (
+              <SunMoon className="size-3.5" />
+            ) : theme === "light" ? (
+              <Sun className="size-3.5" />
+            ) : (
+              <Moon className="size-3.5" />
+            )}
+          </Button>
+        </Tooltip>
+        {rightTrigger}
+      </div>
+    </header>
+  );
+}

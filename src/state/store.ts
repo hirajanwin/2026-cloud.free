@@ -5,21 +5,15 @@
  * on requestAnimationFrame and publishes a snapshot at 10 Hz.
  */
 import { useSyncExternalStore } from "react";
-import {
-  parse,
-  print,
-  type Diagram,
-  type ParseError,
-  type Provider,
-} from "@/engine/dsl";
+import { parse, print, type Diagram, type ParseError, type Provider } from "@/engine/dsl";
 import { Engine, computeRates, type Rates, type SimInput } from "@/engine/sim";
 import { TEMPLATES, templateById } from "@/engine/templates";
 import {
   DEFAULT_MIX,
-  type RequestClass,
   type Plan,
   type ProtectionMode,
   type Protections,
+  type RequestClass,
   type Snapshot,
   type TrafficMix,
 } from "@/engine/types";
@@ -36,6 +30,8 @@ export interface ProductAnalysis {
   source: "ai" | "heuristic";
 }
 
+export type PanelId = "inspect" | "traffic" | "bill" | "chat" | "code" | "activity";
+
 export interface StudioState {
   source: string;
   diagram: Diagram;
@@ -51,6 +47,9 @@ export interface StudioState {
   rates: Rates;
   selectedId: string | null;
   templateId: string | null;
+  /** Saved blueprint this document belongs to, if any. */
+  blueprintId: string | null;
+  panel: PanelId;
   analysis: ProductAnalysis | null;
   /** WebMCP status for the badge. */
   webmcp: { supported: boolean; registered: number };
@@ -62,16 +61,16 @@ type Listener = () => void;
 
 const DEFAULT_TEMPLATE = TEMPLATES[1]; // SaaS app: the shape most people ask about.
 
+export const EMPTY_DSL = `direction right
+title "New blueprint"
+
+client [kind: client, label: "Visitors"]
+`;
+
 function simInput(
   s: Pick<StudioState, "diagram" | "provider" | "mix" | "protections" | "plan">,
 ): SimInput {
-  return {
-    diagram: s.diagram,
-    provider: s.provider,
-    mix: s.mix,
-    protections: s.protections,
-    plan: s.plan,
-  };
+  return { diagram: s.diagram, provider: s.provider, mix: s.mix, protections: s.protections, plan: s.plan };
 }
 
 function createInitial(): StudioState {
@@ -94,6 +93,8 @@ function createInitial(): StudioState {
     rates: engine.currentRates,
     selectedId: null,
     templateId: DEFAULT_TEMPLATE.id,
+    blueprintId: null,
+    panel: "inspect",
     analysis: null,
     webmcp: { supported: false, registered: 0 },
     revision: 0,
@@ -114,19 +115,21 @@ function set(patch: Partial<StudioState>) {
 }
 
 function reconfigure(
-  patch: Partial<
-    Pick<StudioState, "diagram" | "provider" | "mix" | "protections" | "plan">
-  >,
+  patch: Partial<Pick<StudioState, "diagram" | "provider" | "mix" | "protections" | "plan">>,
+  opts: { keepClock?: boolean } = {},
 ) {
   const next = { ...state, ...patch };
   engine.configure(simInput(next));
-  engine.reset();
-  set({
-    ...patch,
-    rates: engine.currentRates,
-    snapshot: engine.snapshot(),
-    revision: state.revision + 1,
-  });
+  if (!opts.keepClock) engine.reset();
+  set({ ...patch, rates: engine.currentRates, snapshot: engine.snapshot(), revision: state.revision + 1 });
+}
+
+export interface StudioDocument {
+  source: string;
+  provider: Provider;
+  plan: Plan;
+  mix: TrafficMix;
+  protections: Protections;
 }
 
 export const studio = {
@@ -139,51 +142,36 @@ export const studio = {
   /** Replace the document. Returns parse errors; the document is applied even with warnings. */
   setSource(source: string): ParseError[] {
     const { diagram, errors } = parse(source);
-    const fatal = errors.filter(
-      (e) => e.line === 0 || /Unclosed|Unmatched|Duplicate/.test(e.message),
-    );
+    const fatal = errors.filter((e) => e.line === 0 || /Unclosed|Unmatched|Duplicate/.test(e.message));
     if (fatal.length > 0) {
       set({ parseErrors: errors });
       return errors;
     }
-    // Selection may no longer exist.
     const selectedId =
       state.selectedId &&
-      (diagram.nodes.some((n) => n.id === state.selectedId) ||
-        diagram.groups.some((g) => g.id === state.selectedId))
+      (diagram.nodes.some((n) => n.id === state.selectedId) || diagram.groups.some((g) => g.id === state.selectedId))
         ? state.selectedId
         : null;
     const provider = diagram.provider ?? state.provider;
-    state = {
-      ...state,
-      source,
-      parseErrors: errors,
-      selectedId,
-      templateId: null,
-    };
-    reconfigure({ diagram, provider });
+    state = { ...state, source, parseErrors: errors, selectedId, templateId: null };
+    reconfigure({ diagram, provider }, { keepClock: true });
     return errors;
   },
 
   /** Replace the diagram object; the source is re-printed from it. */
   setDiagram(diagram: Diagram) {
-    state = {
-      ...state,
-      source: print(diagram),
-      parseErrors: [],
-      templateId: null,
-    };
-    reconfigure({ diagram, provider: diagram.provider ?? state.provider });
+    state = { ...state, source: print(diagram), parseErrors: [], templateId: null };
+    reconfigure({ diagram, provider: diagram.provider ?? state.provider }, { keepClock: true });
   },
 
   setProvider(provider: Provider) {
     const diagram = { ...state.diagram, provider };
     state = { ...state, source: print(diagram) };
-    reconfigure({ diagram, provider });
+    reconfigure({ diagram, provider }, { keepClock: true });
   },
 
   setPlan(plan: Plan) {
-    reconfigure({ plan });
+    reconfigure({ plan }, { keepClock: true });
   },
 
   setMix(mix: { perDay?: number; shares?: Partial<Record<RequestClass, number>> }) {
@@ -191,35 +179,50 @@ export const studio = {
       perDay: mix.perDay ?? state.mix.perDay,
       shares: { ...state.mix.shares, ...(mix.shares ?? {}) },
     };
-    reconfigure({ mix: next });
+    reconfigure({ mix: next }, { keepClock: true });
   },
 
   setProtection(nodeId: string, mode: ProtectionMode) {
-    reconfigure({ protections: { ...state.protections, [nodeId]: mode } });
+    reconfigure({ protections: { ...state.protections, [nodeId]: mode } }, { keepClock: true });
   },
 
   loadTemplate(id: string): boolean {
     const t = templateById(id);
     if (!t) return false;
     const { diagram, errors } = parse(t.dsl);
-    state = {
-      ...state,
-      source: t.dsl,
-      parseErrors: errors,
-      selectedId: null,
-      templateId: t.id,
-      protections: {},
-    };
-    reconfigure({
-      diagram,
-      provider: diagram.provider ?? state.provider,
-      protections: {},
-    });
+    state = { ...state, source: t.dsl, parseErrors: errors, selectedId: null, templateId: t.id, blueprintId: null, protections: {} };
+    reconfigure({ diagram, provider: diagram.provider ?? state.provider, protections: {} });
     return true;
+  },
+
+  /** Load a whole document (a saved blueprint). */
+  loadDocument(doc: StudioDocument, blueprintId: string | null) {
+    const { diagram, errors } = parse(doc.source);
+    state = { ...state, source: doc.source, parseErrors: errors, selectedId: null, templateId: null, blueprintId };
+    reconfigure({ diagram, provider: doc.provider, plan: doc.plan, mix: doc.mix, protections: doc.protections });
+  },
+
+  /** Start from an (almost) empty canvas. */
+  newDocument(blueprintId: string | null) {
+    const { diagram, errors } = parse(EMPTY_DSL);
+    state = { ...state, source: EMPTY_DSL, parseErrors: errors, selectedId: null, templateId: null, blueprintId, analysis: null };
+    reconfigure({ diagram, protections: {} });
+  },
+
+  setBlueprintId(blueprintId: string | null) {
+    set({ blueprintId });
+  },
+
+  document(): StudioDocument {
+    return { source: state.source, provider: state.provider, plan: state.plan, mix: state.mix, protections: state.protections };
   },
 
   select(id: string | null) {
     set({ selectedId: id });
+  },
+
+  setPanel(panel: PanelId) {
+    set({ panel });
   },
 
   setSpeed(speed: number) {
@@ -233,6 +236,12 @@ export const studio = {
   resetClock() {
     engine.reset();
     set({ snapshot: engine.snapshot() });
+  },
+
+  /** Scrub the clock. Pauses so the reader can look. */
+  seek(simSeconds: number) {
+    engine.seek(simSeconds);
+    set({ snapshot: engine.snapshot(), running: false });
   },
 
   setAnalysis(analysis: ProductAnalysis | null) {
@@ -265,8 +274,7 @@ export function startClock() {
   const frame = (t: number) => {
     const dt = Math.min(0.25, Math.max(0, (t - lastT) / 1000));
     lastT = t;
-    if (state.running && document.visibilityState === "visible")
-      engine.advance(dt * state.speed);
+    if (state.running && document.visibilityState === "visible") engine.advance(dt * state.speed);
     if (t - lastPublish >= PUBLISH_MS) {
       lastPublish = t;
       set({ snapshot: engine.snapshot() });

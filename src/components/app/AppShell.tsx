@@ -1,22 +1,16 @@
 /**
- * The application frame: Fluid Functionalism's inset sidebar on the left,
- * a topbar with the provider and plan switches, and the page in the inset.
+ * The application frame: two Fluid Functionalism inset sidebars on one
+ * plane. Left holds blueprints, templates and the product palette; right
+ * holds the studio panels. The main card between them carries the top bar
+ * with the live traffic strip, the canvas, and the timeline.
+ *
+ * Each sidebar needs its own provider, so the right provider wraps the left
+ * one; a small context bridge lets the top bar (inside the left tree) toggle
+ * the right rail.
  */
-import { useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import {
-  Activity,
-  BookOpen,
-  Layers,
-  Moon,
-  Pause,
-  Play,
-  Plus,
-  RotateCcw,
-  Sun,
-  SunMoon,
-  Wand2,
-} from "lucide-react";
+import { Activity, BookOpen, Copy, Layers, PanelRight, Plus, Receipt, Save, Sliders, Sparkles, Terminal, Trash2, Wand2, Wrench } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -26,157 +20,290 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuActions,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { SidebarInsetTopbar } from "@/components/sidebar-app/inset-topbar";
-import {
-  SidebarWorkspaceHeader,
-  WorkspaceTile,
-} from "@/components/sidebar-app/workspace-header";
+import { SidebarSearchField } from "@/components/sidebar-app/search-field";
+import { SidebarWorkspaceHeader, WorkspaceTile } from "@/components/sidebar-app/workspace-header";
 import { Tabs, TabItem, TabsList } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
-import { useThemeContext } from "@/lib/theme-context";
-import {
-  CATEGORY_LABEL,
-  CATEGORY_ORDER,
-  KINDS,
-  PRODUCTS,
-  PRODUCT_KINDS,
-  type ProductKind,
-} from "@/engine/catalog";
+import { CATEGORY_LABEL, CATEGORY_ORDER, KINDS, PRODUCTS, PRODUCT_KINDS, type ProductKind } from "@/engine/catalog";
 import { applyPatch } from "@/engine/dsl";
 import { TEMPLATES } from "@/engine/templates";
-import { studio, useStudio } from "@/state/store";
-import { formatElapsed } from "@/lib/format";
+import { studio, useStudio, type PanelId } from "@/state/store";
+import { blueprints, useBlueprints } from "@/state/blueprints";
 import { Glyph, ProviderDot } from "./Glyph";
+import { Topbar } from "./Topbar";
+import { Inspector } from "./Inspector";
+import { TrafficPanel } from "./TrafficPanel";
+import { BillPanel } from "./BillPanel";
+import { Chat } from "./Chat";
+import { DslEditor } from "./DslEditor";
+import { ActivityPanel } from "./ActivityPanel";
+import { ClientOnly } from "@tanstack/react-router";
 
-export function AppShell({ children }: { children: ReactNode }) {
+/* ------------------------------------------------------------------ *
+ * Right sidebar bridge
+ * ------------------------------------------------------------------ */
+
+interface RightSidebar {
+  open: boolean;
+  toggle: () => void;
+  setOpen: (v: boolean) => void;
+}
+const RightSidebarCtx = createContext<RightSidebar | null>(null);
+
+function RightSidebarBridge({ children }: { children: ReactNode }) {
+  const { open, toggleSidebar, setOpen } = useSidebar();
+  const value = useMemo(() => ({ open, toggle: toggleSidebar, setOpen }), [open, toggleSidebar, setOpen]);
+  return <RightSidebarCtx.Provider value={value}>{children}</RightSidebarCtx.Provider>;
+}
+
+export function useRightSidebar(): RightSidebar | null {
+  return useContext(RightSidebarCtx);
+}
+
+function RightTrigger() {
+  const right = useRightSidebar();
+  if (!right) return null;
   return (
-    <SidebarProvider peek="hover" defaultOpen>
-      <AppSidebar />
-      <SidebarInset className="flex min-h-svh flex-col">
-        <SidebarInsetTopbar className="border-b border-border pr-3">
-          <Topbar />
-        </SidebarInsetTopbar>
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
+    <Tooltip content={`${right.open ? "Hide" : "Show"} panels  ]`}>
+      <Button variant="ghost" size="compact" aria-label="Toggle panels" active={right.open} onClick={right.toggle}>
+        <PanelRight className="size-4" />
+      </Button>
+    </Tooltip>
   );
 }
 
 /* ------------------------------------------------------------------ */
 
+export function AppShell({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const isStudio = pathname === "/";
+  return (
+    <SidebarProvider peek="hover" shortcut="]" width="24rem" className="min-h-svh">
+      <RightSidebarBridge>
+        <SidebarProvider peek="hover" className="min-h-svh min-w-0 flex-1">
+          <AppSidebar />
+          <SidebarInset className={`flex min-h-svh flex-col ${isStudio ? "!mr-0" : ""}`}>
+            <Topbar rightTrigger={isStudio ? <RightTrigger /> : null} showTraffic={isStudio} />
+            <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+          </SidebarInset>
+        </SidebarProvider>
+        {isStudio && <RightRail />}
+      </RightSidebarBridge>
+    </SidebarProvider>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Right rail: the studio panels
+ * ------------------------------------------------------------------ */
+
+const PANELS: { value: PanelId; label: string; icon: typeof Layers }[] = [
+  { value: "inspect", label: "Inspect", icon: Layers },
+  { value: "traffic", label: "Traffic", icon: Sliders },
+  { value: "bill", label: "Bill", icon: Receipt },
+  { value: "chat", label: "Architect", icon: Sparkles },
+  { value: "code", label: "DSL", icon: Terminal },
+  { value: "activity", label: "Tools", icon: Wrench },
+];
+
+function RightRail() {
+  const panel = useStudio((s) => s.panel);
+  return (
+    <Sidebar side="right" variant="inset" rail={false}>
+      <SidebarHeader className="px-2 pt-2">
+        <Tabs value={panel} onValueChange={(v) => studio.setPanel(v as PanelId)} size="compact">
+          <TabsList className="w-full">
+            {PANELS.map((p) => (
+              <TabItem key={p.value} value={p.value} label={p.label} />
+            ))}
+          </TabsList>
+        </Tabs>
+      </SidebarHeader>
+      <SidebarContent className="px-3 pb-3 pt-2">
+        <div key={panel} className="panel-in">
+          {panel === "inspect" && <Inspector />}
+          {panel === "traffic" && <TrafficPanel />}
+          {panel === "bill" && <BillPanel />}
+          {panel === "activity" && <ActivityPanel />}
+        </div>
+        {/* Kept mounted so the conversation and the draft survive switching. */}
+        <div hidden={panel !== "chat"} className="h-[calc(100svh-7.5rem)] min-h-[320px]">
+          <ClientOnly fallback={null}>
+            <Chat />
+          </ClientOnly>
+        </div>
+        <div hidden={panel !== "code"} className="h-[calc(100svh-7.5rem)] min-h-[320px]">
+          <DslEditor />
+        </div>
+      </SidebarContent>
+    </Sidebar>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Left sidebar: blueprints, templates, verdicts, products
+ * ------------------------------------------------------------------ */
+
 function AppSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const templateId = useStudio((s) => s.templateId);
+  const blueprintId = useStudio((s) => s.blueprintId);
   const provider = useStudio((s) => s.provider);
   const nodeCount = useStudio((s) => s.diagram.nodes.length);
-  const [showAllProducts, setShowAllProducts] = useState(false);
+  const saved = useBlueprints();
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const match = (...parts: (string | undefined)[]) => !q || parts.some((p) => p?.toLowerCase().includes(q));
 
-  const verdicts = TEMPLATES.filter((t) => t.verdict);
-  const starters = TEMPLATES.filter((t) => !t.verdict);
-
-  const addNode = (kind: ProductKind) => {
-    const s = studio.get();
-    let id = kind;
-    let i = 2;
-    while (
-      s.diagram.nodes.some((n) => n.id === id) ||
-      s.diagram.groups.some((g) => g.id === id)
-    )
-      id = `${kind}-${i++}` as ProductKind;
-    const { diagram } = applyPatch(s.diagram, [
-      { op: "add_node", id, kind, label: PRODUCTS[s.provider][kind].name },
-    ]);
-    studio.setDiagram(diagram);
-    studio.select(id);
+  const goStudio = () => {
     if (pathname !== "/") void navigate({ to: "/" });
   };
 
+  const addNode = (kind: ProductKind) => {
+    const s = studio.get();
+    let nid: string = kind;
+    let i = 2;
+    while (s.diagram.nodes.some((n) => n.id === nid) || s.diagram.groups.some((g) => g.id === nid)) nid = `${kind}-${i++}`;
+    const { diagram } = applyPatch(s.diagram, [{ op: "add_node", id: nid, kind, label: PRODUCTS[s.provider][kind].name }]);
+    studio.setDiagram(diagram);
+    studio.select(nid);
+    studio.setPanel("inspect");
+    goStudio();
+  };
+
+  const verdicts = TEMPLATES.filter((t) => t.verdict && match(t.name, t.verdict.product, t.tagline));
+  const starters = TEMPLATES.filter((t) => !t.verdict && match(t.name, t.tagline));
+  const mine = saved.filter((b) => match(b.name));
   const kindsByCategory = useMemo(() => {
     const out: Record<string, ProductKind[]> = {};
     for (const k of PRODUCT_KINDS) {
-      if (k === "client" && !showAllProducts) continue;
+      if (k === "client") continue;
+      const p = PRODUCTS[provider][k];
+      if (!match(p.name, KINDS[k].name, p.tagline, k)) continue;
       (out[KINDS[k].category] ??= []).push(k);
     }
     return out;
-  }, [showAllProducts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provider, q]);
 
   return (
     <Sidebar variant="inset">
       <SidebarHeader>
-        <SidebarWorkspaceHeader
-          name="Blueprint"
-          tile={<WorkspaceTile>B</WorkspaceTile>}
-        />
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              icon={Layers}
-              isActive={pathname === "/"}
-              asChild
-            >
-              <Link to="/">
-                Studio
-                <SidebarMenuBadge>{nodeCount}</SidebarMenuBadge>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <SidebarWorkspaceHeader name="Blueprint" tile={<WorkspaceTile>B</WorkspaceTile>} />
+        <div className="flex flex-col gap-0.5">
+          <SidebarSearchField placeholder="Search blueprints, products…" shortcut="/" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                icon={Plus}
+                onClick={() => {
+                  blueprints.create();
+                  studio.setPanel("inspect");
+                  goStudio();
+                }}
+              >
+                New blueprint
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            {!blueprintId && pathname === "/" && (
+              <SidebarMenuItem>
+                <SidebarMenuButton icon={Save} onClick={() => blueprints.saveCurrent()}>
+                  Save canvas as blueprint
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+          </SidebarMenu>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Verdicts</SidebarGroupLabel>
-          <SidebarMenu>
-            {verdicts.map((t) => (
-              <SidebarMenuItem key={t.id}>
-                <SidebarMenuButton
-                  icon={BookOpen}
-                  isActive={pathname === `/verdict/${t.id}`}
-                  asChild
-                >
-                  <Link to="/verdict/$slug" params={{ slug: t.id }}>
-                    {t.verdict!.product}
-                    <SidebarMenuBadge>
-                      {t.verdict!.call === "yes"
-                        ? "yes"
-                        : t.verdict!.call === "kinda"
-                          ? "kinda"
-                          : "no"}
-                    </SidebarMenuBadge>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+        {(mine.length > 0 || !q) && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Blueprints</SidebarGroupLabel>
+            <SidebarMenu>
+              {mine.length === 0 && <div className="px-2 py-1 text-caption text-muted-foreground">Nothing saved yet. Remix a template or save the canvas.</div>}
+              {mine.map((b) => (
+                <SidebarMenuItem key={b.id}>
+                  <SidebarMenuButton
+                    icon={Layers}
+                    isActive={blueprintId === b.id && pathname === "/"}
+                    onClick={() => {
+                      blueprints.open(b.id);
+                      goStudio();
+                    }}
+                  >
+                    <span className="truncate">{b.name}</span>
+                    {blueprintId === b.id && pathname === "/" && <SidebarMenuBadge>{nodeCount}</SidebarMenuBadge>}
+                  </SidebarMenuButton>
+                  <SidebarMenuActions>
+                    <SidebarMenuAction showOnHover aria-label="Remix" title="Remix" onClick={() => { blueprints.remix(b.id); goStudio(); }}>
+                      <Copy className="size-3.5" />
+                    </SidebarMenuAction>
+                    <SidebarMenuAction showOnHover aria-label="Delete" title="Delete" onClick={() => blueprints.remove(b.id)}>
+                      <Trash2 className="size-3.5" />
+                    </SidebarMenuAction>
+                  </SidebarMenuActions>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Templates</SidebarGroupLabel>
-          <SidebarMenu>
-            {starters.map((t) => (
-              <SidebarMenuItem key={t.id}>
-                <SidebarMenuButton
-                  icon={Wand2}
-                  isActive={templateId === t.id && pathname === "/"}
-                  onClick={() => {
-                    studio.loadTemplate(t.id);
-                    if (pathname !== "/") void navigate({ to: "/" });
-                  }}
-                >
-                  {t.name}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+        {starters.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Templates</SidebarGroupLabel>
+            <SidebarMenu>
+              {starters.map((t) => (
+                <SidebarMenuItem key={t.id}>
+                  <SidebarMenuButton
+                    icon={Wand2}
+                    isActive={templateId === t.id && pathname === "/"}
+                    onClick={() => {
+                      studio.loadTemplate(t.id);
+                      studio.setPanel("inspect");
+                      goStudio();
+                    }}
+                  >
+                    {t.name}
+                  </SidebarMenuButton>
+                  <SidebarMenuActions>
+                    <SidebarMenuAction showOnHover aria-label="Remix into a blueprint" title="Remix" onClick={() => { blueprints.remixTemplate(t.id); goStudio(); }}>
+                      <Copy className="size-3.5" />
+                    </SidebarMenuAction>
+                  </SidebarMenuActions>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
+
+        {verdicts.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Verdicts</SidebarGroupLabel>
+            <SidebarMenu>
+              {verdicts.map((t) => (
+                <SidebarMenuItem key={t.id}>
+                  <SidebarMenuButton icon={BookOpen} isActive={pathname === `/verdict/${t.id}`} asChild>
+                    <Link to="/verdict/$slug" params={{ slug: t.id }}>
+                      {t.verdict!.product}
+                      <SidebarMenuBadge>{t.verdict!.call === "yes" ? "yes" : t.verdict!.call === "kinda" ? "kinda" : "no"}</SidebarMenuBadge>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
 
         {CATEGORY_ORDER.filter((c) => kindsByCategory[c]?.length).map((c) => (
           <SidebarGroup key={c}>
@@ -191,10 +318,7 @@ function AppSidebar() {
                 return (
                   <SidebarMenuItem key={k}>
                     <Tooltip content={p.tagline} side="right">
-                      <SidebarMenuButton
-                        onClick={() => addNode(k)}
-                        className="group/add"
-                      >
+                      <SidebarMenuButton onClick={() => addNode(k)} className="group/add">
                         <span className="flex size-4 items-center justify-center text-muted-foreground">
                           <Glyph kind={k} size={15} />
                         </span>
@@ -208,145 +332,17 @@ function AppSidebar() {
             </SidebarMenu>
           </SidebarGroup>
         ))}
-        <div className="px-2 pb-2">
-          <Button
-            variant="ghost"
-            size="compact"
-            onClick={() => setShowAllProducts((v) => !v)}
-          >
-            {showAllProducts ? "Hide traffic source" : "Show every kind"}
-          </Button>
-        </div>
+        {q && mine.length + starters.length + verdicts.length + Object.keys(kindsByCategory).length === 0 && (
+          <div className="px-3 py-2 text-caption text-muted-foreground">Nothing matches “{query}”.</div>
+        )}
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="px-2 py-1 text-caption text-muted-foreground">
-          Click a product to add it. Word marks belong to their owners; this
-          tool is independent.
+        <div className="flex items-center gap-2 px-2 py-1 text-caption text-muted-foreground">
+          <Activity className="size-3.5" />
+          <span>Click a product to add it to the canvas. Drag a node's handle onto another to connect.</span>
         </div>
       </SidebarFooter>
     </Sidebar>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-
-function Topbar() {
-  const provider = useStudio((s) => s.provider);
-  const plan = useStudio((s) => s.plan);
-  const title = useStudio((s) => s.diagram.title);
-  const running = useStudio((s) => s.running);
-  const elapsed = useStudio((s) => s.snapshot.elapsedS);
-  const webmcp = useStudio((s) => s.webmcp);
-  const { theme, setTheme } = useThemeContext();
-
-  return (
-    <div className="flex min-w-0 flex-1 items-center gap-3">
-      <div className="min-w-0 truncate text-subtitle font-medium">
-        {title ?? "Untitled"}
-      </div>
-
-      <div className="ml-auto flex items-center gap-2">
-        <Tabs
-          value={provider}
-          onValueChange={(v) => studio.setProvider(v as typeof provider)}
-          size="compact"
-          aria-label="Provider"
-        >
-          <TabsList>
-            <TabItem value="cloudflare" label="Cloudflare" />
-            <TabItem value="vercel" label="Vercel" />
-          </TabsList>
-        </Tabs>
-        <Tabs
-          value={plan}
-          onValueChange={(v) => studio.setPlan(v as typeof plan)}
-          size="compact"
-          aria-label="Plan"
-        >
-          <TabsList>
-            <TabItem
-              value="free"
-              label={provider === "cloudflare" ? "Free" : "Hobby"}
-            />
-            <TabItem
-              value="paid"
-              label={provider === "cloudflare" ? "Workers Paid" : "Pro"}
-            />
-          </TabsList>
-        </Tabs>
-
-        <span className="hidden items-center gap-1 rounded-md bg-surface-2 px-2 py-1 text-caption text-numeric text-muted-foreground shadow-surface-1 md:inline-flex">
-          <Activity className="size-3.5" /> {formatElapsed(elapsed)}
-        </span>
-        <Tooltip content={running ? "Pause the clock" : "Resume the clock"}>
-          <Button
-            variant="tertiary"
-            size="compact"
-            aria-label={running ? "Pause" : "Play"}
-            onClick={() => studio.setRunning(!running)}
-          >
-            {running ? (
-              <Pause className="size-3.5" />
-            ) : (
-              <Play className="size-3.5" />
-            )}
-          </Button>
-        </Tooltip>
-        <Tooltip content="Reset the clock">
-          <Button
-            variant="tertiary"
-            size="compact"
-            aria-label="Reset clock"
-            onClick={() => studio.resetClock()}
-          >
-            <RotateCcw className="size-3.5" />
-          </Button>
-        </Tooltip>
-
-        <Tooltip
-          content={
-            webmcp.supported
-              ? `${webmcp.registered} tools registered on document.modelContext. Ask the browser's agent to drive the canvas.`
-              : "No WebMCP in this browser. Enable chrome://flags/#enable-webmcp-testing in Chrome 149+. The in-page assistant still works; its tools run directly."
-          }
-        >
-          <span>
-            <Badge
-              color={webmcp.supported ? "green" : "gray"}
-              variant="dot"
-              size="compact"
-            >
-              WebMCP {webmcp.supported ? `· ${webmcp.registered} tools` : "off"}
-            </Badge>
-          </span>
-        </Tooltip>
-
-        <Tooltip content={`Theme: ${theme}. Press T to cycle.`}>
-          <Button
-            variant="ghost"
-            size="compact"
-            aria-label="Cycle theme"
-            onClick={() =>
-              setTheme(
-                theme === "system"
-                  ? "light"
-                  : theme === "light"
-                    ? "dark"
-                    : "system",
-              )
-            }
-          >
-            {theme === "system" ? (
-              <SunMoon className="size-3.5" />
-            ) : theme === "light" ? (
-              <Sun className="size-3.5" />
-            ) : (
-              <Moon className="size-3.5" />
-            )}
-          </Button>
-        </Tooltip>
-      </div>
-    </div>
   );
 }

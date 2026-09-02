@@ -771,3 +771,24 @@ html.transitioning *::after {
 .prose-chat { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 .prose-chat table { max-width: 100%; }
 .prose-chat th, .prose-chat td { white-space: nowrap; }
+
+/* ── Motion ──────────────────────────────────────────────────────────────── */
+
+/* Nodes glide to their laid-out position; a node being dragged follows the pointer. */
+.react-flow__node { transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.react-flow__node.dragging { transition: none; }
+@keyframes node-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+.node-in { animation: node-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* Panel switch in the right rail. */
+@keyframes panel-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.panel-in { animation: panel-in 160ms ease-out both; }
+
+/* Connection line while dragging a new edge. */
+.react-flow__connectionline path { stroke: var(--focus-ring); stroke-width: 1.5; stroke-dasharray: 4 6; }
+.react-flow__handle { transition: transform 120ms ease, background-color 120ms ease; }
+.react-flow__handle:hover, .react-flow__handle.connectingfrom, .react-flow__handle.valid { transform: scale(1.5); background: var(--focus-ring) !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__node, .node-in, .panel-in, .react-flow__handle { transition: none; animation: none; }
+}
