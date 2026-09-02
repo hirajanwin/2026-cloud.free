@@ -33,9 +33,6 @@ import { exportConfig, proposeDsl } from "./generate";
 const ProviderSchema = z.enum(["cloudflare", "vercel"]);
 const PlanSchema = z.enum(["free", "paid"]);
 const KindSchema = z.enum(PRODUCT_KINDS as [string, ...string[]]);
-const ClassSchema = z.enum(
-  REQUEST_CLASSES as [RequestClass, ...RequestClass[]],
-);
 const ModeSchema = z.enum(PROTECTION_MODES as [string, ...string[]]);
 const AttrValue = z.union([z.string(), z.number(), z.boolean()]);
 const AttrsSchema = z.record(z.string(), AttrValue);
