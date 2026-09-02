@@ -71,21 +71,26 @@ export async function routeToolCall(
       const target = tools.find((t) => t.name === def.name);
       if (target) {
         via = "webmcp";
-        result = unwrap(
-          await mc.executeTool(target, JSON.stringify(input ?? {})),
-        );
+        activeCaller = "assistant";
+        try {
+          result = unwrap(await mc.executeTool(target, JSON.stringify(input ?? {})));
+        } finally {
+          activeCaller = null;
+        }
       }
     }
     if (via === "direct") result = await runTool(def, input);
   } finally {
-    toolLog.push({
-      name: def.name,
-      input,
-      via,
-      at: Date.now(),
-      durationMs: Math.round(performance.now() - started),
-      caller: "assistant",
-    });
+    // WebMCP-routed calls are logged by the registered wrapper with the right caller.
+    if (via === "direct")
+      toolLog.push({
+        name: def.name,
+        input,
+        via,
+        at: Date.now(),
+        durationMs: Math.round(performance.now() - started),
+        caller: "assistant",
+      });
   }
   return result;
 }
