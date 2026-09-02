@@ -30,7 +30,8 @@ export interface ProductAnalysis {
   source: "ai" | "heuristic";
 }
 
-export type PanelId = "inspect" | "traffic" | "bill" | "chat" | "code" | "activity";
+export type PanelId = "inspect" | "traffic" | "bill" | "chat";
+export type ChatTab = "chat" | "code" | "activity";
 /** How the canvas arranges nodes. "flow" follows the DSL direction; "snake" wraps the flow into rows. */
 export type ViewLayout = "flow" | "snake";
 
@@ -52,6 +53,7 @@ export interface StudioState {
   /** Saved blueprint this document belongs to, if any. */
   blueprintId: string | null;
   panel: PanelId;
+  chatTab: ChatTab;
   viewLayout: ViewLayout;
   analysis: ProductAnalysis | null;
   /** WebMCP status for the badge. */
@@ -98,6 +100,7 @@ function createInitial(): StudioState {
     templateId: DEFAULT_TEMPLATE.id,
     blueprintId: null,
     panel: "inspect",
+    chatTab: "chat",
     viewLayout: "flow",
     analysis: null,
     webmcp: { supported: false, registered: 0, enabled: true },
@@ -229,8 +232,18 @@ export const studio = {
     set({ panel });
   },
 
+  setChatTab(chatTab: ChatTab) {
+    set({ chatTab, panel: "chat" });
+  },
+
   setViewLayout(viewLayout: ViewLayout) {
     set({ viewLayout, revision: state.revision + 1 });
+  },
+
+  setTitle(title: string) {
+    const diagram = { ...state.diagram, title: title.trim() || undefined };
+    state = { ...state, source: print(diagram) };
+    reconfigure({ diagram }, { keepClock: true });
   },
 
   setDirection(direction: Diagram["direction"]) {

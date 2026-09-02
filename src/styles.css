@@ -799,3 +799,10 @@ html.transitioning *::after {
 .react-flow__node.selected, .react-flow__node:focus, .react-flow__node:focus-visible { outline: none !important; box-shadow: none !important; }
 .react-flow__edge.selected .react-flow__edge-path { stroke: var(--foreground) !important; }
 .react-flow__edge-path { transition: stroke 150ms ease, stroke-width 150ms ease; }
+
+/* Right rail: everything wraps; no horizontal scrolling. */
+.prose-chat { overflow-x: hidden; }
+.prose-chat pre { white-space: pre-wrap; word-break: break-word; overflow-x: hidden; }
+.prose-chat table { display: table; width: 100%; table-layout: fixed; }
+.prose-chat th, .prose-chat td { white-space: normal; overflow-wrap: anywhere; vertical-align: top; }
+.prose-chat th:first-child, .prose-chat td:first-child { width: 28%; }

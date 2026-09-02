@@ -103,49 +103,28 @@ export function TrafficStrip() {
 export function Topbar({ rightTrigger }: { rightTrigger?: ReactNode }) {
   const provider = useStudio((s) => s.provider);
   const plan = useStudio((s) => s.plan);
-  const title = useStudio((s) => s.diagram.title);
   const webmcp = useStudio((s) => s.webmcp);
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-1.5 pr-2">
-      <SidebarTrigger />
-      <div
-        className="min-w-0 max-w-[320px] truncate text-subtitle font-medium"
-        title={title}
-      >
-        {title ?? "Untitled"}
-      </div>
-
-
-      <div className="ml-auto flex items-center gap-2">
-        <Tabs
-          value={provider}
-          onValueChange={(v) => studio.setProvider(v as typeof provider)}
-          size="compact"
-          aria-label="Provider"
-        >
+    <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-border px-1.5 pr-2">
+      <div className="flex items-center gap-2">
+        <SidebarTrigger />
+        <Tabs value={provider} onValueChange={(v) => studio.setProvider(v as typeof provider)} size="compact" aria-label="Provider">
           <TabsList>
             <TabItem value="cloudflare" label="Cloudflare" />
             <TabItem value="vercel" label="Vercel" />
           </TabsList>
         </Tabs>
-        <Tabs
-          value={plan}
-          onValueChange={(v) => studio.setPlan(v as typeof plan)}
-          size="compact"
-          aria-label="Plan"
-        >
-          <TabsList>
-            <TabItem
-              value="free"
-              label={provider === "cloudflare" ? "Free" : "Hobby"}
-            />
-            <TabItem
-              value="paid"
-              label={provider === "cloudflare" ? "Paid" : "Pro"}
-            />
-          </TabsList>
-        </Tabs>
+      </div>
+
+      <Tabs value={plan} onValueChange={(v) => studio.setPlan(v as typeof plan)} size="compact" aria-label="Plan">
+        <TabsList>
+          <TabItem value="free" label={provider === "cloudflare" ? "Free" : "Hobby"} />
+          <TabItem value="paid" label={provider === "cloudflare" ? "Workers Paid" : "Pro"} />
+        </TabsList>
+      </Tabs>
+
+      <div className="flex items-center justify-end gap-2">
         <Tooltip
           content={
             webmcp.supported

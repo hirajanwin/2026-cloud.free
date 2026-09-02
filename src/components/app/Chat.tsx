@@ -26,7 +26,6 @@ import type { ToolDef } from "@/tools/define";
 import { tools, toolByName } from "@/tools";
 import { toClientTools } from "@/tools/define";
 import { routeToolCall } from "@/tools/webmcp";
-import { useStudio } from "@/state/store";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -63,7 +62,6 @@ type AddToolOutput = (o: {
 export function Chat() {
   const [draft, setDraft] = useState("");
   const [name] = useState(sessionName);
-  const webmcp = useStudio((s) => s.webmcp);
 
   // One schema set for both agents: the browser agent gets it via WebMCP,
   // this one gets it in the request body.
@@ -129,18 +127,22 @@ export function Chat() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-caption text-muted-foreground">
+          {messages.length === 0 ? "The architect drives the canvas through the page's tools." : `${messages.length} messages`}
+        </span>
+        {messages.length > 0 && (
+          <Button variant="ghost" size="compact" onClick={() => setMessages([])}>
+            Clear conversation
+          </Button>
+        )}
+      </div>
       <div
         id="chat-scroll"
         className="scroll-fade min-h-0 flex-1 overflow-y-auto px-1 pb-2"
       >
         {messages.length === 0 && (
           <div className="flex flex-col gap-2 pt-2">
-            <p className="text-caption text-muted-foreground">
-              The architect edits the canvas through the same {tools.length}{" "}
-              tools the browser agent sees
-              {webmcp.supported ? ", routed through document.modelContext" : ""}
-              .
-            </p>
             {SUGGESTIONS.map((s) => (
               <button
                 key={s}
@@ -208,17 +210,6 @@ export function Chat() {
           maxRows={5}
           size="compact"
         />
-        {messages.length > 0 && (
-          <div className="mt-1 flex justify-end">
-            <Button
-              variant="ghost"
-              size="compact"
-              onClick={() => setMessages([])}
-            >
-              Clear conversation
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

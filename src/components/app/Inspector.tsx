@@ -3,7 +3,7 @@
  * knobs, and the numbers flowing through it. With nothing selected it shows
  * the document's summary and the template's lesson.
  */
-import { Copy, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, Pencil, Save, Trash2 } from "lucide-react";
 import { blueprints, useBlueprints } from "@/state/blueprints";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+import { useEffect, useState } from "react";
 import { KINDS, PRODUCTS, isProductKind, type ProductKind } from "@/engine/catalog";
 import { applyPatch } from "@/engine/dsl";
 import { PRICING } from "@/engine/pricing";
@@ -77,16 +78,14 @@ function Overview() {
   return (
     <div className="flex flex-col gap-4 text-body">
       <div>
-        {open ? (
-          <input
-            value={open.name}
-            onChange={(e) => blueprints.rename(open.id, e.target.value)}
-            aria-label="Blueprint name"
-            className="w-full bg-transparent text-title font-medium outline-none"
-          />
-        ) : (
-          <div className="text-title font-medium">{diagram.title ?? "Untitled architecture"}</div>
-        )}
+        <RenameField
+          value={open ? open.name : (diagram.title ?? "")}
+          placeholder="Untitled architecture"
+          onCommit={(name) => {
+            if (open) blueprints.rename(open.id, name);
+            studio.setTitle(name);
+          }}
+        />
         <div className="text-caption text-muted-foreground">
           {diagram.nodes.length} nodes · {diagram.edges.length} edges · {diagram.groups.length} groups
           {open ? " · saved blueprint" : t ? " · template" : ""}
@@ -147,6 +146,7 @@ function Overview() {
           )}
         </div>
       )}
+      <LayerList />
       {kinds.length > 0 && (
         <div className="rounded-xl bg-surface-2 p-3 shadow-surface-1">
           <div className="text-caption font-medium text-muted-foreground">
@@ -190,9 +190,127 @@ function Overview() {
   );
 }
 
+function RenameField({ value, placeholder, onCommit }: { value: string; placeholder: string; onCommit: (v: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  if (!editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <div className="min-w-0 truncate text-title font-medium">{value || placeholder}</div>
+        <Button variant="ghost" size="compact" aria-label="Rename" onClick={() => setEditing(true)}>
+          <Pencil className="size-3.5" />
+        </Button>
+      </div>
+    );
+  }
+  const commit = () => {
+    setEditing(false);
+    if (draft.trim() !== value) onCommit(draft.trim());
+  };
+  return (
+    <input
+      autoFocus
+      value={draft}
+      placeholder={placeholder}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") {
+          setDraft(value);
+          setEditing(false);
+        }
+      }}
+      aria-label="Name"
+      className="w-full rounded-md bg-surface-2 px-2 py-1 text-title font-medium outline-none shadow-surface-1 focus-visible:outline-1"
+    />
+  );
+}
+
+/** Every node on the canvas, in document order, grouped like the canvas. Click one to inspect it. */
+function LayerList() {
+  const diagram = useStudio((s) => s.diagram);
+  const provider = useStudio((s) => s.provider);
+  const rates = useStudio((s) => s.rates);
+  const rows = (scope: string | undefined, depth: number): React.ReactNode[] => {
+    const out: React.ReactNode[] = [];
+    const items: { key: number; node?: (typeof diagram.nodes)[number]; group?: (typeof diagram.groups)[number] }[] = [];
+    diagram.nodes.forEach((n, i) => n.group === scope && items.push({ key: i, node: n }));
+    diagram.groups.forEach((g, i) => {
+      if (g.parent !== scope) return;
+      const first = diagram.nodes.findIndex((n) => n.group === g.id);
+      items.push({ key: first === -1 ? 1e6 + i : first, group: g });
+    });
+    items.sort((a, b) => a.key - b.key);
+    for (const it of items) {
+      if (it.group) {
+        out.push(
+          <li key={`g:${it.group.id}`} className="mt-1 first:mt-0">
+            <button
+              type="button"
+              onClick={() => studio.select(it.group!.id)}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-caption font-medium text-muted-foreground hover:bg-hover"
+              style={{ paddingLeft: 8 + depth * 14 }}
+            >
+              <span className="inline-block size-2 rounded-sm border border-dashed border-foreground/40" aria-hidden />
+              {it.group.label ?? it.group.id}
+            </button>
+            <ul className="flex flex-col">{rows(it.group.id, depth + 1)}</ul>
+          </li>,
+        );
+      } else if (it.node) {
+        const n = it.node;
+        const product = isProductKind(n.kind) ? PRODUCTS[provider][n.kind] : undefined;
+        const r = rates.nodes[n.id];
+        const arrivals = r ? Object.values(r.arrivals).reduce((s, v) => s + v, 0) : 0;
+        const blocked = r ? Object.values(r.blocked).reduce((s, v) => s + v, 0) : 0;
+        out.push(
+          <li key={n.id}>
+            <button
+              type="button"
+              onClick={() => studio.select(n.id)}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover"
+              style={{ paddingLeft: 8 + depth * 14 }}
+            >
+              <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
+                <Glyph kind={n.kind} size={14} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-body text-foreground">{n.label ?? product?.name ?? n.kind}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">{product?.name ?? n.kind}</span>
+              </span>
+              <span className="shrink-0 text-right text-[11px] text-numeric text-muted-foreground">
+                {n.kind === "client" ? `${formatCount(arrivals)}/d` : `${formatCount(arrivals)}/d`}
+                {blocked > 0 && <span className="block text-destructive">⊘{formatCount(blocked)}</span>}
+              </span>
+            </button>
+          </li>,
+        );
+      }
+    }
+    return out;
+  };
+  return (
+    <div className="rounded-xl bg-surface-2 p-2 shadow-surface-1">
+      <div className="px-2 pb-1 text-caption font-medium text-muted-foreground">Layers</div>
+      <ul className="flex flex-col">{rows(undefined, 0)}</ul>
+    </div>
+  );
+}
+
+function BackToLayers() {
+  return (
+    <button type="button" onClick={() => studio.select(null)} className="inline-flex items-center gap-1 self-start text-caption text-muted-foreground hover:text-foreground">
+      <ArrowLeft className="size-3.5" /> All layers
+    </button>
+  );
+}
+
 function GroupView({ id, label }: { id: string; label?: string }) {
   return (
     <div className="flex flex-col gap-3">
+      <BackToLayers />
       <div className="text-title font-medium">{label ?? id}</div>
       <p className="text-caption text-muted-foreground">
         A group is a visual boundary. It carries no traffic and no cost.
@@ -247,6 +365,7 @@ function NodeView({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col gap-4 text-body">
+      <BackToLayers />
       <div className="flex items-start gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
           <Glyph kind={node.kind} size={22} />

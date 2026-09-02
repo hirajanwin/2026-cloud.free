@@ -10,7 +10,7 @@
  */
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { BookOpen, Layers, Moon, PanelRight, Plus, Receipt, Save, Sliders, Sparkles, Sun, SunMoon, Terminal, Wrench } from "lucide-react";
+import { BookOpen, Layers, Moon, PanelRight, Plus, Receipt, Save, Sliders, Sparkles, Sun, SunMoon } from "lucide-react";
 import { useThemeContext } from "@/lib/theme-context";
 import {
   Sidebar,
@@ -29,6 +29,7 @@ import {
 import { SidebarSearchField } from "@/components/sidebar-app/search-field";
 import { SidebarWorkspaceHeader, WorkspaceTile } from "@/components/sidebar-app/workspace-header";
 import { Tabs, TabItem, TabsList } from "@/components/ui/tabs";
+import { TabsSubtle, TabsSubtleItem } from "@/components/ui/tabs-subtle";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { CATEGORY_LABEL, CATEGORY_ORDER, KINDS, PRODUCTS, PRODUCT_KINDS, type ProductKind } from "@/engine/catalog";
@@ -109,13 +110,31 @@ const PANELS: { value: PanelId; label: string; icon: typeof Layers }[] = [
   { value: "inspect", label: "Inspect", icon: Layers },
   { value: "traffic", label: "Traffic", icon: Sliders },
   { value: "bill", label: "Bill", icon: Receipt },
-  { value: "chat", label: "Architect", icon: Sparkles },
-  { value: "code", label: "DSL", icon: Terminal },
-  { value: "activity", label: "Tools", icon: Wrench },
+  { value: "chat", label: "Chat", icon: Sparkles },
 ];
+
+function ChatTabs() {
+  const chatTab = useStudio((s) => s.chatTab);
+  const tabs = [
+    { value: "chat", label: "Chat" },
+    { value: "code", label: "DSL" },
+    { value: "activity", label: "Tools" },
+  ] as const;
+  const idx = tabs.findIndex((t) => t.value === chatTab);
+  return (
+    <div className="mb-2">
+      <TabsSubtle selectedIndex={idx} onSelect={(i) => studio.setChatTab(tabs[i].value)} size="compact">
+        {tabs.map((t, i) => (
+          <TabsSubtleItem key={t.value} index={i} label={t.label} />
+        ))}
+      </TabsSubtle>
+    </div>
+  );
+}
 
 function RightRail() {
   const panel = useStudio((s) => s.panel);
+  const chatTab = useStudio((s) => s.chatTab);
   return (
     <Sidebar side="right" variant="inset" rail={false}>
       <SidebarHeader className="px-2 pt-2">
@@ -127,24 +146,31 @@ function RightRail() {
           </TabsList>
         </Tabs>
       </SidebarHeader>
-      {(panel === "inspect" || panel === "traffic" || panel === "bill" || panel === "activity") && (
+      {panel !== "chat" && (
         <SidebarContent className="px-3 pb-3 pt-2">
-          <div key={panel} className="panel-in">
+          <div key={panel} className="panel-in min-w-0">
             {panel === "inspect" && <Inspector />}
             {panel === "traffic" && <TrafficPanel />}
             {panel === "bill" && <BillPanel />}
-            {panel === "activity" && <ActivityPanel />}
           </div>
         </SidebarContent>
       )}
-      {/* Kept mounted so the conversation and the draft survive switching. */}
-      <div hidden={panel !== "chat"} className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2">
-        <ClientOnly fallback={null}>
-          <Chat />
-        </ClientOnly>
-      </div>
-      <div hidden={panel !== "code"} className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2">
-        <DslEditor />
+      {/* Chat, DSL and Tools share one panel. Chat stays mounted so the conversation survives switching. */}
+      <div hidden={panel !== "chat"} className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-1">
+        <ChatTabs />
+        <div hidden={chatTab !== "chat"} className="flex min-h-0 flex-1 flex-col">
+          <ClientOnly fallback={null}>
+            <Chat />
+          </ClientOnly>
+        </div>
+        <div hidden={chatTab !== "code"} className="flex min-h-0 flex-1 flex-col">
+          <DslEditor />
+        </div>
+        {chatTab === "activity" && (
+          <div className="panel-in min-h-0 flex-1 overflow-y-auto">
+            <ActivityPanel />
+          </div>
+        )}
       </div>
     </Sidebar>
   );
