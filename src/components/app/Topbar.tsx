@@ -120,27 +120,15 @@ export function TrafficStrip() {
         ))}
       </div>
       <div className="flex shrink-0 gap-3 text-[11px] text-numeric">
-        <span className="text-success">
-          ✓ {formatCount(snapshot.outcomes.served)}
-        </span>
-        <span className="text-destructive">
-          ⊘ {formatCount(snapshot.outcomes.blocked)}
-        </span>
-        <span className="text-warning">
-          ✕ {formatCount(snapshot.outcomes.dropped)}
-        </span>
+        <span className="text-success" title="Served">✓ {formatCount(snapshot.outcomes.served)} served</span>
+        <span className="text-destructive" title="Blocked by gates">⊘ {formatCount(snapshot.outcomes.blocked)} blocked</span>
+        <span className="text-warning" title="Dropped by free-plan caps">✕ {formatCount(snapshot.outcomes.dropped)} dropped</span>
       </div>
     </div>
   );
 }
 
-export function Topbar({
-  rightTrigger,
-  showTraffic,
-}: {
-  rightTrigger?: ReactNode;
-  showTraffic: boolean;
-}) {
+export function Topbar({ rightTrigger }: { rightTrigger?: ReactNode }) {
   const provider = useStudio((s) => s.provider);
   const plan = useStudio((s) => s.plan);
   const title = useStudio((s) => s.diagram.title);
@@ -151,7 +139,7 @@ export function Topbar({
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-1.5 pr-2">
       <SidebarTrigger />
       <div
-        className="hidden min-w-0 max-w-[220px] truncate text-subtitle font-medium md:block"
+        className="min-w-0 max-w-[320px] truncate text-subtitle font-medium"
         title={title}
       >
         {title ?? "Untitled"}
