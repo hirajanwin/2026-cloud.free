@@ -173,16 +173,16 @@ function snake(all: LaidOutNode[], viewport?: { width: number; height: number })
   if (rows.length < 2) return { nodes: all, width: 0, height: 0 };
 
   const out = new Map(all.map((n) => [n.id, { ...n }]));
+  const rowWidth = (cols: LaidOutNode[][]) => cols.reduce((s, c) => s + colWidth(c), 0) + GAP_X * (cols.length - 1);
+  const totalW = Math.max(...rows.map(rowWidth));
   let y = 0;
-  let totalW = 0;
   rows.forEach((cols, r) => {
     const reverse = r % 2 === 1;
     const rowH = Math.max(...cols.map(colHeight));
     const widths = cols.map(colWidth);
-    const rowW = widths.reduce((s, w) => s + w, 0) + GAP_X * (cols.length - 1);
-    totalW = Math.max(totalW, rowW);
-    // Odd rows run right-to-left, aligned to the right edge so the chain bends back.
-    let x = reverse ? rowW : 0;
+    // Odd rows run right-to-left from the shared right edge, so the chain
+    // bends back directly under the previous row's last column.
+    let x = reverse ? totalW : 0;
     cols.forEach((c, i) => {
       const w = widths[i];
       const left = reverse ? x - w : x;
