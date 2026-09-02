@@ -18,6 +18,7 @@ import {
   ReactFlowProvider,
   getSmoothStepPath,
   useReactFlow,
+  useNodesInitialized,
   type Edge,
   type EdgeProps,
   type Node,
@@ -329,6 +330,7 @@ function CanvasInner() {
   const [nodes, setNodes] = useState<RFNode[]>([]);
   const [edges, setEdges] = useState<RFEdge[]>([]);
   const { fitView } = useReactFlow();
+  const nodesInitialized = useNodesInitialized();
   const layoutRun = useRef(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pendingFit = useRef(false);
@@ -413,15 +415,14 @@ function CanvasInner() {
   // Fit once React has committed a freshly laid-out node set (layout mode or
   // document change). Calling fitView before the commit measures stale nodes.
   useEffect(() => {
-    if (!pendingFit.current) return;
+    if (!pendingFit.current || !nodesInitialized) return;
     pendingFit.current = false;
-    const t1 = setTimeout(() => fitView({ padding: 0.12, duration: 250 }), 60);
-    const t2 = setTimeout(() => fitView({ padding: 0.12, duration: 200 }), 520);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [nodes, fitView]);
+    // Two passes: once now that every node is measured, once after the
+    // sidebars' width springs have settled.
+    fitView({ padding: 0.12, duration: 250 });
+    const t = setTimeout(() => fitView({ padding: 0.12, duration: 200 }), 500);
+    return () => clearTimeout(t);
+  }, [nodes, nodesInitialized, fitView]);
 
   const withSelection = useMemo(() => nodes.map((n) => ({ ...n, selected: n.id === selectedId })), [nodes, selectedId]);
 
