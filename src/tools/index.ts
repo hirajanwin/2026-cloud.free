@@ -351,7 +351,9 @@ export const tools: ToolDef[] = [
       "Set requests per day and the share of each request class (human, googlebot, ai-crawler, scraper, botnet). Shares are normalised. Omitted fields keep their value.",
     schema: z.object({
       perDay: z.number().min(0).max(1e10).optional(),
-      shares: z.record(ClassSchema, z.number().min(0).max(1)).optional(),
+      shares: z
+        .object(Object.fromEntries(REQUEST_CLASSES.map((c) => [c, z.number().min(0).max(1).optional()])) as Record<RequestClass, z.ZodOptional<z.ZodNumber>>)
+        .optional(),
     }),
     execute: ({ perDay, shares }) => {
       studio.setMix({
