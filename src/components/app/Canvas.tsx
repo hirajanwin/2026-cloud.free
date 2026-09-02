@@ -444,7 +444,7 @@ function CanvasInner() {
       >
         <svg style={{ position: "absolute", width: 0, height: 0 }} aria-hidden>
           <defs>
-            <marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" fill="color-mix(in oklab, var(--foreground) 45%, transparent)" />
             </marker>
           </defs>

@@ -97,6 +97,14 @@ export async function routeToolCall(
 
 /** executeTool returns our `{ content: [{ type: "text", text }] }`; hand back the JSON inside. */
 function unwrap(raw: unknown): unknown {
+  // Chrome hands back the envelope as a JSON string.
+  if (typeof raw === "string") {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      return raw;
+    }
+  }
   if (raw && typeof raw === "object" && "content" in raw) {
     const content = (
       raw as { content?: Array<{ type?: string; text?: string }> }

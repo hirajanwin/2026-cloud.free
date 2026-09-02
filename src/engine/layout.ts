@@ -10,7 +10,7 @@ import ELK, {
 } from "elkjs/lib/elk.bundled.js";
 import type { Diagram, Direction } from "./dsl";
 
-export const NODE_W = 216;
+export const NODE_W = 240;
 export const NODE_H = 68;
 const GROUP_PAD = { top: 44, left: 16, right: 16, bottom: 16 };
 
