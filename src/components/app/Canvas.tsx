@@ -329,17 +329,41 @@ function CanvasInner() {
   const theme = useResolvedTheme();
   const [nodes, setNodes] = useState<RFNode[]>([]);
   const [edges, setEdges] = useState<RFEdge[]>([]);
-  const { fitView } = useReactFlow();
+  const { fitBounds } = useReactFlow();
   const nodesInitialized = useNodesInitialized();
+  const nodesRef = useRef<RFNode[]>([]);
   const layoutRun = useRef(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pendingFit = useRef(false);
 
+  /** Bounds from our own geometry: measurement-independent, so the fit is exact on first paint. */
+  const fitAll = useCallback(
+    (duration = 200) => {
+      const all = nodesRef.current;
+      if (all.length === 0) return;
+      const byId = new Map(all.map((n) => [n.id, n]));
+      const abs = (n: RFNode): { x: number; y: number } => {
+        const p = n.parentId ? byId.get(n.parentId) : undefined;
+        if (!p) return n.position;
+        const pp = abs(p);
+        return { x: pp.x + n.position.x, y: pp.y + n.position.y };
+      };
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const n of all) {
+        const { x, y } = abs(n);
+        const w = n.width ?? NODE_W;
+        const h = n.height ?? NODE_H;
+        minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x + w); maxY = Math.max(maxY, y + h);
+      }
+      fitBounds({ x: minX, y: minY, width: maxX - minX, height: maxY - minY }, { padding: 0.12, duration });
+    },
+    [fitBounds],
+  );
+
   const refit = useCallback(() => {
-    requestAnimationFrame(() => requestAnimationFrame(() => fitView({ padding: 0.12, duration: 250 })));
-    setTimeout(() => fitView({ padding: 0.12, duration: 200 }), 400);
-    setTimeout(() => fitView({ padding: 0.12, duration: 200 }), 900);
-  }, [fitView]);
+    requestAnimationFrame(() => requestAnimationFrame(() => fitAll(250)));
+    setTimeout(() => fitAll(200), 400);
+  }, [fitAll]);
 
   useEffect(() => {
     const run = ++layoutRun.current;
@@ -359,6 +383,7 @@ function CanvasInner() {
         next.push({ id: n.id, type: "product", position: { x: l.x, y: l.y }, width: NODE_W, height: NODE_H, parentId: l.parentId,  data: { id: n.id, kind: n.kind, label: n.label, direction: l.direction ?? diagram.direction } });
       }
       pendingFit.current = true;
+      nodesRef.current = next;
       setNodes(next);
       setEdges(
         diagram.edges.map((e, i) => ({
@@ -419,10 +444,10 @@ function CanvasInner() {
     pendingFit.current = false;
     // Two passes: once now that every node is measured, once after the
     // sidebars' width springs have settled.
-    fitView({ padding: 0.12, duration: 250 });
-    const t = setTimeout(() => fitView({ padding: 0.12, duration: 200 }), 500);
+    fitAll(250);
+    const t = setTimeout(() => fitAll(200), 500);
     return () => clearTimeout(t);
-  }, [nodes, nodesInitialized, fitView]);
+  }, [nodes, nodesInitialized, fitAll]);
 
   const withSelection = useMemo(() => nodes.map((n) => ({ ...n, selected: n.id === selectedId })), [nodes, selectedId]);
 
@@ -466,7 +491,7 @@ function CanvasInner() {
         onInit={() => {
           // First paint: the sidebars are still springing to their width, so fit
           // a few times while the container settles.
-          for (const ms of [100, 400, 900, 1600]) setTimeout(() => fitView({ padding: 0.12, duration: 200 }), ms);
+          for (const ms of [100, 400, 900, 1600]) setTimeout(() => fitAll(200), ms);
         }}
         onNodesChange={(changes) => {
           for (const c of changes) {
@@ -492,7 +517,7 @@ function CanvasInner() {
           studio.setPanel("inspect");
         }}
         onPaneClick={() => studio.select(null)}
-        onNodeDragStop={() => setNodes((prev) => fitGroups(prev))}
+        onNodeDragStop={() => setNodes((prev) => { const next = fitGroups(prev); nodesRef.current = next; return next; })}
         onConnect={onConnect}
         isValidConnection={isValidConnection}
         onNodesDelete={onNodesDelete}
