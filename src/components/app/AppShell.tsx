@@ -292,6 +292,12 @@ function AppSidebar() {
 
   const [providerFilter, setProviderFilter] = useState<"all" | Provider | VendorId>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [tab, setTab] = useState<"net" | "node">("net");
+  /** Opening a net moves you to Node so the next click adds to it. */
+  const openNet = () => {
+    setTab("node");
+    goStudio();
+  };
 
   const addService = (service: string, label: string) => {
     const s = studio.get();
@@ -362,47 +368,56 @@ function AppSidebar() {
           </div>
           <ThemeButton />
         </div>
+        {/* Net: the designs. Node: what you add to them. Opening a net jumps to Node. */}
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "net" | "node")} size="compact" aria-label="Sidebar section">
+          <TabsList className="w-full">
+            <TabItem value="net" label="Net" className="flex-1 justify-center" />
+            <TabItem value="node" label="Node" className="flex-1 justify-center" />
+          </TabsList>
+        </Tabs>
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-1">
             <div className="min-w-0 flex-1">
-              <SidebarSearchField placeholder="Search freenets, products…" shortcut="/" value={query} onChange={(e) => setQuery(e.target.value)} />
+              <SidebarSearchField placeholder={tab === "net" ? "Search freenets…" : "Search products…"} shortcut="/" value={query} onChange={(e) => setQuery(e.target.value)} />
             </div>
-            <Button variant="ghost" size="compact" aria-label="Filter products" aria-pressed={showFilters} onClick={() => setShowFilters((v) => !v)} className={showFilters ? "text-foreground" : "text-muted-foreground"}>
-              <SlidersHorizontal className="size-3.5" />
-            </Button>
+            {tab === "node" && (
+              <Button variant="ghost" size="compact" aria-label="Filter products" aria-pressed={showFilters} onClick={() => setShowFilters((v) => !v)} className={showFilters ? "text-foreground" : "text-muted-foreground"}>
+                <SlidersHorizontal className="size-3.5" />
+              </Button>
+            )}
           </div>
-          {showFilters && (
+          {tab === "node" && showFilters && (
             <Tabs value={providerFilter} onValueChange={(v) => setProviderFilter(v as "all" | Provider | VendorId)} size="compact" aria-label="Provider filter">
               <TabsList className="w-full">
                 <TabItem value="all" label="All" className="flex-1 justify-center" />
-                <TabItem value="cloudflare" label="Cloudflare" className="flex-1 justify-center" />
+                <TabItem value="cloudflare" label="CF" title="Cloudflare" className="flex-1 justify-center" />
                 <TabItem value="vercel" label="Vercel" className="flex-1 justify-center" />
+                <TabItem value="openai" label="OpenAI" className="flex-1 justify-center" />
+                <TabItem value="shopify" label="Shopify" className="flex-1 justify-center" />
+                <TabItem value="netlify" label="Netlify" className="flex-1 justify-center" />
               </TabsList>
             </Tabs>
           )}
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                icon={Plus}
-                onClick={() => {
-                  blueprints.create();
-                  studio.setPanel("inspect");
-                  goStudio();
-                }}
-              >
-                New freenet
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
-        {(mine.length > 0 || !q) && (
+        {tab === "net" && (mine.length > 0 || !q) && (
           <SidebarGroup>
             <SidebarGroupLabel>Freenets</SidebarGroupLabel>
             <SidebarMenu>
-              {mine.length === 0 && <div className="px-2 py-1 text-caption text-muted-foreground">Nothing saved yet. Remix a template or save the canvas.</div>}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  icon={Plus}
+                  onClick={() => {
+                    blueprints.create();
+                    studio.setPanel("inspect");
+                    openNet();
+                  }}
+                >
+                  New freenet
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               {mine.map((b) => (
                 <SidebarMenuItem key={b.id}>
                   <SidebarMenuButton
@@ -410,7 +425,7 @@ function AppSidebar() {
                     isActive={blueprintId === b.id && pathname === "/"}
                     onClick={() => {
                       blueprints.open(b.id);
-                      goStudio();
+                      openNet();
                     }}
                   >
                     <span className="truncate">{b.name}</span>
@@ -422,20 +437,22 @@ function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {starters.length > 0 && (
+        {tab === "net" && starters.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel>Templates</SidebarGroupLabel>
+            <SidebarGroupLabel>Default nets</SidebarGroupLabel>
             <SidebarMenu>
               {starters.map((t) => (
                 <SidebarMenuItem key={t.id}>
-                  <SidebarMenuButton isActive={templateId === t.id && pathname === "/"}
+                  <SidebarMenuButton
+                    isActive={templateId === t.id && pathname === "/"}
                     onClick={() => {
                       studio.loadTemplate(t.id);
                       studio.setPanel("inspect");
-                      goStudio();
+                      openNet();
                     }}
                   >
-                    {t.name}
+                    <span className="truncate">{t.name}</span>
+                    <SidebarMenuBadge>default</SidebarMenuBadge>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -443,8 +460,7 @@ function AppSidebar() {
           </SidebarGroup>
         )}
 
-
-        {productSections.map((sec) => (
+        {tab === "node" && productSections.map((sec) => (
           <SidebarGroup key={sec.key}>
             <SidebarGroupLabel>{sec.label}</SidebarGroupLabel>
             <SidebarMenu>
@@ -480,7 +496,7 @@ function AppSidebar() {
             </SidebarMenu>
           </SidebarGroup>
         ))}
-        {q && mine.length + starters.length + productSections.length === 0 && (
+        {q && (tab === "net" ? mine.length + starters.length : productSections.length) === 0 && (
           <div className="px-3 py-2 text-caption text-muted-foreground">Nothing matches “{query}”.</div>
         )}
       </SidebarContent>

@@ -25,12 +25,8 @@ import {
   type Node,
   type NodeProps,
   ControlButton,
-  getNodesBounds,
-  getViewportForBounds,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { domToPng } from "modern-screenshot";
-import { downloadImage, registerCanvasExporter, safeFilename } from "@/lib/canvas-export";
 import { KINDS, PRODUCTS, isProductKind } from "@/engine/catalog";
 import { resolveService } from "@/engine/services";
 import type { Direction } from "@/engine/dsl";
@@ -310,48 +306,6 @@ function EdgeStyleControls() {
         </ControlButton>
       ))}
     </>
-  );
-}
-
-/** Registers the PNG exporter and offers a camera button in the controls stack. */
-function ExportControl() {
-  const rf = useReactFlow();
-  const title = useStudio((s) => s.diagram.title);
-  useEffect(() => {
-    return registerCanvasExporter(async ({ scale = 2, padding = 48 }) => {
-      const nodes = rf.getNodes();
-      const el = document.querySelector(".react-flow__viewport") as HTMLElement | null;
-      if (!el || nodes.length === 0) throw new Error("Nothing on the canvas to export.");
-      const bounds = getNodesBounds(nodes);
-      const width = Math.ceil(bounds.width + padding * 2);
-      const height = Math.ceil(bounds.height + padding * 2);
-      const vp = getViewportForBounds(bounds, width, height, 0.1, 4, padding);
-      const bg = getComputedStyle(document.documentElement).getPropertyValue("--surface-2").trim() || "#1e1e1e";
-      const dataUrl = await domToPng(el, {
-        backgroundColor: bg,
-        width,
-        height,
-        scale,
-        style: { width: `${width}px`, height: `${height}px`, transform: `translate(${vp.x}px, ${vp.y}px) scale(${vp.zoom})` },
-        filter: (node) => !(node instanceof HTMLElement && node.classList.contains("react-flow__minimap")),
-      });
-      return { dataUrl, width: width * scale, height: height * scale, bytes: Math.round((dataUrl.length * 3) / 4) };
-    });
-  }, [rf]);
-  return (
-    <ControlButton
-      title="Save canvas as image"
-      aria-label="Save canvas as image"
-      className="!text-muted-foreground"
-      onClick={() => {
-        void import("@/lib/canvas-export").then(({ exportCanvasImage }) => exportCanvasImage({}).then((img) => downloadImage(img, safeFilename(title))));
-      }}
-    >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ fill: "none" }}>
-        <path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
-        <circle cx="12" cy="12.5" r="3.2" />
-      </svg>
-    </ControlButton>
   );
 }
 
@@ -659,7 +613,6 @@ function CanvasInner() {
         <Controls showInteractive={false} className="!shadow-surface-2">
           <LayoutControls />
           <EdgeStyleControls />
-          <ExportControl />
         </Controls>
         <MiniMap position="top-right" pannable zoomable className="!hidden lg:!block" nodeStrokeWidth={2} style={{ width: 140, height: 90 }} />
       </ReactFlow>
