@@ -72,7 +72,10 @@ export function Timeline() {
         const line = candidates[0];
         const product = isProductKind(n.kind) ? PRODUCTS[provider][n.kind] : undefined;
         return { id: n.id, label: n.label ?? product?.name ?? n.kind, product: product?.name ?? n.kind, line };
-      });
+      })
+      // Metered rows first, tightest first; unmetered layers trail so the
+      // rows that can break are the ones on screen.
+      .sort((a, b) => (a.line?.crossDay ?? Infinity) - (b.line?.crossDay ?? Infinity));
   }, [diagram, rates, lines, provider]);
 
   const pos = Math.min(1, elapsed / MONTH_S);
@@ -329,7 +332,7 @@ function TracksView({
         </div>
         <div />
       </div>
-      <div className="col-span-3 max-h-[168px] overflow-y-auto">
+      <div className="col-span-3 max-h-[188px] overflow-y-auto">
         <div className="relative grid grid-cols-[minmax(150px,200px)_minmax(0,1fr)_64px] gap-x-3 gap-y-1">
           {tracks.map((t) => {
             const l = t.line;
@@ -348,7 +351,7 @@ function TracksView({
                   <span className="w-full truncate text-[11.5px] text-foreground">{t.label}</span>
                   <span className="w-full truncate text-[10px] text-muted-foreground">{l ? l.label : `${t.product} · unmetered`}</span>
                 </button>
-                <div className="relative h-8 cursor-ew-resize select-none rounded-md bg-surface-3/60" {...scrubHandlers}>
+                <div className={`relative cursor-ew-resize select-none rounded-md bg-surface-3/60 ${l ? "h-8" : "h-5"}`} {...scrubHandlers}>
                   <svg viewBox={`0 0 30 ${Y_MAX}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden>
                     {/* 100% rule */}
                     <line x1="0" x2="30" y1={Y_MAX - 100} y2={Y_MAX - 100} stroke="color-mix(in oklab, var(--foreground) 28%, transparent)" strokeWidth="1" vectorEffect="non-scaling-stroke" strokeDasharray="3 3" />
