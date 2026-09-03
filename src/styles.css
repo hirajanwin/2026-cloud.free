@@ -714,7 +714,7 @@ html.transitioning *::after {
 ============================================================================ */
 
 .react-flow {
-  --xy-background-color: var(--surface-1);
+  --xy-background-color: var(--surface-2);
   --xy-background-pattern-color: rgb(var(--overlay) / 0.08);
   --xy-edge-stroke: color-mix(in oklab, var(--foreground) 28%, transparent);
   --xy-edge-stroke-selected: var(--foreground);
@@ -813,9 +813,9 @@ html.transitioning *::after {
 /* ── Text motion ─────────────────────────────────────────────────────────── */
 
 /* Odometer digits. Each digit is a 1em window over a column of 0–9. */
-.rolling { display: inline-flex; align-items: baseline; font-variant-numeric: tabular-nums; }
-.rolling-static { display: inline-block; }
-.rolling-digit { display: inline-block; height: 1em; line-height: 1; overflow: hidden; vertical-align: baseline; position: relative; top: 0.08em; }
+.rolling { display: inline-flex; align-items: flex-end; line-height: 1; font-variant-numeric: tabular-nums; }
+.rolling-static { display: inline-block; height: 1em; line-height: 1; }
+.rolling-digit { display: inline-block; height: 1em; line-height: 1; overflow: hidden; }
 .rolling-column { display: flex; flex-direction: column; line-height: 1; transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1); will-change: transform; }
 .rolling-column > span { display: block; height: 1em; }
 
@@ -841,3 +841,10 @@ html.transitioning *::after {
   .rolling-column { transition: none; }
   .text-in, .cycling-item, .act-in, .dot-pulse, .value-flash { animation: none; }
 }
+
+/* ── Shell ───────────────────────────────────────────────────────────────── */
+/* The frame behind both sidebars sits a step below the main panel, so the
+   inset panel reads as a card on the shell rather than a region on the same plane. */
+:root { --shell: light-dark(#efefee, #101010); }
+.group\/sidebar-wrapper { background: var(--shell) !important; }
+[data-sidebar="sidebar"] { background: transparent !important; }

@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <RightSidebarBridge>
         <SidebarProvider peek="hover" className="h-svh min-w-0 flex-1 overflow-hidden">
           <AppSidebar />
-          <SidebarInset className={`flex min-h-0 flex-col overflow-hidden ${isStudio ? "!mr-0" : ""}`}>
+          <SidebarInset className={`flex min-h-0 flex-col overflow-hidden bg-surface-2 shadow-surface-2 ${isStudio ? "!mr-0" : ""}`}>
             <Topbar rightTrigger={isStudio ? <RightTrigger /> : null} />
             {isStudio && <TrafficStrip />}
             <div className={`flex min-h-0 flex-1 flex-col ${isStudio ? "" : "overflow-y-auto"}`}>{children}</div>

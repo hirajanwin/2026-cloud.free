@@ -104,7 +104,7 @@ export function Timeline() {
   const atEnd = elapsed >= periodS;
 
   return (
-    <div className="border-t border-border bg-surface-2 px-4 py-2.5">
+    <div className="bg-surface-2 px-4 py-2.5">
       {/* header: clock, position, speed, view */}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-caption text-muted-foreground">
         <span className="inline-flex items-center gap-2">
@@ -153,7 +153,6 @@ export function Timeline() {
           </span>
         </span>
         <span className="inline-flex items-center gap-3">
-          <span className="hidden xl:inline">Drag anywhere on the track to scrub.</span>
           <span className="inline-flex overflow-hidden rounded-md bg-muted p-0.5">
             {(["bar", "tracks"] as const).map((v) => (
               <button
@@ -431,7 +430,6 @@ function TracksView({
           </span>
           {span < MONTH_DAYS && <span className="text-numeric">from day {start.toFixed(1)}</span>}
         </span>
-        <span>Drag to scrub · shift-scroll to pan · click a row to focus its node</span>
       </div>
 
       {/* Fixed label/value widths so one playhead can span every row in the scroll area. */}

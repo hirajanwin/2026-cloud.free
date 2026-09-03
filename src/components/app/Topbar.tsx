@@ -82,7 +82,7 @@ export function TrafficStrip() {
   const shown = useGlide(offered);
 
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-6 border-b border-border bg-surface-2 px-4 py-2">
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-6 bg-surface-2 px-4 py-2">
 
       {/* headline number */}
       <div className="min-w-[132px]">
@@ -132,7 +132,7 @@ export function Topbar({ rightTrigger }: { rightTrigger?: ReactNode }) {
   const webmcp = useStudio((s) => s.webmcp);
 
   return (
-    <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-border px-1.5 pr-2">
+    <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center px-1.5 pr-2">
       <div className="flex items-center gap-2">
         <SidebarTrigger />
         <Tabs value={provider} onValueChange={(v) => studio.setProvider(v as typeof provider)} size="compact" aria-label="Provider">
