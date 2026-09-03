@@ -45,6 +45,7 @@ import { BillPanel } from "./BillPanel";
 import { Chat } from "./Chat";
 import { DslEditor } from "./DslEditor";
 import { ActivityPanel } from "./ActivityPanel";
+import { AlternativesPanel } from "./AlternativesPanel";
 import { ClientOnly } from "@tanstack/react-router";
 
 /* ------------------------------------------------------------------ *
@@ -119,6 +120,7 @@ function ChatTabs() {
     { value: "chat", label: "Chat" },
     { value: "code", label: "DSL" },
     { value: "activity", label: "Tools" },
+    { value: "alternatives", label: "Alternatives" },
   ] as const;
   const idx = tabs.findIndex((t) => t.value === chatTab);
   return (
@@ -169,6 +171,11 @@ function RightRail() {
         {chatTab === "activity" && (
           <div className="panel-in min-h-0 flex-1 overflow-y-auto">
             <ActivityPanel />
+          </div>
+        )}
+        {chatTab === "alternatives" && (
+          <div className="panel-in min-h-0 flex-1 overflow-y-auto">
+            <AlternativesPanel />
           </div>
         )}
       </div>

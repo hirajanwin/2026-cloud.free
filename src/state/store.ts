@@ -31,7 +31,13 @@ export interface ProductAnalysis {
 }
 
 export type PanelId = "inspect" | "traffic" | "bill" | "chat";
-export type ChatTab = "chat" | "code" | "activity";
+export type ChatTab = "chat" | "code" | "activity" | "alternatives";
+/** How long the simulation runs for. The timeline spans exactly this. */
+export type Period = "day" | "month" | "year";
+export const PERIOD_DAYS: Record<Period, number> = { day: 1, month: 30, year: 365 };
+export const periodSeconds = (p: Period) => PERIOD_DAYS[p] * 86_400;
+/** Real seconds a full period takes to play. */
+const PLAY_SECONDS = 90;
 /** How the canvas arranges nodes. "flow" follows the DSL direction; "snake" wraps the flow into rows. */
 export type ViewLayout = "flow" | "snake";
 export type EdgeStyleMode = "curved" | "step" | "straight";
@@ -44,8 +50,9 @@ export interface StudioState {
   plan: Plan;
   mix: TrafficMix;
   protections: Protections;
-  /** Simulated seconds per real second. */
+  /** Simulated seconds per real second (derived from the period). */
   speed: number;
+  period: Period;
   running: boolean;
   snapshot: Snapshot;
   rates: Rates;
@@ -96,7 +103,8 @@ function createInitial(): StudioState {
     source: DEFAULT_TEMPLATE.dsl,
     parseErrors: errors,
     ...base,
-    speed: 4 * 3600, // four simulated hours per second: a month in three minutes
+    speed: periodSeconds("month") / PLAY_SECONDS,
+    period: "month",
     running: true,
     snapshot: engine.snapshot(),
     rates: engine.currentRates,
@@ -276,8 +284,14 @@ export const studio = {
     set({ speed: Math.max(1, speed) });
   },
 
+  /** Choose the simulated period. The clock restarts and plays the whole period in ~90 s. */
+  setPeriod(period: Period) {
+    engine.reset();
+    set({ period, speed: periodSeconds(period) / PLAY_SECONDS, snapshot: engine.snapshot(), running: true });
+  },
+
   setRunning(running: boolean) {
-    if (running && engine.snapshot().elapsedS >= MONTH_S) engine.reset();
+    if (running && engine.snapshot().elapsedS >= periodSeconds(state.period)) engine.reset();
     set({ running, snapshot: engine.snapshot() });
   },
 
@@ -288,7 +302,7 @@ export const studio = {
 
   /** Scrub the clock. Pauses so the reader can look. */
   seek(simSeconds: number) {
-    engine.seek(simSeconds);
+    engine.seek(Math.min(periodSeconds(state.period), simSeconds));
     set({ snapshot: engine.snapshot(), running: false });
   },
 
@@ -322,11 +336,12 @@ function tick(nowMs: number) {
   lastT = nowMs;
   if (state.running) {
     const before = engine.snapshot().elapsedS;
-    if (before >= MONTH_S) {
+    const end = periodSeconds(state.period);
+    if (before >= end) {
       // End of the simulated month: stop, so "play" reads as "run the month".
       set({ running: false });
     } else {
-      engine.advance(Math.min(dt * state.speed, MONTH_S - before));
+      engine.advance(Math.min(dt * state.speed, end - before));
     }
   }
   if (nowMs - lastPublish >= PUBLISH_MS) {

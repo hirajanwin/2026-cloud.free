@@ -12,7 +12,7 @@ import { Pause, Play, RotateCcw } from "lucide-react";
 import { computeBill, type BillLine } from "@/engine/pricing";
 import { PRODUCTS, isProductKind } from "@/engine/catalog";
 import { formatCount, formatUnit } from "@/lib/format";
-import { MONTH_S, studio, useStudio } from "@/state/store";
+import { PERIOD_DAYS, periodSeconds, studio, useStudio, type Period } from "@/state/store";
 import { Tooltip } from "@/components/ui/tooltip";
 import { toneFor } from "@/lib/tones";
 
@@ -20,11 +20,13 @@ const DAY = 86_400;
 const MONTH_DAYS = 30;
 /** One hue per meter so the legend and the markers read together. */
 const METER_TONES = ["var(--info)", "var(--success)", "var(--warning)", "#a78bfa", "#f472b6", "#22d3ee", "#fb923c", "#34d399"];
-const SPEEDS: { label: string; value: number; help: string }[] = [
-  { label: "1 h/s", value: 3600, help: "One simulated hour per real second: the month plays in 12 minutes." },
-  { label: "4 h/s", value: 4 * 3600, help: "Four simulated hours per real second: the month plays in 3 minutes." },
-  { label: "1 d/s", value: DAY, help: "One simulated day per real second: the month plays in 30 seconds." },
+const PERIODS: { value: Period; label: string; help: string }[] = [
+  { value: "day", label: "Day", help: "Simulate one day. Daily caps show where in the day they hit." },
+  { value: "month", label: "Month", help: "Simulate one billing month (30 days). Monthly allowances and daily caps both apply." },
+  { value: "year", label: "Year", help: "Simulate a year. Monthly allowances reset twelve times; you see the steady-state rhythm." },
 ];
+const SPANS_FOR: Record<Period, readonly number[]> = { day: [1, 0.5, 0.25], month: [30, 14, 7, 3, 1], year: [365, 180, 90, 30, 7] };
+const MONTH_LEN = 365 / 12;
 /** Vertical scale of a track, in percent of allowance. */
 const Y_MAX = 160;
 
@@ -36,7 +38,9 @@ interface TrackLine extends BillLine {
 export function Timeline() {
   const elapsed = useStudio((s) => s.snapshot.elapsedS);
   const running = useStudio((s) => s.running);
-  const speed = useStudio((s) => s.speed);
+  const period = useStudio((s) => s.period);
+  const periodDays = PERIOD_DAYS[period];
+  const periodS = periodSeconds(period);
   const rates = useStudio((s) => s.rates);
   const provider = useStudio((s) => s.provider);
   const plan = useStudio((s) => s.plan);
@@ -79,13 +83,13 @@ export function Timeline() {
       .sort((a, b) => (a.line?.crossDay ?? Infinity) - (b.line?.crossDay ?? Infinity));
   }, [diagram, rates, lines, provider]);
 
-  const pos = Math.min(1, elapsed / MONTH_S);
+  const pos = Math.min(1, elapsed / periodS);
   const seekTo = (clientX: number) => {
     const el = trackRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
     const k = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
-    studio.seek(k * MONTH_S);
+    studio.seek(k * periodS);
   };
   const scrubHandlers = {
     onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
@@ -96,7 +100,7 @@ export function Timeline() {
       if (e.buttons & 1) seekTo(e.clientX);
     },
   };
-  const atEnd = elapsed >= MONTH_S;
+  const atEnd = elapsed >= periodS;
 
   return (
     <div className="border-t border-border bg-surface-2 px-4 py-2.5">
@@ -122,22 +126,26 @@ export function Timeline() {
             <RotateCcw className="size-3.5" />
           </button>
           <span>
-            Day <span className="text-numeric text-foreground">{(elapsed / DAY).toFixed(1)}</span> of {MONTH_DAYS}
-            {atEnd && !running ? " · month complete" : ""}
+            {period === "day" ? (
+              <>Hour <span className="text-numeric text-foreground">{((elapsed / DAY) * 24).toFixed(1)}</span> of 24</>
+            ) : (
+              <>Day <span className="text-numeric text-foreground">{(elapsed / DAY).toFixed(1)}</span> of {periodDays}</>
+            )}
+            {atEnd && !running ? ` · ${period} complete` : ""}
           </span>
           <span className="ml-1 inline-flex items-center gap-1 text-[10.5px]">
-            <span className="hidden lg:inline">Speed</span>
+            <span className="hidden lg:inline">Simulate a</span>
           </span>
           <span className="inline-flex overflow-hidden rounded-md bg-muted p-0.5">
-            {SPEEDS.map((s) => (
-              <Tooltip key={s.value} content={s.help}>
+            {PERIODS.map((p) => (
+              <Tooltip key={p.value} content={p.help}>
                 <button
                   type="button"
-                  onClick={() => studio.setSpeed(s.value)}
-                  className={`rounded px-1.5 py-0.5 text-[10.5px] text-numeric transition-colors ${speed === s.value ? "bg-surface-4 text-foreground shadow-surface-1" : "text-muted-foreground hover:text-foreground"}`}
-                  aria-pressed={speed === s.value}
+                  onClick={() => studio.setPeriod(p.value)}
+                  className={`rounded px-2 py-0.5 text-[10.5px] transition-colors ${period === p.value ? "bg-surface-4 text-foreground shadow-surface-1" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-pressed={period === p.value}
                 >
-                  {s.label}
+                  {p.label}
                 </button>
               </Tooltip>
             ))}
@@ -162,9 +170,9 @@ export function Timeline() {
       </div>
 
       {view === "bar" ? (
-        <BarView lines={lines} tone={tone} pos={pos} trackRef={trackRef} scrubHandlers={scrubHandlers} elapsed={elapsed} />
+        <BarView lines={lines} tone={tone} pos={pos} trackRef={trackRef} scrubHandlers={scrubHandlers} elapsed={elapsed} periodDays={periodDays} />
       ) : (
-        <TracksView tracks={tracks} tone={tone} pos={pos} trackRef={trackRef} scrubHandlers={scrubHandlers} elapsed={elapsed} plan={plan} selectedId={selectedId} />
+        <TracksView tracks={tracks} tone={tone} pos={pos} trackRef={trackRef} scrubHandlers={scrubHandlers} elapsed={elapsed} plan={plan} selectedId={selectedId} period={period} />
       )}
     </div>
   );
@@ -181,6 +189,7 @@ function BarView({
   trackRef,
   scrubHandlers,
   elapsed,
+  periodDays,
 }: {
   lines: TrackLine[];
   tone: Map<string, string>;
@@ -188,8 +197,10 @@ function BarView({
   trackRef: React.RefObject<HTMLDivElement | null>;
   scrubHandlers: { onPointerDown: (e: React.PointerEvent<HTMLElement>) => void; onPointerMove: (e: React.PointerEvent<HTMLElement>) => void };
   elapsed: number;
+  periodDays: number;
 }) {
   const shown = lines.slice(0, 6);
+  const MONTH_DAYS = periodDays;
   return (
     <>
       <div
@@ -197,7 +208,7 @@ function BarView({
         role="slider"
         aria-label="Simulated time"
         aria-valuemin={0}
-        aria-valuemax={MONTH_DAYS}
+        aria-valuemax={periodDays}
         aria-valuenow={Number((elapsed / DAY).toFixed(1))}
         tabIndex={0}
         className="relative mt-2 h-8 cursor-ew-resize select-none"
@@ -209,8 +220,8 @@ function BarView({
       >
         <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-muted" />
         <div className="absolute left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-foreground/70 transition-[width] duration-100" style={{ width: `${pos * 100}%` }} />
-        {Array.from({ length: MONTH_DAYS + 1 }, (_, d) => (
-          <span key={d} className="absolute top-1/2 h-1 w-px -translate-y-1/2 bg-foreground/15" style={{ left: `${(d / MONTH_DAYS) * 100}%` }} />
+        {Array.from({ length: Math.min(periodDays, 30) + 1 }, (_, d) => (
+          <span key={d} className="absolute top-1/2 h-1 w-px -translate-y-1/2 bg-foreground/15" style={{ left: `${(d / Math.min(periodDays, 30)) * 100}%` }} />
         ))}
         {shown.map((l, i) => {
           if (!Number.isFinite(l.crossDay)) return null;
@@ -262,45 +273,55 @@ function BarView({
  * window of the month, one continuous playhead, live readout while scrubbing.
  * ------------------------------------------------------------------ */
 
-const SPANS = [30, 14, 7, 3, 1] as const;
 
-/** Path for a meter's usage as percent of allowance over [start, start+span] days, in a span × Y_MAX space (y grows downward). */
-function trackPath(line: TrackLine, start: number, span: number): { path: string; overPath: string } {
+/**
+ * Path for a meter's usage as percent of allowance over [start, start+span]
+ * days, in a span × Y_MAX space (y grows downward). `resetDays` is how often
+ * the allowance resets: 1 for daily caps, a month for monthly allowances
+ * inside a year, Infinity when the period itself is the billing window.
+ */
+function trackPath(line: TrackLine, start: number, span: number, period: Period): { path: string; overPath: string } {
   const allowance = line.allowanceMonthly!;
   const y = (pct: number) => Y_MAX - Math.min(Y_MAX, pct);
   const X = (d: number) => d - start;
-  if (!line.isDaily) {
-    const slope = (line.daily / allowance) * 100; // percent per day
+  const resetDays = line.isDaily ? 1 : period === "year" ? MONTH_LEN : Infinity;
+  // percent of the allowance consumed per day
+  const slope = line.isDaily ? (line.daily / (allowance / 30)) * 100 : (line.daily / allowance) * 100;
+  if (!Number.isFinite(resetDays)) {
     const p0 = slope * start;
     const p1 = slope * (start + span);
     const path = `M0,${y(p0)} L${span},${y(p1)}`;
     if (p1 <= 100) return { path, overPath: "" };
     const xCross = Math.max(0, X(100 / slope));
-    const overPath = `M${xCross},${y(Math.max(100, p0))} L${span},${y(p1)} L${span},${y(100)} L${xCross},${y(100)} Z`;
-    return { path, overPath };
+    return { path, overPath: `M${xCross},${y(Math.max(100, p0))} L${span},${y(p1)} L${span},${y(100)} L${xCross},${y(100)} Z` };
   }
-  const dailyPct = (line.daily / (allowance / MONTH_DAYS)) * 100;
+  const perReset = slope * resetDays; // percent reached by the end of one reset window
   const parts: string[] = [];
   const over: string[] = [];
-  const first = Math.floor(start);
-  const last = Math.ceil(start + span);
-  for (let d = first; d < last; d += 1) {
-    if (dailyPct <= 100) {
-      parts.push(`M${X(d)},${y(0)} L${X(d + 1)},${y(dailyPct)}`);
+  const first = Math.floor(start / resetDays);
+  const last = Math.ceil((start + span) / resetDays);
+  for (let k = first; k < last; k += 1) {
+    const a = k * resetDays;
+    const b = a + resetDays;
+    if (perReset <= 100) {
+      parts.push(`M${X(a)},${y(0)} L${X(b)},${y(perReset)}`);
     } else {
-      const xHit = d + 100 / dailyPct;
-      parts.push(`M${X(d)},${y(0)} L${X(xHit)},${y(100)} L${X(d + 1)},${y(100)}`);
-      over.push(`M${X(xHit)},${y(100)} L${X(d + 1)},${y(Math.min(Y_MAX, dailyPct))} L${X(d + 1)},${y(100)} Z`);
+      const xHit = a + 100 / slope;
+      parts.push(`M${X(a)},${y(0)} L${X(xHit)},${y(100)} L${X(b)},${y(100)}`);
+      over.push(`M${X(xHit)},${y(100)} L${X(b)},${y(Math.min(Y_MAX, perReset))} L${X(b)},${y(100)} Z`);
     }
   }
   return { path: parts.join(" "), overPath: over.join(" ") };
 }
 
-function fmtDay(d: number): string {
+function fmtDay(d: number, period: Period): string {
   const day = Math.floor(d);
   const h = Math.floor((d - day) * 24);
   const m = Math.floor(((d - day) * 24 - h) * 60);
-  return `Day ${day} · ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  const hm = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  if (period === "day") return hm;
+  if (period === "year") return `Month ${Math.floor(d / MONTH_LEN) + 1} · day ${Math.floor(d % MONTH_LEN) + 1}`;
+  return `Day ${day} · ${hm}`;
 }
 
 function TracksView({
@@ -310,6 +331,7 @@ function TracksView({
   elapsed,
   plan,
   selectedId,
+  period,
 }: {
   tracks: { id: string; label: string; product: string; line?: TrackLine; tone: string }[];
   tone: Map<string, string>;
@@ -319,24 +341,34 @@ function TracksView({
   elapsed: number;
   plan: "free" | "paid";
   selectedId: string | null;
+  period: Period;
 }) {
   const day = elapsed / DAY;
+  const MONTH_DAYS = PERIOD_DAYS[period];
+  const SPANS = SPANS_FOR[period];
   const snapshot = useStudio((s) => s.snapshot);
-  const [span, setSpan] = useState<number>(30);
+  const [span, setSpan] = useState<number>(MONTH_DAYS);
   const [start, setStart] = useState(0);
+  // A new period resets the window to the whole period.
+  const [seenPeriod, setSeenPeriod] = useState(period);
+  if (seenPeriod !== period) {
+    setSeenPeriod(period);
+    setSpan(MONTH_DAYS);
+    setStart(0);
+  }
   const [hover, setHover] = useState<string | null>(null);
   void pos;
 
   // Follow the playhead when it leaves the window.
   const winStart = useMemo(() => {
-    if (span >= 30) return 0;
+    if (span >= MONTH_DAYS) return 0;
     if (day < start || day > start + span) return Math.min(MONTH_DAYS - span, Math.max(0, day - span * 0.2));
     return start;
   }, [day, start, span]);
   if (winStart !== start) setStart(winStart);
 
   const zoom = (dir: 1 | -1) => {
-    const i = SPANS.indexOf(span as (typeof SPANS)[number]);
+    const i = Math.max(0, SPANS.indexOf(span));
     const next = SPANS[Math.min(SPANS.length - 1, Math.max(0, i + dir))];
     setSpan(next);
     setStart(Math.min(MONTH_DAYS - next, Math.max(0, day - next / 2)));
@@ -357,7 +389,7 @@ function TracksView({
       if (e.buttons & 1) seekAt(e.clientX);
     },
     onWheel: (e: React.WheelEvent<HTMLElement>) => {
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && span < 30) {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && span < MONTH_DAYS) {
         setStart((v) => Math.min(MONTH_DAYS - span, Math.max(0, v + (e.deltaX / 400) * span)));
       }
     },
@@ -365,10 +397,10 @@ function TracksView({
 
   const valueAt = (l: TrackLine): number => {
     const allowance = l.allowanceMonthly!;
-    if (!l.isDaily) return (l.daily * day) / allowance;
-    const frac = day - Math.floor(day);
-    const dailyPct = l.daily / (allowance / MONTH_DAYS);
-    return Math.min(1, dailyPct * frac);
+    const resetDays = l.isDaily ? 1 : period === "year" ? MONTH_LEN : Infinity;
+    const slope = l.isDaily ? l.daily / (allowance / 30) : l.daily / allowance; // fraction per day
+    const t = Number.isFinite(resetDays) ? day - Math.floor(day / resetDays) * resetDays : day;
+    return Math.min(1, slope * t);
   };
   const overTone = plan === "free" ? "var(--destructive)" : "var(--warning)";
   const playX = Math.min(1, Math.max(0, (day - start) / span)) * 100;
@@ -378,7 +410,9 @@ function TracksView({
 
   // Ruler ticks: days when wide, hours when tight.
   const ticks: { x: number; label: string }[] = [];
-  if (span >= 7) for (let d = Math.ceil(start); d <= start + span; d += span >= 20 ? 5 : 1) ticks.push({ x: (d - start) / span, label: `${d}` });
+  if (period === "year" && span > 60) {
+    for (let mth = Math.ceil(start / MONTH_LEN); mth * MONTH_LEN <= start + span; mth += 1) ticks.push({ x: (mth * MONTH_LEN - start) / span, label: `M${mth + 1}` });
+  } else if (span >= 7) for (let d = Math.ceil(start); d <= start + span; d += span >= 60 ? 10 : span >= 20 ? 5 : 1) ticks.push({ x: (d - start) / span, label: `${d}` });
   else {
     const stepH = span >= 3 ? 12 : 6;
     for (let h = Math.ceil(start * 24 / stepH) * stepH; h <= (start + span) * 24; h += stepH) ticks.push({ x: (h / 24 - start) / span, label: h % 24 === 0 ? `d${h / 24}` : `${h % 24}h` });
@@ -390,11 +424,11 @@ function TracksView({
         <span className="inline-flex items-center gap-1">
           Window
           <span className="inline-flex overflow-hidden rounded-md bg-muted p-0.5">
-            <button type="button" aria-label="Zoom out" onClick={() => zoom(-1)} disabled={span >= 30} className="rounded px-1.5 text-[11px] disabled:opacity-40 hover:text-foreground">−</button>
-            <span className="px-1.5 text-numeric text-foreground">{span}d</span>
-            <button type="button" aria-label="Zoom in" onClick={() => zoom(1)} disabled={span <= 1} className="rounded px-1.5 text-[11px] disabled:opacity-40 hover:text-foreground">+</button>
+            <button type="button" aria-label="Zoom out" onClick={() => zoom(-1)} disabled={span >= MONTH_DAYS} className="rounded px-1.5 text-[11px] disabled:opacity-40 hover:text-foreground">−</button>
+            <span className="px-1.5 text-numeric text-foreground">{span >= 1 ? `${span}d` : `${span * 24}h`}</span>
+            <button type="button" aria-label="Zoom in" onClick={() => zoom(1)} disabled={span <= SPANS[SPANS.length - 1]} className="rounded px-1.5 text-[11px] disabled:opacity-40 hover:text-foreground">+</button>
           </span>
-          {span < 30 && <span className="text-numeric">from day {start.toFixed(1)}</span>}
+          {span < MONTH_DAYS && <span className="text-numeric">from day {start.toFixed(1)}</span>}
         </span>
         <span>Drag to scrub · shift-scroll to pan · click a row to focus its node</span>
       </div>
@@ -419,7 +453,7 @@ function TracksView({
           <div className="grid grid-cols-[var(--label-w)_minmax(0,1fr)_var(--value-w)] gap-x-[var(--gap)]">
             {tracks.map((t) => {
               const l = t.line;
-              const paths = l ? trackPath(l, start, span) : null;
+              const paths = l ? trackPath(l, start, span, period) : null;
               const over = l ? l.status === "over-free" || l.status === "charged" : false;
               return (
                 <div key={t.id} className="contents">
@@ -481,7 +515,7 @@ function TracksView({
             className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-surface-4 px-2 py-0.5 text-[10.5px] text-numeric text-foreground shadow-surface-3"
             style={{ left: `calc(var(--label-w) + var(--gap) + (100% - var(--label-w) - var(--value-w) - 2 * var(--gap)) * ${playX / 100})` }}
           >
-            {fmtDay(day)} · {formatCount(offered)} req · <span className="text-destructive">{formatCount(snapshot.outcomes.blocked)} blocked</span> · <span className="text-warning">{formatCount(snapshot.outcomes.dropped)} dropped</span>
+            {fmtDay(day, period)} · {formatCount(offered)} req · <span className="text-destructive">{formatCount(snapshot.outcomes.blocked)} blocked</span> · <span className="text-warning">{formatCount(snapshot.outcomes.dropped)} dropped</span>
             {hover && (() => { const t = tracks.find((x) => x.id === hover); return t?.line ? <> · {t.label} {Math.round(valueAt(t.line) * 100)}%</> : null; })()}
           </div>
         )}
