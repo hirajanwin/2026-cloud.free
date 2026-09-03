@@ -40,6 +40,31 @@ Tool definitions live in [`src/tools/index.ts`](src/tools/index.ts); the schema 
 | `analyze_product`, `propose_architecture`                         | URL or description → breakdown → diagram   |
 | `export_config`                                                   | Deployable config and stack notes          |
 
+### How the tools are registered
+
+Every tool is defined once and registered with the standard imperative API. The code lives in [`src/tools/webmcp.ts`](src/tools/webmcp.ts) and [`src/tools/define.ts`](src/tools/define.ts); this is the shape the browser sees:
+
+```ts
+document.modelContext.registerTool({
+  name: "set_traffic_mix",
+  description:
+    "Set requests per day and the share of each request class (human, googlebot, ai-crawler, scraper, botnet). Shares are normalised. Omitted fields keep their value.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      perDay: { type: "number", minimum: 0 },
+      shares: { type: "object", properties: { human: { type: "number" }, botnet: { type: "number" } /* ... */ } },
+    },
+  },
+  execute: async (input) => {
+    studio.setMix(input);
+    return { content: [{ type: "text", text: JSON.stringify({ mix: studio.get().mix }) }] };
+  },
+});
+```
+
+The same definitions are also announced as declarative forms (`<form toolname tooldescription toolautosubmit>` with `toolparamdescription` on each field) and pre-registered from an inline script in `<head>`, so `getTools()` is populated before hydration.
+
 ### How agents find the tools
 
 Three layers, all backed by the same tool definitions:
@@ -105,3 +130,6 @@ Open http://localhost:5173. For WebMCP, use Chrome 149+ with `chrome://flags/#en
 
 Deploy with `npm run deploy`. The Worker needs the `AI` binding and the `ArchitectAgent` Durable Object declared in [`wrangler.jsonc`](wrangler.jsonc); both are created on first deploy.
 
+## Licence
+
+MIT. See [LICENSE](LICENSE); third-party assets and their licences are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
