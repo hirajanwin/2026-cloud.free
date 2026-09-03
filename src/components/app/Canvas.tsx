@@ -109,7 +109,7 @@ const ProductNode = memo(function ProductNode({
       <Handle type="target" position={pos.target} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
       <Handle type="source" position={pos.source} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
 
-      <div className="icon-tile icon-in flex size-9 items-center justify-center rounded-lg" style={{ background: `color-mix(in oklab, ${data.tone} 16%, transparent)`, color: `color-mix(in oklab, ${data.tone} 78%, var(--foreground))` }}>
+      <div className="flex size-9 items-center justify-center rounded-lg" style={{ background: `color-mix(in oklab, ${data.tone} 16%, transparent)`, color: `color-mix(in oklab, ${data.tone} 78%, var(--foreground))` }}>
         <Glyph kind={data.kind} size={20} provider={provider} />
       </div>
 

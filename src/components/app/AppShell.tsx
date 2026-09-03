@@ -43,7 +43,6 @@ import { Inspector } from "./Inspector";
 import { BillPanel } from "./BillPanel";
 import { Chat } from "./Chat";
 import { useToolLog } from "@/state/toollog";
-import { DslEditor } from "./DslEditor";
 import { ActivityPanel } from "./ActivityPanel";
 import { AlternativesPanel } from "./AlternativesPanel";
 import { ClientOnly } from "@tanstack/react-router";
@@ -117,7 +116,6 @@ function ChatTabs() {
   const chatTab = useStudio((s) => s.chatTab);
   const tabs = [
     { value: "chat", label: "Chat" },
-    { value: "code", label: "DSL" },
     { value: "activity", label: "Tools" },
     { value: "alternatives", label: "Alternatives" },
   ] as const;
@@ -177,9 +175,6 @@ function RightRail() {
           <ClientOnly fallback={null}>
             <Chat />
           </ClientOnly>
-        </div>
-        <div hidden={chatTab !== "code"} className="flex min-h-0 flex-1 flex-col">
-          <DslEditor />
         </div>
         {chatTab === "activity" && (
           <div className="panel-in min-h-0 flex-1 overflow-y-auto">

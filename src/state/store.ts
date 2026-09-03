@@ -31,7 +31,7 @@ export interface ProductAnalysis {
 }
 
 export type PanelId = "inspect" | "bill" | "chat";
-export type ChatTab = "chat" | "code" | "activity" | "alternatives";
+export type ChatTab = "chat" | "activity" | "alternatives";
 /** How long the simulation runs for. The timeline spans exactly this. */
 export type Period = "day" | "month" | "year";
 export const PERIOD_DAYS: Record<Period, number> = { day: 1, month: 30, year: 365 };

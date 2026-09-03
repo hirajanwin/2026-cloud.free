@@ -21,7 +21,7 @@ const PeriodSchema = z.enum(["day", "month", "year"]);
 const LayoutSchema = z.enum(["snake", "vertical", "horizontal"]);
 const EdgeStyleSchema = z.enum(["curved", "step", "straight"]);
 const PanelSchema = z.enum(["inspect", "bill", "chat"]);
-const ChatTabSchema = z.enum(["chat", "code", "activity", "alternatives"]);
+const ChatTabSchema = z.enum(["chat", "activity", "alternatives"]);
 
 export const ABOUT = {
   name: "freenet.free",
@@ -44,7 +44,7 @@ export const ABOUT = {
     trafficStrip: "Requests so far, a donut of the class mix, sliders for requests per day and each class share, and served / blocked / dropped counts.",
     canvas: "Nodes with product icons inside coloured groups. Snake, vertical or horizontal layout; curved, step or straight edges; reset re-runs auto layout.",
     timeline: "Play, pause and reset; Day / Month / Year period; Bar view with markers or Tracks view with one row per layer, its percent of allowance and daily caps as a sawtooth.",
-    rightSidebar: "Inspect (overview, layers, node details, protection), Bill (per-meter lines with sources) and AI (the in-page architect, DSL editor, tool activity log, alternatives).",
+    rightSidebar: "Inspect (overview, layers, node details, protection), Bill (per-meter lines with sources) and AI (the in-page architect, tool activity log, alternatives).",
   },
   toolGuide: {
     orient: ["describe_studio", "get_diagram", "get_snapshot", "get_layers"],
@@ -256,7 +256,7 @@ export const studioTools: ToolDef[] = [
   defineTool({
     name: "open_panel",
     description:
-      "Open a right-hand panel: inspect (overview, layers, node details), bill (per-meter lines) or chat (the AI tab), optionally a chat sub-tab: chat, code (DSL editor), activity (tool log) or alternatives.",
+      "Open a right-hand panel: inspect (overview, layers, node details), bill (per-meter lines) or chat (the AI tab), optionally a chat sub-tab: chat, activity (tool log) or alternatives.",
     schema: z.object({ panel: PanelSchema, chatTab: ChatTabSchema.optional() }),
     execute: ({ panel, chatTab }) => {
       if (panel === "chat" && chatTab) studio.setChatTab(chatTab);
