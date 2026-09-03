@@ -19,8 +19,8 @@ export const REQUEST_CLASSES: readonly RequestClass[] = [
 
 export const REQUEST_CLASS_LABEL: Record<RequestClass, string> = {
   human: "Humans",
-  googlebot: "Search crawlers",
-  "ai-crawler": "AI crawlers",
+  googlebot: "Search",
+  "ai-crawler": "AI",
   scraper: "Scrapers",
   botnet: "Botnet",
 };
