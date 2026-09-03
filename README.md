@@ -142,6 +142,14 @@ Kinds are generic (`compute`, `kv`, `sql`, `blob`, `queue`, `actor`, …) and ma
 
 TanStack Start on Cloudflare Workers, React Flow + ELK for the canvas, Cloudflare Agents SDK (an `Agent` on a Durable Object, HTTP streaming) with the AI SDK and Workers AI for the architect, Tailwind v4 with [Fluid Functionalism](https://www.fluidfunctionalism.com) components and tokens.
 
+## Cloudflare hygiene
+
+- **One canonical host.** `www.freenet.free` redirects to `freenet.free` with a 301 at the edge.
+- **Security headers** on every document: HSTS with preload, `nosniff`, `strict-origin-when-cross-origin`, a restrictive `Permissions-Policy`, `SAMEORIGIN` framing and a same-origin opener policy. Hashed build assets are served immutable for a year via `public/_headers`.
+- **Web Analytics** without touching the app: set `CF_WEB_ANALYTICS_TOKEN` in `wrangler.jsonc` (Dashboard → Analytics & Logs → Web Analytics → Add a site) and the Worker injects the beacon into documents with HTMLRewriter. Privacy-first, no cookies.
+- **Observability** is on for the Worker (logs and invocations in the dashboard), source maps are uploaded, and **Smart Placement** runs the Worker near the AI binding and the Durable Object instead of near the visitor.
+- **Crawlable.** `robots.txt` and `sitemap.xml` are served from the assets bundle, and the page carries Open Graph and Twitter cards.
+
 ## Run it
 
 ```bash

@@ -17,6 +17,9 @@
 	],
 	"workers_dev": true,
 	"observability": { "enabled": true },
+	// Run near the AI binding and the Durable Object rather than near the visitor.
+	"placement": { "mode": "smart" },
+	"preview_urls": false,
 	"upload_source_maps": true,
 	"ai": { "binding": "AI" },
 	"durable_objects": {
@@ -25,6 +28,9 @@
 	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["ArchitectAgent"] }],
 	"vars": {
 		// Workers AI model used by the in-page architect. Override per environment.
-		"ARCHITECT_MODEL": "@cf/openai/gpt-oss-120b"
+		"ARCHITECT_MODEL": "@cf/openai/gpt-oss-120b",
+		// Cloudflare Web Analytics site token (Dashboard → Analytics & Logs → Web Analytics → Add a site).
+		// Empty disables the beacon.
+		"CF_WEB_ANALYTICS_TOKEN": ""
 	}
 }

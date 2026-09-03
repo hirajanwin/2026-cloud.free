@@ -1,0 +1,6 @@
+# Workers Assets: long cache for hashed build output, sane defaults for the rest.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
