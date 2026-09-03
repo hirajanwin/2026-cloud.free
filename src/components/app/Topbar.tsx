@@ -3,6 +3,7 @@
  * clock controls, and the provider / plan switches.
  */
 import { RollingNumber } from "@/components/ui/rolling-number";
+import { SliderComfortable } from "@/components/ui/slider";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Switch } from "@/components/ui/switch";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -80,16 +81,12 @@ function Donut({ shares, total }: { shares: { key: string; value: number; color:
 const toPerDay = (v: number) => Math.round(10 ** (2 + (v / 100) * 6));
 const fromPerDay = (n: number) => Math.max(0, Math.min(100, ((Math.log10(Math.max(100, n)) - 2) / 6) * 100));
 
-/** A compact labelled range: label and value on one line, the track beneath. */
+/** One FF scrubber: label on the left, value on the right, the fill is the value. */
 function MixRange({ label, value, display, color, title, onChange }: { label: string; value: number; display: string; color: string; title: string; onChange: (v: number) => void }) {
   return (
-    <label className="mix-range flex w-[96px] shrink-0 flex-col gap-0.5" title={title} style={{ ["--mix-color" as string]: color }}>
-      <span className="flex items-baseline justify-between whitespace-nowrap text-[10.5px] leading-3 text-muted-foreground">
-        <span className="inline-flex items-center gap-1"><span className="inline-block size-1.5 rounded-full" style={{ background: color }} />{label}</span>
-        <span className="text-numeric text-foreground">{display}</span>
-      </span>
-      <input type="range" min={0} max={100} step={1} value={value} aria-label={label} onChange={(e) => onChange(Number(e.target.value))} />
-    </label>
+    <div className="mix-range w-[148px] shrink-0" title={title} style={{ ["--mix-color" as string]: color }}>
+      <SliderComfortable variant="scrubber" label={label} value={value} min={0} max={100} step={1} onChange={onChange} formatValue={() => display} className="!h-8 !px-3" />
+    </div>
   );
 }
 
