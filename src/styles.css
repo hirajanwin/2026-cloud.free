@@ -848,3 +848,7 @@ html.transitioning *::after {
 :root { --shell: light-dark(#efefee, #101010); }
 .group\/sidebar-wrapper { background: var(--shell) !important; }
 [data-sidebar="sidebar"] { background: transparent !important; }
+
+/* Edge-style buttons live in the React Flow controls stack; the active one is filled. */
+.react-flow__controls-button.edge-style-on { background: var(--surface-5) !important; }
+.react-flow__controls-button svg { max-width: 16px; max-height: 16px; }

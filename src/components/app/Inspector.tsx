@@ -235,6 +235,7 @@ function LayerList() {
         const r = rates.nodes[n.id];
         const arrivals = r ? Object.values(r.arrivals).reduce((s, v) => s + v, 0) : 0;
         const blocked = r ? Object.values(r.blocked).reduce((s, v) => s + v, 0) : 0;
+        const tone = toneFor(n.id, diagram.nodes.map((x) => x.id));
         out.push(
           <li key={n.id}>
             <button
@@ -243,12 +244,11 @@ function LayerList() {
               className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover"
               style={{ paddingLeft: 8 + depth * 14 }}
             >
-              <span className="inline-block size-2 shrink-0 rounded-full" style={{ background: toneFor(n.id, diagram.nodes.map((x) => x.id)) }} aria-hidden />
-              <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-md" style={{ background: `color-mix(in oklab, ${tone} 16%, transparent)`, color: `color-mix(in oklab, ${tone} 78%, var(--foreground))` }}>
                 <Glyph kind={n.kind} size={14} provider={provider} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-body text-foreground">{n.label ?? product?.name ?? n.kind}</span>
+                <span className="block truncate text-body" style={{ color: `color-mix(in oklab, ${tone} 62%, var(--foreground))` }}>{n.label ?? product?.name ?? n.kind}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">{product?.name ?? n.kind}</span>
               </span>
               <span className="shrink-0 text-right text-[11px] text-numeric text-muted-foreground">

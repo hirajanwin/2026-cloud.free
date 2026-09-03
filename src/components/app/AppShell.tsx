@@ -126,9 +126,9 @@ function ChatTabs() {
   const idx = tabs.findIndex((t) => t.value === chatTab);
   return (
     <div className="mb-2">
-      <TabsSubtle selectedIndex={idx} onSelect={(i) => studio.setChatTab(tabs[i].value)} size="compact">
+      <TabsSubtle selectedIndex={idx} onSelect={(i) => studio.setChatTab(tabs[i].value)} size="compact" className="w-full">
         {tabs.map((t, i) => (
-          <TabsSubtleItem key={t.value} index={i} label={t.label} />
+          <TabsSubtleItem key={t.value} index={i} label={t.label} className="flex-1 justify-center" />
         ))}
       </TabsSubtle>
     </div>

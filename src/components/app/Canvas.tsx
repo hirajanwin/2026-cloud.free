@@ -25,6 +25,7 @@ import {
   type EdgeProps,
   type Node,
   type NodeProps,
+  ControlButton,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { KINDS, PRODUCTS, isProductKind } from "@/engine/catalog";
@@ -96,14 +97,6 @@ const ProductNode = memo(function ProductNode({
   const title = data.label ?? product?.name ?? data.kind;
   const subtitle = data.label ? (product?.name ?? data.kind) : (isProductKind(data.kind) ? KINDS[data.kind].name : data.kind);
 
-  const iconTone =
-    role === "gate"
-      ? "bg-info-light text-info"
-      : role === "cache"
-        ? "bg-success-light text-success"
-        : role === "source"
-          ? "bg-muted text-foreground"
-          : "bg-muted text-foreground";
 
   return (
     <div
@@ -117,12 +110,12 @@ const ProductNode = memo(function ProductNode({
       <Handle type="target" position={pos.target} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
       <Handle type="source" position={pos.source} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
 
-      <div className={`flex size-9 items-center justify-center rounded-lg ${iconTone}`}>
+      <div className="flex size-9 items-center justify-center rounded-lg" style={{ background: `color-mix(in oklab, ${data.tone} 16%, transparent)`, color: `color-mix(in oklab, ${data.tone} 78%, var(--foreground))` }}>
         <Glyph kind={data.kind} size={20} provider={provider} />
       </div>
 
       <div className="min-w-0">
-        <div className="truncate text-[13px] leading-[18px] text-foreground" style={{ fontVariationSettings: "'wght' 550, 'opsz' 18" }} title={title}>
+        <div className="truncate text-[13px] leading-[18px]" style={{ fontVariationSettings: "'wght' 550, 'opsz' 18", color: `color-mix(in oklab, ${data.tone} 62%, var(--foreground))` }} title={title}>
           <span key={title} className="text-in">{title}</span>
         </div>
         <div className="truncate text-[11px] leading-[16px] text-muted-foreground" title={subtitle}>
@@ -178,7 +171,6 @@ const GroupNode = memo(function GroupNode({
       style={{ width, height, borderColor: `color-mix(in oklab, ${data.tone} ${selected ? 80 : 45}%, transparent)`, background: `color-mix(in oklab, ${data.tone} 6%, var(--surface-2))` }}
     >
       <div className="flex items-center gap-1.5 px-3 pt-2 text-caption font-medium text-muted-foreground">
-        <span className="inline-block size-2 rounded-sm" style={{ background: data.tone }} aria-hidden />
         {data.label ?? data.id}
       </div>
     </div>
@@ -288,7 +280,7 @@ const FlowEdge = memo(function FlowEdge({
 
 const nodeTypes = { product: ProductNode, group: GroupNode };
 
-function EdgeStyleToggle() {
+function EdgeStyleControls() {
   const edgeStyle = useStudio((s) => s.edgeStyle);
   const items = [
     ["curved", "Curved", "M3 17c6 0 6-10 12-10h6"],
@@ -296,23 +288,22 @@ function EdgeStyleToggle() {
     ["straight", "Straight", "M3 17 21 7"],
   ] as const;
   return (
-    <div className="flex items-center" role="radiogroup" aria-label="Edge style">
+    <>
       {items.map(([m, label, d]) => (
-        <button
+        <ControlButton
           key={m}
-          type="button"
-          role="radio"
-          aria-checked={edgeStyle === m}
           title={`${label} edges`}
+          aria-label={`${label} edges`}
+          aria-pressed={edgeStyle === m}
           onClick={() => studio.setEdgeStyle(m)}
-          className={`flex h-7 items-center justify-center rounded-md px-1.5 transition-colors ${edgeStyle === m ? "bg-surface-5 text-foreground shadow-surface-1" : "text-muted-foreground hover:bg-hover hover:text-foreground"}`}
+          className={edgeStyle === m ? "!text-foreground edge-style-on" : "!text-muted-foreground"}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ fill: "none" }}>
             <path d={d} />
           </svg>
-        </button>
+        </ControlButton>
       ))}
-    </div>
+    </>
   );
 }
 
@@ -355,7 +346,6 @@ function LayoutToggle() {
         </button>
       ))}
       <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
-      <EdgeStyleToggle />
       <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
       <button
         type="button"
@@ -627,11 +617,13 @@ function CanvasInner() {
           </defs>
         </svg>
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--muted-foreground)" style={{ opacity: 0.35 }} />
-        <Controls showInteractive={false} className="!shadow-surface-2" />
+        <Controls showInteractive={false} className="!shadow-surface-2">
+          <EdgeStyleControls />
+        </Controls>
         <Panel position="top-left">
           <LayoutToggle />
         </Panel>
-        <MiniMap pannable zoomable className="!hidden lg:!block" nodeStrokeWidth={2} style={{ width: 140, height: 90 }} />
+        <MiniMap position="top-right" pannable zoomable className="!hidden lg:!block" nodeStrokeWidth={2} style={{ width: 140, height: 90 }} />
       </ReactFlow>
     </div>
   );

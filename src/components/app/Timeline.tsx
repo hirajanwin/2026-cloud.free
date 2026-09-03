@@ -465,9 +465,8 @@ function TracksView({
                     className={`flex w-full min-w-0 items-center gap-2 rounded-md px-2 text-left leading-4 hover:bg-hover ${selectedId === t.id ? "bg-hover" : ""}`}
                     title={l ? `${l.label} · account total against its allowance` : "No metered quota"}
                   >
-                    <span className="inline-block size-2 shrink-0 rounded-full" style={{ background: t.tone }} aria-hidden />
                     <span className="min-w-0">
-                      <span className="block truncate text-[11.5px] text-foreground">{t.label}</span>
+                      <span className="block truncate text-[11.5px]" style={{ color: `color-mix(in oklab, ${t.tone} 62%, var(--foreground))` }}>{t.label}</span>
                       <span className="block truncate text-[10px] text-muted-foreground">{l ? l.label : `${t.product} · unmetered`}</span>
                     </span>
                   </button>
