@@ -12,7 +12,6 @@ import {
   EdgeLabelRenderer,
   Handle,
   MiniMap,
-  Panel,
   Position,
   ReactFlow,
   ReactFlowProvider,
@@ -40,7 +39,7 @@ import { useResolvedTheme } from "@/lib/use-resolved-theme";
 import { type Connection, type IsValidConnection } from "@xyflow/react";
 import { Glyph } from "./Glyph";
 import { toneAt, toneFor } from "@/lib/tones";
-import { RotateCcw } from "lucide-react";
+import { } from "lucide-react";
 
 type ProductNodeData = {
   id: string;
@@ -110,7 +109,7 @@ const ProductNode = memo(function ProductNode({
       <Handle type="target" position={pos.target} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
       <Handle type="source" position={pos.source} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
 
-      <div className="flex size-9 items-center justify-center rounded-lg" style={{ background: `color-mix(in oklab, ${data.tone} 16%, transparent)`, color: `color-mix(in oklab, ${data.tone} 78%, var(--foreground))` }}>
+      <div className="icon-tile icon-in flex size-9 items-center justify-center rounded-lg" style={{ background: `color-mix(in oklab, ${data.tone} 16%, transparent)`, color: `color-mix(in oklab, ${data.tone} 78%, var(--foreground))` }}>
         <Glyph kind={data.kind} size={20} provider={provider} />
       </div>
 
@@ -307,8 +306,8 @@ function EdgeStyleControls() {
   );
 }
 
-/** Horizontal, vertical, or snake. The first two write the DSL direction; snake is a view. */
-function LayoutToggle() {
+/** Horizontal, vertical, or snake, plus reset. The first two write the DSL direction; snake is a view. */
+function LayoutControls() {
   const direction = useStudio((s) => s.diagram.direction);
   const viewLayout = useStudio((s) => s.viewLayout);
   const mode = viewLayout === "snake" ? "snake" : direction === "down" || direction === "up" ? "vertical" : "horizontal";
@@ -321,43 +320,34 @@ function LayoutToggle() {
       studio.setDirection(m === "vertical" ? "down" : "right");
     }
   };
+  const items = [
+    ["snake", "Snake", "M4 6h12a3 3 0 0 1 0 6H8a3 3 0 0 0 0 6h12"],
+    ["vertical", "Vertical", "M12 4v16M6 14l6 6 6-6"],
+    ["horizontal", "Horizontal", "M4 12h16M14 6l6 6-6 6"],
+  ] as const;
   return (
-    <div className="flex items-center gap-0.5 rounded-lg bg-surface-3 p-0.5 shadow-surface-2" role="radiogroup" aria-label="Canvas layout">
-      {(
-        [
-          ["snake", "Snake", "M4 6h12a3 3 0 0 1 0 6H8a3 3 0 0 0 0 6h12"],
-          ["vertical", "Vertical", "M12 4v16M6 14l6 6 6-6"],
-          ["horizontal", "Horizontal", "M4 12h16M14 6l6 6-6 6"],
-        ] as const
-      ).map(([m, label, d]) => (
-        <button
+    <>
+      {items.map(([m, label, d]) => (
+        <ControlButton
           key={m}
-          type="button"
-          role="radio"
-          aria-checked={mode === m}
           title={`${label} layout`}
+          aria-label={`${label} layout`}
+          aria-pressed={mode === m}
           onClick={() => set(m)}
-          className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-[11px] transition-colors ${mode === m ? "bg-surface-5 text-foreground shadow-surface-1" : "text-muted-foreground hover:bg-hover hover:text-foreground"}`}
+          className={mode === m ? "!text-foreground edge-style-on" : "!text-muted-foreground"}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ fill: "none" }}>
             <path d={d} />
           </svg>
-          {label}
-        </button>
+        </ControlButton>
       ))}
-      <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
-      <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
-      <button
-        type="button"
-        title="Reset positions (re-run auto-layout)"
-        aria-label="Reset positions"
-        onClick={() => studio.relayout()}
-        className="flex h-7 items-center gap-1.5 rounded-md px-2 text-[11px] text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
-      >
-        <RotateCcw className="size-3.5" />
-        Reset
-      </button>
-    </div>
+      <ControlButton title="Reset positions (re-run auto-layout)" aria-label="Reset positions" onClick={() => studio.relayout()} className="!text-muted-foreground">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ fill: "none" }}>
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+        </svg>
+      </ControlButton>
+    </>
   );
 }
 const edgeTypes = { flow: FlowEdge };
@@ -618,11 +608,9 @@ function CanvasInner() {
         </svg>
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--muted-foreground)" style={{ opacity: 0.35 }} />
         <Controls showInteractive={false} className="!shadow-surface-2">
+          <LayoutControls />
           <EdgeStyleControls />
         </Controls>
-        <Panel position="top-left">
-          <LayoutToggle />
-        </Panel>
         <MiniMap position="top-right" pannable zoomable className="!hidden lg:!block" nodeStrokeWidth={2} style={{ width: 140, height: 90 }} />
       </ReactFlow>
     </div>

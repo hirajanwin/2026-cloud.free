@@ -12,7 +12,7 @@ import { useMemo, useRef, useState } from "react";
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { computeBill, type BillLine } from "@/engine/pricing";
 import { PRODUCTS, isProductKind } from "@/engine/catalog";
-import { formatCount, formatUnit } from "@/lib/format";
+import {formatCount } from "@/lib/format";
 import { PERIOD_DAYS, periodSeconds, studio, useStudio, type Period } from "@/state/store";
 import { Tooltip } from "@/components/ui/tooltip";
 import { toneFor } from "@/lib/tones";
@@ -47,7 +47,6 @@ export function Timeline() {
   const plan = useStudio((s) => s.plan);
   const diagram = useStudio((s) => s.diagram);
   const selectedId = useStudio((s) => s.selectedId);
-  const [view, setView] = useState<"bar" | "tracks">("tracks");
   const trackRef = useRef<HTMLDivElement | null>(null);
 
   const bill = useMemo(() => computeBill(provider, plan, rates.daily), [provider, plan, rates]);
@@ -152,28 +151,10 @@ export function Timeline() {
             ))}
           </span>
         </span>
-        <span className="inline-flex items-center gap-3">
-          <span className="inline-flex overflow-hidden rounded-md bg-muted p-0.5">
-            {(["bar", "tracks"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                aria-pressed={view === v}
-                className={`rounded px-2 py-0.5 text-[10.5px] capitalize transition-colors ${view === v ? "bg-surface-4 text-foreground shadow-surface-1" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                {v}
-              </button>
-            ))}
-          </span>
-        </span>
       </div>
 
-      {view === "bar" ? (
-        <BarView lines={lines} tone={tone} pos={pos} trackRef={trackRef} scrubHandlers={scrubHandlers} elapsed={elapsed} periodDays={periodDays} />
-      ) : (
         <TracksView tracks={tracks} tone={tone} pos={pos} trackRef={trackRef} scrubHandlers={scrubHandlers} elapsed={elapsed} plan={plan} selectedId={selectedId} period={period} />
-      )}
+
     </div>
   );
 }
@@ -182,104 +163,6 @@ export function Timeline() {
  * Bar view: the compact scrubber with crossing markers
  * ------------------------------------------------------------------ */
 
-function BarView({
-  lines,
-  tone,
-  pos,
-  trackRef,
-  scrubHandlers,
-  elapsed,
-  periodDays,
-}: {
-  lines: TrackLine[];
-  tone: Map<string, string>;
-  pos: number;
-  trackRef: React.RefObject<HTMLDivElement | null>;
-  scrubHandlers: { onPointerDown: (e: React.PointerEvent<HTMLElement>) => void; onPointerMove: (e: React.PointerEvent<HTMLElement>) => void };
-  elapsed: number;
-  periodDays: number;
-}) {
-  const shown = lines.slice(0, 6);
-  const MONTH_DAYS = periodDays;
-  return (
-    <>
-      <div
-        ref={trackRef}
-        role="slider"
-        aria-label="Simulated time"
-        aria-valuemin={0}
-        aria-valuemax={periodDays}
-        aria-valuenow={Number((elapsed / DAY).toFixed(1))}
-        tabIndex={0}
-        className="relative mt-2 h-8 cursor-ew-resize select-none"
-        {...scrubHandlers}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowRight") studio.seek(elapsed + DAY);
-          if (e.key === "ArrowLeft") studio.seek(Math.max(0, elapsed - DAY));
-        }}
-      >
-        <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-muted" />
-        <div className="absolute left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-foreground/70 transition-[width] duration-100" style={{ width: `${pos * 100}%` }} />
-        {Array.from({ length: Math.min(periodDays, 30) + 1 }, (_, d) => (
-          <span key={d} className="absolute top-1/2 h-1 w-px -translate-y-1/2 bg-foreground/15" style={{ left: `${(d / Math.min(periodDays, 30)) * 100}%` }} />
-        ))}
-        {shown.map((l, i) => {
-          if (!Number.isFinite(l.crossDay)) return null;
-          const within = l.crossDay <= MONTH_DAYS;
-          const left = Math.min(1, l.crossDay / MONTH_DAYS) * 100;
-          const over = l.status === "over-free" || l.status === "charged";
-          return (
-            <Tooltip
-              key={l.meter}
-              content={
-                l.isDaily
-                  ? `${l.label}: daily cap of ${formatUnit(l.allowanceMonthly! / MONTH_DAYS, l.unit)} hits ${(l.crossDay * 24).toFixed(1)} h into each day${l.overage === "drop" ? "; requests fail after that" : l.overage === "block" ? "; blocked after that" : ""}`
-                  : within
-                    ? `${l.label}: ${formatCount(l.allowanceMonthly!)} ${l.unit} allowance crossed on day ${l.crossDay.toFixed(1)}`
-                    : `${l.label}: stays under its allowance this month (${Math.round((l.monthly / l.allowanceMonthly!) * 100)}%)`
-              }
-            >
-              <button
-                type="button"
-                aria-label={l.label}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  studio.seek(Math.min(MONTH_DAYS, l.crossDay) * DAY);
-                }}
-                className={`absolute -translate-x-1/2 rounded-full transition-transform hover:scale-125 ${l.isDaily ? "top-[2px] size-2 rounded-sm" : "top-1/2 size-2.5 -translate-y-1/2"}`}
-                style={{ left: `${left}%`, background: tone.get(l.meter), boxShadow: over ? "0 0 0 2px var(--destructive)" : undefined, opacity: within || l.isDaily ? 1 : 0.5, zIndex: 2 + i }}
-              />
-            </Tooltip>
-          );
-        })}
-        <div className="pointer-events-none absolute top-1/2 h-4 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground shadow-surface-2 transition-[left] duration-100" style={{ left: `${pos * 100}%` }} />
-      </div>
-      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground">
-        {shown.map((l) => (
-          <span key={l.meter} className={`inline-flex items-center gap-1 ${l.status === "over-free" || l.status === "charged" ? "text-foreground" : ""}`}>
-            <span className="inline-block size-1.5 rounded-full" style={{ background: tone.get(l.meter), boxShadow: l.status === "over-free" || l.status === "charged" ? "0 0 0 2px var(--destructive)" : undefined }} />
-            {l.label}
-            {Number.isFinite(l.crossDay) && (l.isDaily ? ` · ${(l.crossDay * 24).toFixed(0)}h/day` : l.crossDay <= MONTH_DAYS ? ` · day ${l.crossDay.toFixed(1)}` : "")}
-          </span>
-        ))}
-        {shown.length === 0 && <span>No quota in play at this traffic.</span>}
-      </div>
-    </>
-  );
-}
-
-/* ------------------------------------------------------------------ *
- * Tracks view: one row per layer, percent of allowance over a zoomable
- * window of the month, one continuous playhead, live readout while scrubbing.
- * ------------------------------------------------------------------ */
-
-
-/**
- * Path for a meter's usage as percent of allowance over [start, start+span]
- * days, in a span × Y_MAX space (y grows downward). `resetDays` is how often
- * the allowance resets: 1 for daily caps, a month for monthly allowances
- * inside a year, Infinity when the period itself is the billing window.
- */
 function trackPath(line: TrackLine, start: number, span: number, period: Period): { path: string; overPath: string } {
   const allowance = line.allowanceMonthly!;
   const y = (pct: number) => Y_MAX - Math.min(Y_MAX, pct);
@@ -317,11 +200,9 @@ function trackPath(line: TrackLine, start: number, span: number, period: Period)
 function fmtDay(d: number, period: Period): string {
   const day = Math.floor(d);
   const h = Math.floor((d - day) * 24);
-  const m = Math.floor(((d - day) * 24 - h) * 60);
-  const hm = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-  if (period === "day") return hm;
+  if (period === "day") return `Hour ${h} of 24`;
   if (period === "year") return `Month ${Math.floor(d / MONTH_LEN) + 1} · day ${Math.floor(d % MONTH_LEN) + 1}`;
-  return `Day ${day} · ${hm}`;
+  return `Day ${day} of ${PERIOD_DAYS.month}`;
 }
 
 function TracksView({

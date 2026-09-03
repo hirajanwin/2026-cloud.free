@@ -244,7 +244,7 @@ function LayerList() {
               className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover"
               style={{ paddingLeft: 8 + depth * 14 }}
             >
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-md" style={{ background: `color-mix(in oklab, ${tone} 16%, transparent)`, color: `color-mix(in oklab, ${tone} 78%, var(--foreground))` }}>
+              <span className="icon-tile flex size-6 shrink-0 items-center justify-center rounded-md" style={{ background: `color-mix(in oklab, ${tone} 16%, transparent)`, color: `color-mix(in oklab, ${tone} 78%, var(--foreground))` }}>
                 <Glyph kind={n.kind} size={14} provider={provider} />
               </span>
               <span className="min-w-0 flex-1">
