@@ -1,7 +1,5 @@
 # Third-party notices
 
-Third-party notices
-
 - UI components under src/components/ui, src/components/sidebar-app,
   src/lib (springs, font-weight, size/shape/surface/icon/theme contexts,
   surface-classes, elevated, sidebar-menu-grid, utils) and src/hooks are
