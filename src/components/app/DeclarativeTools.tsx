@@ -37,14 +37,13 @@ const FORMS: { tool: string; fields: Field[] }[] = [
       {
         name: "id",
         description:
-          "Template id: static-plus-api, saas-sql, media-pipeline, realtime-rooms, ai-rag or granola",
+          "Template id: static-plus-api, saas-sql, media-pipeline, realtime-rooms or ai-rag",
         options: [
           "static-plus-api",
           "saas-sql",
           "media-pipeline",
           "realtime-rooms",
           "ai-rag",
-          "granola",
         ],
         required: true,
       },

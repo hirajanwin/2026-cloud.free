@@ -32,7 +32,7 @@ import { useToolLog, type ToolEvent } from "@/state/toollog";
 import remarkGfm from "remark-gfm";
 
 const SUGGESTIONS = [
-  "Analyse https://www.granola.ai and propose how to build it on Cloudflare",
+  "Analyse https://linear.app and propose how to build it on Cloudflare",
   "Why is my bill this high? Explain the top charges",
   "Switch to Vercel and compare the two bills",
   "Block AI crawlers but keep Googlebot, then show what changed",

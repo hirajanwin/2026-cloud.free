@@ -39,7 +39,7 @@ export const ABOUT = {
   requestClasses: REQUEST_CLASSES.map((c) => ({ id: c, label: REQUEST_CLASS_LABEL[c], description: REQUEST_CLASS_DESCRIPTION[c] })),
   protectionModes: PROTECTION_MODE_LABEL,
   ui: {
-    leftSidebar: "Search, New blueprint, Save canvas as blueprint, then Blueprints, Templates, Verdicts and Products by category. Theme toggle in its header.",
+    leftSidebar: "Search, New blueprint, Save canvas as blueprint, then Blueprints, Templates and Products by category. Theme toggle in its header.",
     topBar: "Cloudflare / Vercel provider tabs on the left, Free / Paid plan in the centre, the WebMCP switch on the right.",
     trafficStrip: "Requests so far, a donut of the class mix, sliders for requests per day and each class share, and served / blocked / dropped counts.",
     canvas: "Nodes with product icons inside coloured groups. Snake, vertical or horizontal layout; curved, step or straight edges; reset re-runs auto layout.",

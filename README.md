@@ -32,7 +32,7 @@ Tool definitions live in [`src/tools/index.ts`](src/tools/index.ts); the schema 
 | Tool                                                              | Purpose                                    |
 | ----------------------------------------------------------------- | ------------------------------------------ |
 | `get_diagram`, `set_diagram`, `patch_diagram`                     | Read, replace or edit the architecture DSL |
-| `list_templates`, `load_template`                                 | Starting points, including verdict pages   |
+| `list_templates`, `load_template`                                 | Starting points                            |
 | `list_products`, `explain_product`                                | The catalog on both providers, with gaps   |
 | `set_provider`, `set_plan`                                        | Re-label and re-price the whole design     |
 | `set_traffic_mix`, `set_protection`                               | Drive the simulator                        |

@@ -9,8 +9,8 @@
  * the right rail.
  */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode, useRef } from "react";
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import {BookOpen, Layers, Moon, PanelRight, Plus, Receipt, Save, Sparkles, Sun, SunMoon } from "lucide-react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import { Layers, Moon, PanelRight, Plus, Receipt, Save, Sparkles, Sun, SunMoon } from "lucide-react";
 import { useThemeContext } from "@/lib/theme-context";
 import {
   Sidebar,
@@ -298,7 +298,6 @@ function AppSidebar() {
     goStudio();
   };
 
-  const verdicts = TEMPLATES.filter((t) => t.verdict && match(t.name, t.verdict.product, t.tagline));
   const starters = TEMPLATES.filter((t) => !t.verdict && match(t.name, t.tagline));
   const mine = saved.filter((b) => match(b.name));
   const kindsByCategory = useMemo(() => {
@@ -394,23 +393,6 @@ function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {verdicts.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Verdicts</SidebarGroupLabel>
-            <SidebarMenu>
-              {verdicts.map((t) => (
-                <SidebarMenuItem key={t.id}>
-                  <SidebarMenuButton icon={BookOpen} isActive={pathname === `/verdict/${t.id}`} asChild>
-                    <Link to="/verdict/$slug" params={{ slug: t.id }}>
-                      {t.verdict!.product}
-                      <SidebarMenuBadge>{t.verdict!.call === "yes" ? "yes" : t.verdict!.call === "kinda" ? "kinda" : "no"}</SidebarMenuBadge>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroup>
-        )}
 
         {CATEGORY_ORDER.filter((c) => kindsByCategory[c]?.length).map((c) => (
           <SidebarGroup key={c}>
@@ -437,7 +419,7 @@ function AppSidebar() {
             </SidebarMenu>
           </SidebarGroup>
         ))}
-        {q && mine.length + starters.length + verdicts.length + Object.keys(kindsByCategory).length === 0 && (
+        {q && mine.length + starters.length + Object.keys(kindsByCategory).length === 0 && (
           <div className="px-3 py-2 text-caption text-muted-foreground">Nothing matches “{query}”.</div>
         )}
       </SidebarContent>

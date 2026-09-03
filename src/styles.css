@@ -4,7 +4,8 @@
   Site-specific rules (bento grid, shiki) are omitted. Inter is loaded from
   Google Fonts with the opsz axis so the font-weight tokens keep advance width.
 */
-@import url("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap");
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
@@ -224,8 +225,8 @@
 ============================================================================ */
 
 @theme inline {
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -305,9 +306,14 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  /* Geist reads best a touch tight, with roomy leading. */
+  letter-spacing: -0.011em;
+  line-height: 1.5;
+  font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+h1, h2, h3, .text-title, .text-heading { letter-spacing: -0.02em; }
 
 @layer base {
   h1,
@@ -388,6 +394,7 @@ html[data-size="compact"] {
 @utility text-numeric {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
 }
 
 html.transitioning *,
@@ -846,8 +853,10 @@ html.transitioning *::after {
 /* The frame behind both sidebars sits a step below the main panel, so the
    inset panel reads as a card on the shell rather than a region on the same plane. */
 :root { --shell: light-dark(#efefee, #101010); }
-.group\/sidebar-wrapper { background: var(--shell) !important; }
+body, .group\/sidebar-wrapper { background: var(--shell) !important; }
 [data-sidebar="sidebar"] { background: transparent !important; }
+/* No hairlines at the scroll edges of either rail: the rails are the shell itself. */
+[data-slot="sidebar"] .scroll-divider::before, [data-slot="sidebar"] .scroll-divider::after { display: none !important; }
 
 /* Edge-style buttons live in the React Flow controls stack; the active one is filled. */
 .react-flow__controls-button.edge-style-on { background: var(--surface-5) !important; }

@@ -316,7 +316,7 @@ function TracksView({
       {/* Fixed label/value widths so one playhead can span every row in the scroll area. */}
       <div className="relative" style={{ ["--label-w" as string]: "176px", ["--value-w" as string]: "72px", ["--gap" as string]: "12px" }}>
         {/* ruler */}
-        <div className="grid grid-cols-[var(--label-w)_minmax(0,1fr)_var(--value-w)] gap-x-[var(--gap)]">
+        <div className="grid grid-cols-[var(--label-w)_minmax(0,1fr)_var(--value-w)] gap-x-[var(--gap)] gap-y-1.5">
           <div className="h-4" />
           <div ref={trackRef} className="relative h-4 cursor-ew-resize select-none text-[9.5px] text-numeric text-muted-foreground" {...scrub} role="slider" aria-label="Simulated time" aria-valuemin={0} aria-valuemax={MONTH_DAYS} aria-valuenow={Number(day.toFixed(1))} tabIndex={0}>
             {ticks.map((t) => (
