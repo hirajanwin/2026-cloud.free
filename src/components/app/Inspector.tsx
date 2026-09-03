@@ -343,8 +343,7 @@ function NodeView({ id }: { id: string }) {
     <div className="flex flex-col gap-4 text-body">
       <BackToLayers />
       <div className="flex items-start gap-3">
-        <div className="relative flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
-          <span aria-hidden className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full" style={{ background: toneFor(id, diagram.nodes.map((x) => x.id)) }} />
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg" style={{ background: `color-mix(in oklab, ${toneFor(id, diagram.nodes.map((x) => x.id))} 16%, transparent)`, color: `color-mix(in oklab, ${toneFor(id, diagram.nodes.map((x) => x.id))} 78%, var(--foreground))` }}>
           <Glyph kind={node.kind} size={24} provider={provider} />
         </div>
         <div className="min-w-0 flex-1">

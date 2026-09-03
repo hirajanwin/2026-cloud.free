@@ -26,7 +26,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { SidebarSearchField } from "@/components/sidebar-app/search-field";
-import { SidebarWorkspaceHeader, WorkspaceTile } from "@/components/sidebar-app/workspace-header";
+import { SidebarWorkspaceHeader } from "@/components/sidebar-app/workspace-header";
 import { Tabs, TabItem, TabsList } from "@/components/ui/tabs";
 import { TabsSubtle, TabsSubtleItem } from "@/components/ui/tabs-subtle";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ import { Inspector } from "./Inspector";
 import { BillPanel } from "./BillPanel";
 import { Chat } from "./Chat";
 import { useToolLog } from "@/state/toollog";
+import { Logo } from "./Logo";
 import { ActivityPanel } from "./ActivityPanel";
 import { AlternativesPanel } from "./AlternativesPanel";
 import { ClientOnly } from "@tanstack/react-router";
@@ -403,7 +404,7 @@ function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
-            <SidebarWorkspaceHeader name="freenet.free" tile={<WorkspaceTile>F</WorkspaceTile>} />
+            <SidebarWorkspaceHeader name="freenet.free" tile={<Logo size={22} className="rounded-md" />} />
           </div>
           <ThemeButton />
         </div>

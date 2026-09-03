@@ -33,7 +33,7 @@ import { FIT_EVENT } from "@/lib/shortcuts";
 import type { Direction } from "@/engine/dsl";
 import { layoutDiagram, NODE_H, NODE_W } from "@/engine/layout";
 import { defaultProtection, edgeKey } from "@/engine/sim";
-import { PROTECTION_MODE_LABEL, REQUEST_CLASSES } from "@/engine/types";
+import {PROTECTION_MODE_LABEL } from "@/engine/types";
 import { formatCount } from "@/lib/format";
 import { studio, useStudio } from "@/state/store";
 import { applyPatch } from "@/engine/dsl";
@@ -52,7 +52,7 @@ type ProductNodeData = {
   service?: unknown;
 };
 type GroupNodeData = { id: string; label?: string; tone: string };
-type FlowEdgeData = { key: string; label?: string; style: string; outIndex: number; tone?: string };
+type FlowEdgeData = { key: string; label?: string; style: string; outIndex: number; tone?: string; toTone?: string };
 
 type RFNode = Node<ProductNodeData, "product"> | Node<GroupNodeData, "group">;
 type RFEdge = Edge<FlowEdgeData, "flow">;
@@ -182,13 +182,6 @@ const GroupNode = memo(function GroupNode({
 
 /* ------------------------------------------------------------------ */
 
-const CLASS_COLOR: Record<string, string> = {
-  human: "var(--success)",
-  googlebot: "var(--info)",
-  "ai-crawler": "var(--warning)",
-  scraper: "var(--destructive)",
-  botnet: "var(--destructive)",
-};
 
 const FlowEdge = memo(function FlowEdge({
   id,
@@ -229,25 +222,29 @@ const FlowEdge = memo(function FlowEdge({
   // Dash speed follows the log of traffic so a busy edge visibly moves faster.
   const duration =
     total <= 0 ? 0 : Math.max(0.6, 6 - Math.log10(Math.max(1, total)));
-  // Dominant class colours the edge so a botnet path reads red before you look at numbers.
-  let dominant = "human";
-  if (flow)
-    for (const c of REQUEST_CLASSES)
-      if (flow[c] > (flow[dominant as keyof typeof flow] ?? 0)) dominant = c;
-  const stroke = isAnnotation
-    ? "var(--muted-foreground)"
-    : total > 0
-      ? CLASS_COLOR[dominant]
-      : "var(--muted-foreground)";
+  // The line runs from the source node's colour to the target node's, so you can read which
+  // pair it joins without following it. A userSpaceOnUse gradient keeps the ends pinned.
+  const gradId = `edge-grad-${id.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+  const from = data?.tone ?? "var(--muted-foreground)";
+  const to = data?.toTone ?? from;
 
   return (
     <>
+      {!isAnnotation && (
+        <defs>
+          <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1={sourceX} y1={sourceY} x2={targetX} y2={targetY}>
+            <stop offset="0" stopColor={from} />
+            <stop offset="1" stopColor={to} />
+          </linearGradient>
+        </defs>
+      )}
       <BaseEdge
         id={id}
         path={path}
         markerEnd={isAnnotation ? undefined : "url(#flow-arrow)"}
         style={{
-          stroke: isAnnotation ? "var(--muted-foreground)" : data?.tone ? `color-mix(in oklab, ${data.tone} 55%, transparent)` : "color-mix(in oklab, var(--foreground) 28%, transparent)",
+          stroke: isAnnotation ? "var(--muted-foreground)" : `url(#${gradId})`,
+          opacity: isAnnotation ? 1 : 0.45,
           strokeWidth: width + 0.5,
           strokeDasharray: isAnnotation ? "3 4" : undefined,
         }}
@@ -256,7 +253,7 @@ const FlowEdge = memo(function FlowEdge({
         <path
           d={path}
           fill="none"
-          stroke={stroke}
+          stroke={`url(#${gradId})`}
           strokeWidth={width}
           strokeDasharray="7 11"
           className="flow-dash"
@@ -443,6 +440,7 @@ function CanvasInner() {
             label: e.label,
             style: e.style,
             tone: toneFor(e.style === "back" ? e.to : e.from, diagram.nodes.map((n) => n.id)),
+            toTone: toneFor(e.style === "back" ? e.from : e.to, diagram.nodes.map((n) => n.id)),
             outIndex: (() => {
               const src = e.style === "back" ? e.to : e.from;
               const n = outSeen.get(src) ?? 0;

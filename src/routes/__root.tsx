@@ -31,6 +31,8 @@ const APP_JSON_LD = JSON.stringify({
 const THEME_INIT_SCRIPT = `(function(){try{var s=window.localStorage.getItem('theme');var r=document.documentElement;r.classList.remove('light','dark');if(s==='light'||s==='dark'){r.classList.add(s);}}catch(e){}})();`;
 
 const SITE_TITLE = "freenet.free";
+/** Public origin, used for absolute Open Graph URLs. Change when the domain does. */
+const SITE_URL = "https://freenet.free";
 const SITE_DESCRIPTION =
   "Design how to build a product on Cloudflare or Vercel, watch requests flow and get billed, and let your browser's agent drive the canvas through WebMCP.";
 
@@ -44,8 +46,25 @@ export const Route = createRootRoute({
       { property: "og:title", content: SITE_TITLE },
       { property: "og:description", content: SITE_DESCRIPTION },
       { name: "color-scheme", content: "light dark" },
+      { name: "theme-color", content: "#101010" },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: SITE_TITLE },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:image", content: `${SITE_URL}/og.png` },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "freenet.free: three nodes, one net" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: SITE_TITLE },
+      { name: "twitter:description", content: SITE_DESCRIPTION },
+      { name: "twitter:image", content: `${SITE_URL}/og.png` },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: "/icon-512.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+    ],
   }),
   shellComponent: RootDocument,
   notFoundComponent: () => (
