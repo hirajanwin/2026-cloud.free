@@ -351,7 +351,13 @@ function tick(nowMs: number) {
 }
 
 export function startClock() {
-  if (rafId !== null || typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
+  // One clock per page, even across hot module reloads: a fresh module
+  // instance takes over from the previous one instead of running beside it.
+  const w = window as unknown as { __blueprintClockStop?: () => void };
+  if (rafId !== null) return;
+  w.__blueprintClockStop?.();
+  w.__blueprintClockStop = stopClock;
   lastT = performance.now();
   lastPublish = lastT;
   const frame = (t: number) => {
@@ -374,6 +380,11 @@ export function stopClock() {
   rafId = null;
   intervalId = null;
 }
+
+// Start on the client as soon as the store exists. ClockStarter also calls
+// startClock, which is a no-op once this has run; after an HMR swap of this
+// module the new instance starts its own loop and stops the old one.
+if (typeof window !== "undefined") startClock();
 
 /* ------------------------------------------------------------------ *
  * React binding
