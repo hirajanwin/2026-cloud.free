@@ -34,6 +34,7 @@ export type PanelId = "inspect" | "traffic" | "bill" | "chat";
 export type ChatTab = "chat" | "code" | "activity";
 /** How the canvas arranges nodes. "flow" follows the DSL direction; "snake" wraps the flow into rows. */
 export type ViewLayout = "flow" | "snake";
+export type EdgeStyleMode = "curved" | "step" | "straight";
 
 export interface StudioState {
   source: string;
@@ -57,6 +58,7 @@ export interface StudioState {
   panel: PanelId;
   chatTab: ChatTab;
   viewLayout: ViewLayout;
+  edgeStyle: EdgeStyleMode;
   analysis: ProductAnalysis | null;
   /** WebMCP status for the badge. */
   webmcp: { supported: boolean; registered: number; enabled: boolean };
@@ -105,6 +107,7 @@ function createInitial(): StudioState {
     panel: "inspect",
     chatTab: "chat",
     viewLayout: "snake",
+    edgeStyle: "curved",
     analysis: null,
     webmcp: { supported: false, registered: 0, enabled: true },
     revision: 0,
@@ -242,6 +245,10 @@ export const studio = {
 
   setChatTab(chatTab: ChatTab) {
     set({ chatTab, panel: "chat" });
+  },
+
+  setEdgeStyle(edgeStyle: EdgeStyleMode) {
+    set({ edgeStyle });
   },
 
   /** Re-run auto-layout, discarding manual nudges. */

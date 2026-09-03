@@ -41,6 +41,40 @@ function useGlide(target: number, ms = 220): number {
   return value;
 }
 
+/** A thin donut of the request mix. Arcs are stroke-dasharray segments on one circle, so it costs nothing to animate. */
+function Donut({ shares, total }: { shares: { key: string; value: number; color: string; dim?: boolean }[]; total: number }) {
+  const r = 14;
+  const c = 2 * Math.PI * r;
+  let acc = 0;
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden className="shrink-0 -rotate-90">
+      <circle cx="20" cy="20" r={r} fill="none" stroke="var(--muted)" strokeWidth="6" />
+      {total > 0 &&
+        shares.map((s) => {
+          const frac = s.value / total;
+          const dash = frac * c;
+          const el = (
+            <circle
+              key={s.key}
+              cx="20"
+              cy="20"
+              r={r}
+              fill="none"
+              stroke={s.color}
+              strokeOpacity={s.dim ? 0.6 : 1}
+              strokeWidth="6"
+              strokeDasharray={`${dash} ${c - dash}`}
+              strokeDashoffset={-acc}
+              className="transition-[stroke-dasharray,stroke-dashoffset] duration-300"
+            />
+          );
+          acc += dash;
+          return el;
+        })}
+    </svg>
+  );
+}
+
 export function TrafficStrip() {
   const snapshot = useStudio((s) => s.snapshot);
   const offered = REQUEST_CLASSES.reduce((s, c) => s + snapshot.offered[c], 0);
@@ -59,19 +93,10 @@ export function TrafficStrip() {
         </div>
       </div>
 
-      {/* mix bar + legend */}
-      <div className="min-w-0">
-        <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted" aria-hidden>
-          {REQUEST_CLASSES.map((c) => (
-            <span
-              key={c}
-              title={REQUEST_CLASS_LABEL[c]}
-              className="transition-[width] duration-200"
-              style={{ width: `${offered > 0 ? (snapshot.offered[c] / offered) * 100 : 0}%`, background: CLASS_TONE[c], opacity: c === "botnet" ? 0.6 : 1 }}
-            />
-          ))}
-        </div>
-        <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] leading-4 text-numeric text-muted-foreground">
+      {/* mix donut + legend */}
+      <div className="flex min-w-0 items-center gap-3">
+        <Donut shares={REQUEST_CLASSES.map((c) => ({ key: c, value: snapshot.offered[c], color: CLASS_TONE[c], dim: c === "botnet" }))} total={offered} />
+        <div className="flex min-w-0 flex-wrap gap-x-3 text-[11px] leading-4 text-numeric text-muted-foreground">
           {REQUEST_CLASSES.map((c) => (
             <span key={c} className="inline-flex items-center gap-1 whitespace-nowrap">
               <span className="inline-block size-1.5 rounded-full" style={{ background: CLASS_TONE[c], opacity: c === "botnet" ? 0.6 : 1 }} />

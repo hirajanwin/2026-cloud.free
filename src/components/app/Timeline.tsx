@@ -20,10 +20,10 @@ const DAY = 86_400;
 const MONTH_DAYS = 30;
 /** One hue per meter so the legend and the markers read together. */
 const METER_TONES = ["var(--info)", "var(--success)", "var(--warning)", "#a78bfa", "#f472b6", "#22d3ee", "#fb923c", "#34d399"];
-const SPEEDS: { label: string; value: number }[] = [
-  { label: "1 h/s", value: 3600 },
-  { label: "4 h/s", value: 4 * 3600 },
-  { label: "1 d/s", value: DAY },
+const SPEEDS: { label: string; value: number; help: string }[] = [
+  { label: "1 h/s", value: 3600, help: "One simulated hour per real second: the month plays in 12 minutes." },
+  { label: "4 h/s", value: 4 * 3600, help: "Four simulated hours per real second: the month plays in 3 minutes." },
+  { label: "1 d/s", value: DAY, help: "One simulated day per real second: the month plays in 30 seconds." },
 ];
 /** Vertical scale of a track, in percent of allowance. */
 const Y_MAX = 160;
@@ -125,17 +125,21 @@ export function Timeline() {
             Day <span className="text-numeric text-foreground">{(elapsed / DAY).toFixed(1)}</span> of {MONTH_DAYS}
             {atEnd && !running ? " · month complete" : ""}
           </span>
-          <span className="ml-1 inline-flex overflow-hidden rounded-md bg-muted p-0.5">
+          <span className="ml-1 inline-flex items-center gap-1 text-[10.5px]">
+            <span className="hidden lg:inline">Speed</span>
+          </span>
+          <span className="inline-flex overflow-hidden rounded-md bg-muted p-0.5">
             {SPEEDS.map((s) => (
-              <button
-                key={s.value}
-                type="button"
-                onClick={() => studio.setSpeed(s.value)}
-                className={`rounded px-1.5 py-0.5 text-[10.5px] text-numeric transition-colors ${speed === s.value ? "bg-surface-4 text-foreground shadow-surface-1" : "text-muted-foreground hover:text-foreground"}`}
-                aria-pressed={speed === s.value}
-              >
-                {s.label}
-              </button>
+              <Tooltip key={s.value} content={s.help}>
+                <button
+                  type="button"
+                  onClick={() => studio.setSpeed(s.value)}
+                  className={`rounded px-1.5 py-0.5 text-[10.5px] text-numeric transition-colors ${speed === s.value ? "bg-surface-4 text-foreground shadow-surface-1" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-pressed={speed === s.value}
+                >
+                  {s.label}
+                </button>
+              </Tooltip>
             ))}
           </span>
         </span>
@@ -395,99 +399,92 @@ function TracksView({
         <span>Drag to scrub · shift-scroll to pan · click a row to focus its node</span>
       </div>
 
-      <div className="grid grid-cols-[minmax(150px,200px)_minmax(0,1fr)_72px] gap-x-3">
-        {/* labels */}
-        <div className="flex flex-col">
+      {/* Fixed label/value widths so one playhead can span every row in the scroll area. */}
+      <div className="relative" style={{ ["--label-w" as string]: "176px", ["--value-w" as string]: "72px", ["--gap" as string]: "12px" }}>
+        {/* ruler */}
+        <div className="grid grid-cols-[var(--label-w)_minmax(0,1fr)_var(--value-w)] gap-x-[var(--gap)]">
           <div className="h-4" />
-          <div className="max-h-[168px] overflow-hidden">
-            {tracks.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => studio.focus(t.id)}
-                onMouseEnter={() => setHover(t.id)}
-                onMouseLeave={() => setHover(null)}
-                style={{ height: ROW }}
-                className={`flex w-full min-w-0 items-center gap-2 rounded-md px-2 text-left leading-4 hover:bg-hover ${selectedId === t.id ? "bg-hover" : ""}`}
-                title={t.line ? `${t.line.label} · account total against its allowance` : "No metered quota"}
-              >
-                <span className="inline-block size-2 shrink-0 rounded-full" style={{ background: t.tone }} aria-hidden />
-                <span className="min-w-0">
-                  <span className="block truncate text-[11.5px] text-foreground">{t.label}</span>
-                  <span className="block truncate text-[10px] text-muted-foreground">{t.line ? t.line.label : `${t.product} · unmetered`}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* tracks column: ruler + rows + ONE playhead */}
-        <div ref={trackRef} className="relative cursor-ew-resize select-none" {...scrub} role="slider" aria-label="Simulated time" aria-valuemin={0} aria-valuemax={MONTH_DAYS} aria-valuenow={Number(day.toFixed(1))} tabIndex={0}>
-          <div className="relative h-4 text-[9.5px] text-numeric text-muted-foreground">
+          <div ref={trackRef} className="relative h-4 cursor-ew-resize select-none text-[9.5px] text-numeric text-muted-foreground" {...scrub} role="slider" aria-label="Simulated time" aria-valuemin={0} aria-valuemax={MONTH_DAYS} aria-valuenow={Number(day.toFixed(1))} tabIndex={0}>
             {ticks.map((t) => (
               <span key={t.label + t.x} className="absolute -translate-x-1/2" style={{ left: `${t.x * 100}%` }}>
                 {t.label}
               </span>
             ))}
           </div>
-          <div className="max-h-[168px] overflow-hidden">
+          <div className="h-4" />
+        </div>
+
+        {/* rows: one scroll container for all three columns */}
+        <div className="relative max-h-[168px] overflow-y-auto">
+          <div className="grid grid-cols-[var(--label-w)_minmax(0,1fr)_var(--value-w)] gap-x-[var(--gap)]">
             {tracks.map((t) => {
               const l = t.line;
               const paths = l ? trackPath(l, start, span) : null;
+              const over = l ? l.status === "over-free" || l.status === "charged" : false;
               return (
-                <div key={t.id} style={{ height: ROW }} className="py-0.5" onMouseEnter={() => setHover(t.id)} onMouseLeave={() => setHover(null)}>
-                  <div className={`relative h-full rounded-md ${hover === t.id || selectedId === t.id ? "bg-surface-4/70" : "bg-surface-3/60"}`}>
-                    <svg viewBox={`0 0 ${span} ${Y_MAX}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden>
-                      <line x1="0" x2={span} y1={Y_MAX - 100} y2={Y_MAX - 100} stroke="color-mix(in oklab, var(--foreground) 28%, transparent)" strokeWidth="1" vectorEffect="non-scaling-stroke" strokeDasharray="3 3" />
-                      {paths && paths.overPath && <path d={paths.overPath} fill={overTone} fillOpacity="0.35" />}
-                      {paths ? (
-                        <path d={paths.path} fill="none" stroke={t.tone} strokeWidth="1.6" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-                      ) : (
-                        <line x1="0" x2={span} y1={Y_MAX - 4} y2={Y_MAX - 4} stroke="var(--muted-foreground)" strokeOpacity="0.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                      )}
-                      {inWindow && <rect x={(day - start)} y="0" width={Math.max(0, span - (day - start))} height={Y_MAX} fill="var(--background)" fillOpacity="0.45" />}
-                    </svg>
+                <div key={t.id} className="contents">
+                  <button
+                    type="button"
+                    onClick={() => studio.focus(t.id)}
+                    onMouseEnter={() => setHover(t.id)}
+                    onMouseLeave={() => setHover(null)}
+                    style={{ height: ROW }}
+                    className={`flex w-full min-w-0 items-center gap-2 rounded-md px-2 text-left leading-4 hover:bg-hover ${selectedId === t.id ? "bg-hover" : ""}`}
+                    title={l ? `${l.label} · account total against its allowance` : "No metered quota"}
+                  >
+                    <span className="inline-block size-2 shrink-0 rounded-full" style={{ background: t.tone }} aria-hidden />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[11.5px] text-foreground">{t.label}</span>
+                      <span className="block truncate text-[10px] text-muted-foreground">{l ? l.label : `${t.product} · unmetered`}</span>
+                    </span>
+                  </button>
+                  <div style={{ height: ROW }} className="cursor-ew-resize select-none py-0.5" {...scrub} onMouseEnter={() => setHover(t.id)} onMouseLeave={() => setHover(null)}>
+                    <div className={`relative h-full rounded-md ${hover === t.id || selectedId === t.id ? "bg-surface-4/70" : "bg-surface-3/60"}`}>
+                      <svg viewBox={`0 0 ${span} ${Y_MAX}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden>
+                        <line x1="0" x2={span} y1={Y_MAX - 100} y2={Y_MAX - 100} stroke="color-mix(in oklab, var(--foreground) 28%, transparent)" strokeWidth="1" vectorEffect="non-scaling-stroke" strokeDasharray="3 3" />
+                        {paths && paths.overPath && <path d={paths.overPath} fill={overTone} fillOpacity="0.35" />}
+                        {paths ? (
+                          <path d={paths.path} fill="none" stroke={t.tone} strokeWidth="1.6" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+                        ) : (
+                          <line x1="0" x2={span} y1={Y_MAX - 4} y2={Y_MAX - 4} stroke="var(--muted-foreground)" strokeOpacity="0.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                        )}
+                        {inWindow && <rect x={day - start} y="0" width={Math.max(0, span - (day - start))} height={Y_MAX} fill="var(--background)" fillOpacity="0.45" />}
+                      </svg>
+                    </div>
+                  </div>
+                  <div style={{ height: ROW }} className={`flex flex-col justify-center text-right text-[11px] text-numeric ${over ? "text-destructive" : "text-muted-foreground"}`}>
+                    {l ? (
+                      <>
+                        <div className="text-foreground">{Math.round(valueAt(l) * 100)}%</div>
+                        <div className="text-[9.5px]">{l.isDaily ? (Number.isFinite(l.crossDay) && l.crossDay < 1 ? `cap ${(l.crossDay * 24).toFixed(0)}h` : "daily") : Number.isFinite(l.crossDay) && l.crossDay <= MONTH_DAYS ? `day ${l.crossDay.toFixed(0)}` : "in budget"}</div>
+                      </>
+                    ) : (
+                      <div className="text-[9.5px]">–</div>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
+          {/* one playhead across every row, positioned in the middle column */}
           {inWindow && (
-            <>
-              <div className="pointer-events-none absolute bottom-0 top-4 w-px bg-foreground" style={{ left: `${playX}%` }} />
-              <div
-                className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-surface-4 px-2 py-0.5 text-[10.5px] text-numeric text-foreground shadow-surface-3"
-                style={{ left: `${playX}%` }}
-              >
-                {fmtDay(day)} · {formatCount(offered)} req · <span className="text-destructive">{formatCount(snapshot.outcomes.blocked)} blocked</span> · <span className="text-warning">{formatCount(snapshot.outcomes.dropped)} dropped</span>
-                {hover && (() => { const t = tracks.find((x) => x.id === hover); return t?.line ? <> · {t.label} {Math.round(valueAt(t.line) * 100)}%</> : null; })()}
-              </div>
-            </>
+            <div
+              className="pointer-events-none absolute bottom-0 top-0 w-px bg-foreground"
+              style={{ left: `calc(var(--label-w) + var(--gap) + (100% - var(--label-w) - var(--value-w) - 2 * var(--gap)) * ${playX / 100})` }}
+            />
           )}
         </div>
 
-        {/* values */}
-        <div className="flex flex-col">
-          <div className="h-4" />
-          <div className="max-h-[168px] overflow-hidden">
-            {tracks.map((t) => {
-              const l = t.line;
-              const over = l ? l.status === "over-free" || l.status === "charged" : false;
-              return (
-                <div key={t.id} style={{ height: ROW }} className={`flex flex-col justify-center text-right text-[11px] text-numeric ${over ? "text-destructive" : "text-muted-foreground"}`}>
-                  {l ? (
-                    <>
-                      <div className="text-foreground">{Math.round(valueAt(l) * 100)}%</div>
-                      <div className="text-[9.5px]">{l.isDaily ? (Number.isFinite(l.crossDay) && l.crossDay < 1 ? `cap ${(l.crossDay * 24).toFixed(0)}h` : "daily") : Number.isFinite(l.crossDay) && l.crossDay <= MONTH_DAYS ? `day ${l.crossDay.toFixed(0)}` : "in budget"}</div>
-                    </>
-                  ) : (
-                    <div className="text-[9.5px]">–</div>
-                  )}
-                </div>
-              );
-            })}
+        {/* readout rides the playhead above the ruler */}
+        {inWindow && (
+          <div
+            className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-surface-4 px-2 py-0.5 text-[10.5px] text-numeric text-foreground shadow-surface-3"
+            style={{ left: `calc(var(--label-w) + var(--gap) + (100% - var(--label-w) - var(--value-w) - 2 * var(--gap)) * ${playX / 100})` }}
+          >
+            {fmtDay(day)} · {formatCount(offered)} req · <span className="text-destructive">{formatCount(snapshot.outcomes.blocked)} blocked</span> · <span className="text-warning">{formatCount(snapshot.outcomes.dropped)} dropped</span>
+            {hover && (() => { const t = tracks.find((x) => x.id === hover); return t?.line ? <> · {t.label} {Math.round(valueAt(t.line) * 100)}%</> : null; })()}
           </div>
-        </div>
+        )}
       </div>
       {tracks.length === 0 && <div className="py-2 text-caption text-muted-foreground">Add nodes to see their quota tracks.</div>}
     </div>

@@ -17,6 +17,8 @@ import {
   ReactFlow,
   ReactFlowProvider,
   getBezierPath,
+  getSmoothStepPath,
+  getStraightPath,
   useReactFlow,
   useNodesInitialized,
   type Edge,
@@ -36,7 +38,7 @@ import { applyPatch } from "@/engine/dsl";
 import { useResolvedTheme } from "@/lib/use-resolved-theme";
 import { type Connection, type IsValidConnection } from "@xyflow/react";
 import { Glyph } from "./Glyph";
-import { toneFor } from "@/lib/tones";
+import { toneAt, toneFor } from "@/lib/tones";
 import { RotateCcw } from "lucide-react";
 
 type ProductNodeData = {
@@ -46,7 +48,7 @@ type ProductNodeData = {
   direction: Direction;
   tone: string;
 };
-type GroupNodeData = { id: string; label?: string };
+type GroupNodeData = { id: string; label?: string; tone: string };
 type FlowEdgeData = { key: string; label?: string; style: string; outIndex: number };
 
 type RFNode = Node<ProductNodeData, "product"> | Node<GroupNodeData, "group">;
@@ -106,13 +108,12 @@ const ProductNode = memo(function ProductNode({
   return (
     <div
       className={[
-        "node-in group/node relative grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-xl bg-surface-3 px-3 shadow-surface-2 transition-[box-shadow,background-color] duration-150",
+        "node-in group/node relative grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-xl border bg-surface-3 px-3 shadow-surface-2 transition-[box-shadow,background-color,border-color] duration-150",
         selected ? "node-selected ring-2 ring-[color:var(--node-tone)] shadow-surface-5" : "hover:shadow-surface-3",
         gap?.severity === "missing" ? "outline outline-1 outline-dashed outline-destructive/60" : "",
       ].join(" ")}
-      style={{ width: NODE_W, height: NODE_H, ["--node-tone" as string]: data.tone }}
+      style={{ width: NODE_W, height: NODE_H, ["--node-tone" as string]: data.tone, borderColor: selected ? data.tone : `color-mix(in oklab, ${data.tone} 55%, transparent)` }}
     >
-      <span aria-hidden className="absolute bottom-3 left-0 top-3 w-[3px] rounded-r-full" style={{ background: data.tone }} />
       <Handle type="target" position={pos.target} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
       <Handle type="source" position={pos.source} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
 
@@ -173,10 +174,11 @@ const GroupNode = memo(function GroupNode({
 }: NodeProps<Node<GroupNodeData, "group">>) {
   return (
     <div
-      className={`group-shell h-full w-full rounded-2xl border border-dashed bg-surface-2/70 transition-[border-color,box-shadow] duration-150 ${selected ? "border-foreground/50 shadow-surface-3" : "border-foreground/20"}`}
-      style={{ width, height }}
+      className={`group-shell h-full w-full rounded-2xl border bg-surface-2 shadow-surface-1 transition-[border-color,box-shadow] duration-150 ${selected ? "shadow-surface-3" : ""}`}
+      style={{ width, height, borderColor: `color-mix(in oklab, ${data.tone} ${selected ? 80 : 45}%, transparent)`, background: `color-mix(in oklab, ${data.tone} 6%, var(--surface-2))` }}
     >
-      <div className="px-3 pt-2 text-caption font-medium text-muted-foreground">
+      <div className="flex items-center gap-1.5 px-3 pt-2 text-caption font-medium text-muted-foreground">
+        <span className="inline-block size-2 rounded-sm" style={{ background: data.tone }} aria-hidden />
         {data.label ?? data.id}
       </div>
     </div>
@@ -215,7 +217,13 @@ const FlowEdge = memo(function FlowEdge({
   const anchor = horizontal
     ? { x: sourceX + dir * 44, y: sourceY - 12 - idx * 15, tx: dir > 0 ? "0, -100%" : "-100%, -100%" }
     : { x: sourceX + 10, y: sourceY + dir * (28 + idx * 15), tx: "0, -50%" };
-  const [path] = getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, curvature: 0.28 });
+  const edgeStyle = useStudio((s) => s.edgeStyle);
+  const [path] =
+    edgeStyle === "step"
+      ? getSmoothStepPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, borderRadius: 12 })
+      : edgeStyle === "straight"
+        ? getStraightPath({ sourceX, sourceY, targetX, targetY })
+        : getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, curvature: 0.28 });
   const total = flow ? sum(flow) : 0;
   const isAnnotation = data?.style === "line" || data?.style === "dotted";
   const width = isAnnotation
@@ -280,6 +288,34 @@ const FlowEdge = memo(function FlowEdge({
 
 const nodeTypes = { product: ProductNode, group: GroupNode };
 
+function EdgeStyleToggle() {
+  const edgeStyle = useStudio((s) => s.edgeStyle);
+  const items = [
+    ["curved", "Curved", "M3 17c6 0 6-10 12-10h6"],
+    ["step", "Step", "M3 17h7v-10h11"],
+    ["straight", "Straight", "M3 17 21 7"],
+  ] as const;
+  return (
+    <div className="flex items-center" role="radiogroup" aria-label="Edge style">
+      {items.map(([m, label, d]) => (
+        <button
+          key={m}
+          type="button"
+          role="radio"
+          aria-checked={edgeStyle === m}
+          title={`${label} edges`}
+          onClick={() => studio.setEdgeStyle(m)}
+          className={`flex h-7 items-center justify-center rounded-md px-1.5 transition-colors ${edgeStyle === m ? "bg-surface-5 text-foreground shadow-surface-1" : "text-muted-foreground hover:bg-hover hover:text-foreground"}`}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d={d} />
+          </svg>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Horizontal, vertical, or snake. The first two write the DSL direction; snake is a view. */
 function LayoutToggle() {
   const direction = useStudio((s) => s.diagram.direction);
@@ -318,6 +354,8 @@ function LayoutToggle() {
           {label}
         </button>
       ))}
+      <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
+      <EdgeStyleToggle />
       <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
       <button
         type="button"
@@ -392,7 +430,7 @@ function CanvasInner() {
       for (const g of diagram.groups) {
         const l = byId.get(g.id);
         if (!l) continue;
-        next.push({ id: g.id, type: "group", position: { x: l.x, y: l.y }, width: l.width, height: l.height, parentId: l.parentId, data: { id: g.id, label: g.label }, selectable: true, draggable: false, connectable: false, zIndex: -1 });
+        next.push({ id: g.id, type: "group", position: { x: l.x, y: l.y }, width: l.width, height: l.height, parentId: l.parentId, data: { id: g.id, label: g.label, tone: toneAt(diagram.nodes.length + diagram.groups.indexOf(g)) }, selectable: true, draggable: false, connectable: false, zIndex: -1 });
       }
       for (const n of diagram.nodes) {
         const l = byId.get(n.id);
