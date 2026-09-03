@@ -160,6 +160,76 @@ const FORMS: { tool: string; fields: Field[] }[] = [
       },
     ],
   },
+  {
+    tool: "set_simulation_period",
+    fields: [
+      {
+        name: "period",
+        description: "day, month or year",
+        options: ["day", "month", "year"],
+        required: true,
+      },
+    ],
+  },
+  {
+    tool: "control_timeline",
+    fields: [
+      {
+        name: "action",
+        description: "play, pause, reset, seek or status",
+        options: ["status", "play", "pause", "reset", "seek"],
+        required: true,
+      },
+      {
+        name: "at",
+        description: "For seek: position in the period from 0 (start) to 1 (end)",
+        type: "number",
+      },
+    ],
+  },
+  {
+    tool: "set_view",
+    fields: [
+      {
+        name: "layout",
+        description: "snake, vertical or horizontal",
+        options: ["", "snake", "vertical", "horizontal"],
+      },
+      {
+        name: "edgeStyle",
+        description: "curved, step or straight",
+        options: ["", "curved", "step", "straight"],
+      },
+    ],
+  },
+  {
+    tool: "focus_node",
+    fields: [
+      {
+        name: "id",
+        description: "Node id from get_diagram, e.g. worker, db or cache",
+        required: true,
+      },
+    ],
+  },
+  {
+    tool: "open_panel",
+    fields: [
+      {
+        name: "panel",
+        description: "inspect, traffic, bill or chat",
+        options: ["inspect", "traffic", "bill", "chat"],
+        required: true,
+      },
+    ],
+  },
+  {
+    tool: "save_blueprint",
+    fields: [{ name: "name", description: "Optional name for the saved blueprint" }],
+  },
+  { tool: "describe_studio", fields: [] },
+  { tool: "get_layers", fields: [] },
+  { tool: "list_blueprints", fields: [] },
   { tool: "compare_providers", fields: [] },
   { tool: "get_snapshot", fields: [] },
   { tool: "get_diagram", fields: [] },

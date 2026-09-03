@@ -29,6 +29,7 @@ import { analyzeProduct } from "@/server/analyze";
 import { studio, type ProductAnalysis } from "@/state/store";
 import { defineTool, type ToolDef } from "./define";
 import { exportConfig, proposeDsl } from "./generate";
+import { studioTools } from "./studio";
 
 const ProviderSchema = z.enum(["cloudflare", "vercel"]);
 const PlanSchema = z.enum(["free", "paid"]);
@@ -163,7 +164,7 @@ function diagramSummary() {
   };
 }
 
-export const tools: ToolDef[] = [
+const architectureTools: ToolDef[] = [
   defineTool({
     name: "get_diagram",
     description:
@@ -596,4 +597,6 @@ export const tools: ToolDef[] = [
   }),
 ];
 
+/** Architecture tools first, then studio tools (timeline, view, blueprints, orientation). */
+export const tools: ToolDef[] = [...architectureTools, ...studioTools];
 export const toolByName = new Map(tools.map((t) => [t.name, t] as const));

@@ -12,8 +12,20 @@ import { ClockStarter } from "@/components/app/ClockStarter";
 import appCss from "../styles.css?url";
 import { tools } from "@/tools";
 import { earlyRegistrationScript } from "@/tools/early";
+import { ABOUT } from "@/tools/studio";
 
 const WEBMCP_EARLY_SCRIPT = earlyRegistrationScript(tools);
+
+/** Machine-readable description of the app for agents that read the page before using tools. */
+const APP_JSON_LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: ABOUT.name,
+  description: ABOUT.whatItIs,
+  applicationCategory: "DeveloperApplication",
+  featureList: ABOUT.howToThink,
+  potentialAction: tools.map((t) => ({ "@type": "Action", name: t.name, description: t.description })),
+}).replace(/</g, "\\u003c");
 
 const THEME_INIT_SCRIPT = `(function(){try{var s=window.localStorage.getItem('theme');var r=document.documentElement;r.classList.remove('light','dark');if(s==='light'||s==='dark'){r.classList.add(s);}}catch(e){}})();`;
 
@@ -47,6 +59,7 @@ function RootDocument({ children }: { children: ReactNode }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: WEBMCP_EARLY_SCRIPT }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: APP_JSON_LD }} />
         <HeadContent />
       </head>
       <body className="font-sans antialiased">
