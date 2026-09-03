@@ -1,7 +1,7 @@
 # freenet.free — WebMCP Challenge submission
 
 ## Links
-- Live app: https://freenet.free (Cloudflare Workers; workers.dev fallback listed in the submission form)
+- Live app: https://freenet-free.designer.workers.dev (Cloudflare Workers). https://freenet.free goes live once the zone's placeholder DNS records are removed and the routes in wrangler.jsonc are re-enabled.
 - Source: https://github.com/hirajanwin/2026-cloud.free (MIT; Cloudflare product icons CC BY 4.0)
 - Requires Chrome 149+ with `chrome://flags/#enable-webmcp-testing` for the browser-agent path. Everything else works in any browser.
 
