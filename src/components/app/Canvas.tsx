@@ -338,7 +338,7 @@ function CanvasInner() {
   const theme = useResolvedTheme();
   const [nodes, setNodes] = useState<RFNode[]>([]);
   const [edges, setEdges] = useState<RFEdge[]>([]);
-  const { fitBounds } = useReactFlow();
+  const { fitBounds, fitView } = useReactFlow();
   const nodesInitialized = useNodesInitialized();
   const nodesRef = useRef<RFNode[]>([]);
   const layoutRun = useRef(0);
@@ -457,24 +457,12 @@ function CanvasInner() {
     return changed ? [...next.values()] : all;
   }, []);
 
-  // Frame a node when the layer list (or a tool) asks for focus.
+  // Frame a node when the layer list (or a tool) asks for focus. React Flow
+  // fits the measured node; the padding keeps its neighbours in view.
   useEffect(() => {
     if (!focusNonce || !selectedId) return;
-    const all = nodesRef.current;
-    const byId = new Map(all.map((n) => [n.id, n]));
-    const target = byId.get(selectedId);
-    if (!target) return;
-    const abs = (n: RFNode): { x: number; y: number } => {
-      const p = n.parentId ? byId.get(n.parentId) : undefined;
-      if (!p) return n.position;
-      const pp = abs(p);
-      return { x: pp.x + n.position.x, y: pp.y + n.position.y };
-    };
-    const { x, y } = abs(target);
-    const w = target.width ?? NODE_W;
-    const h = target.height ?? NODE_H;
-    // Frame the node with generous room, but never zoom past 1.2 so a single card does not fill the screen.
-    fitBounds({ x: x - w * 1.5, y: y - h * 2, width: w * 4, height: h * 5 }, { padding: 0.1, duration: 350 });
+    const t = setTimeout(() => fitView({ nodes: [{ id: selectedId }], padding: 1.6, maxZoom: 1.15, duration: 350 }), 30);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusNonce]);
 
