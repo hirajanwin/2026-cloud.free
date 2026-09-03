@@ -1,6 +1,6 @@
 {
   "provider": "vercel",
-  "asOf": "2026-09-02",
+  "asOf": "2026-09-03",
   "plans": {
     "free": {
       "label": "Hobby",
@@ -338,6 +338,253 @@
       },
       "source": "https://vercel.com/docs/marketplace-storage",
       "unverified": true
+    },
+    "vc.edge_config.reads": {
+      "label": "Global Config reads (formerly Edge Config reads)",
+      "unit": "reads",
+      "free": {
+        "quota": 100000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: '100K / month included' (vercel.com/pricing). Hobby cannot purchase additional usage. One read is counted per SDK/REST call regardless of how many items are retrieved; getAll() counts as a single read. Hobby limits: 1 store, 1 MB per store."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 3,
+        "per": 1000000,
+        "note": "'$3.00 per 1,000,000 reads' (docs/limits); vercel.com/pricing says 'Starting at $3 per 1M reads'. Not regionally priced in the iad1 table. Drawn from the $20 Pro credit."
+      },
+      "source": "https://vercel.com/docs/global-config/global-config-limits",
+      "unverified": false
+    },
+    "vc.edge_config.writes": {
+      "label": "Global Config writes (formerly Edge Config writes)",
+      "unit": "writes",
+      "free": {
+        "quota": 100,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: '100 writes / month included' (vercel.com/pricing). docs/limits separately lists a rate limit of 'Global Config writes per month (Free): 250' (rate limit, not the billing allowance). Hobby cannot purchase additional usage."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 10,
+        "per": 1000,
+        "note": "docs/limits: '$10 per 1K writes'; vercel.com/pricing: '$1 per 100 writes' (equivalent). CONFLICT: the Global Config limits page pricing table shows 'Global Config Writes ... $5.00' with no unit stated. Recorded $10/1K from the two sources that agree and state a unit. Pro rate limit: 100 writes per hour."
+      },
+      "source": "https://vercel.com/docs/limits",
+      "unverified": true
+    },
+    "vc.middleware.invocations": {
+      "label": "Routing Middleware invocations (formerly Edge Middleware)",
+      "unit": "invocations",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "No separate middleware meter (null = verified). Routing Middleware 'is priced using the fluid compute model' and counts against the Function invocation / Active CPU / Provisioned Memory meters (vc.functions.*). Default runtime with the middleware.ts file convention is Edge; proxy entrypoints run on Node.js."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1000000,
+        "note": "Billed as Fluid compute (function invocations $0.60/1M plus Active CPU and Provisioned Memory), not as a separate 'Middleware Invocations' meter. A related meter still exists: 'Edge Requests - Additional CPU Duration' $0.30 per hour (iad1), Pro includes 1 hour/month (docs/limits). Middleware on the edge runtime is fair-use limited to 50 ms average CPU."
+      },
+      "source": "https://vercel.com/docs/routing-middleware",
+      "unverified": false
+    },
+    "vc.sandbox.active_cpu_hrs": {
+      "label": "Vercel Sandbox Active CPU",
+      "unit": "hours",
+      "free": {
+        "quota": 5,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: '5 hours/month' included. Once quotas are exceeded 'sandbox creation is paused until 30 days have passed since you first used the feature'; no charge. Hobby max 4 vCPUs / 8 GB, 45 min session, 10 concurrent sandboxes."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.128,
+        "per": 1,
+        "note": "iad1 rate ($0.128/hour); rates vary by region (iad1, sfo1, cle1, cdg1 available). I/O wait does not count. 'All Sandbox usage on Pro plans is charged against your $20/month credit'. Pro max 8 vCPUs / 16 GB, 24 h session, 10,000 concurrent."
+      },
+      "source": "https://vercel.com/docs/sandbox/pricing",
+      "unverified": false
+    },
+    "vc.sandbox.provisioned_memory_gbhrs": {
+      "label": "Vercel Sandbox Provisioned Memory",
+      "unit": "GB-hours",
+      "free": {
+        "quota": 420,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: '420 GB-hours/month' included. Sandbox creation paused until 30 days pass once any quota is exceeded."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.0212,
+        "per": 1,
+        "note": "iad1 rate ($0.0212/GB-hour); varies by region. Each vCPU includes 2 GB memory; billed in 1-minute minimum increments for the whole sandbox lifetime. Charged against the $20 Pro credit."
+      },
+      "source": "https://vercel.com/docs/sandbox/pricing",
+      "unverified": false
+    },
+    "vc.sandbox.creations": {
+      "label": "Vercel Sandbox creations (Sandbox.create() calls)",
+      "unit": "creations",
+      "free": {
+        "quota": 5000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: '5,000/month' included. Sandbox creation paused until 30 days pass once exceeded."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.6,
+        "per": 1000000,
+        "note": "'$0.60/1M' creations, same rate in all regions. Other Sandbox meters not in this file: Sandbox Data Transfer (Hobby 20 GB/month, Pro $0.15/GB; downloads into the sandbox are free, egress and exposed-port traffic billable) and Snapshot Storage (Hobby 15 GB lifetime, Pro $0.08/GB-month)."
+      },
+      "source": "https://vercel.com/docs/sandbox/pricing",
+      "unverified": false
+    },
+    "vc.queues.messages": {
+      "label": "Vercel Queues API operations (send/receive/delete/visibility change/notify)",
+      "unit": "operations",
+      "free": {
+        "quota": 1000000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: '1M / month included' (vercel.com/pricing, listed as 'Vercel Queues (Beta)'). The queues pricing doc itself does not list per-plan allowances. Unit is API operations, not messages: every API call counts as one operation and messages are metered in 4 KiB chunks (a 12 KiB message counts as three operations), so one delivered message typically costs several operations."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.6,
+        "per": 1000000,
+        "note": "iad1 'Queue API Operations $0.60 per 1,000,000 Operations'; regionally priced. Sends with an idempotency key and push deliveries with max concurrency bill at 2x units. Functions invoked in push mode are billed at normal Fluid compute rates in addition. Drawn from the $20 Pro credit. Queues is in public beta."
+      },
+      "source": "https://vercel.com/docs/queues/pricing",
+      "unverified": false
+    },
+    "vc.workflow.steps": {
+      "label": "Vercel Workflows events (workflow state transitions)",
+      "unit": "events",
+      "free": {
+        "quota": 50000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: '50,000 events / month included'. Workflow bills Events, not steps: 'a normal step function execution produces three events' (step_created, step_started, step_completed), plus step_retrying per retry. Hobby also includes 1 GB Workflow Data Written; Workflow Data Retained is not available on Hobby (1 day retention after run completion)."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.02,
+        "per": 1000,
+        "note": "'$0.02 per 1K events' (= $20 per 1M on vercel.com/pricing). Additional Workflow meters not in this file: Workflow Data Written $0.50 per GB, Workflow Data Retained $0.50 per GB-month (Pro retention 7 days). Step code runs as Vercel Functions and is ALSO billed at Fluid compute rates (vc.functions.*), and orchestration uses Vercel Queues billed at standard Queue API Operation rates (vc.queues.messages). Drawn from the $20 Pro credit."
+      },
+      "source": "https://vercel.com/docs/workflows/pricing",
+      "unverified": false
+    },
+    "vc.web_analytics.events": {
+      "label": "Web Analytics events (page views + custom events)",
+      "unit": "events",
+      "free": {
+        "quota": 50000,
+        "period": "month",
+        "overage": "block",
+        "note": "Hobby: '50,000 events / month included', shared across all projects. Hobby cannot purchase additional events; after the limit a 3-day grace period starts, then collection is paused; 'Wait 7 days before Vercel will start collecting events again' or upgrade. Reporting window 1 month; no custom events."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0.03,
+        "per": 1000,
+        "note": "'$0.03 per 1K events' (= $3 per 100K on vercel.com/pricing), subject to the Pro monthly usage credit. Web Analytics Plus add-on is $10.00/month per team (24-month window, 8 custom-event properties, UTM parameters) with the same $0.03/1K event rate."
+      },
+      "source": "https://vercel.com/docs/analytics/limits-and-pricing",
+      "unverified": false
+    },
+    "vc.speed_insights.datapoints": {
+      "label": "Speed Insights events (data points)",
+      "unit": "events",
+      "free": {
+        "quota": 10000,
+        "period": "month",
+        "overage": "block",
+        "note": "Free tier: '10,000 events over the last 30 days, shared across the team' (rolling 30 days, recorded as a monthly quota). If exceeded 'Vercel pauses the ingestion for those projects for the next 14 days'. Additional events 'Not available' without Speed Insights Plus, which Hobby cannot buy. Free tier shows Real Experience Score only."
+      },
+      "paid": {
+        "included": 10000,
+        "period": "month",
+        "pricePer": 0.65,
+        "per": 10000,
+        "note": "Pro gets the same free 10,000 events/30 days shared across the team. On-demand events ($0.65 per 10,000) are only billable with Speed Insights Plus, a $10.00 per project per month add-on (included on Enterprise); ingestion is not paused for Plus projects. Simulators should add the $10/project fee when modelling overage."
+      },
+      "source": "https://vercel.com/docs/speed-insights/limits-and-pricing",
+      "unverified": false
+    },
+    "vc.observability.events": {
+      "label": "Observability Plus events",
+      "unit": "events",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "Observability Plus is not available on Hobby (null = not applicable, verified). Base Observability is free on all plans with 12-hour data retention and 1-hour runtime logs on Hobby."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 1.2,
+        "per": 1000000,
+        "note": "'$1.20 per 1 million events', usage-based with no base fee, prorated within the billing cycle. Enabled by default for teams created or upgraded to Paid Pro on or after April 3, 2026; existing Pro teams opt in via Billing. Projects can be excluded to control cost. Base (free) Observability on Pro: 1 day retention; Plus: 30 days. Not available on Pro trial."
+      },
+      "source": "https://vercel.com/docs/observability/observability-plus",
+      "unverified": false
+    },
+    "vc.ai_gateway.requests": {
+      "label": "AI Gateway requests (pass-through token billing)",
+      "unit": "requests",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "Unmetered by Vercel (null = no per-request fee, verified). 'AI Gateway charges no markup and no platform fee on tokens'; you pay the provider's list price from a prepaid AI Gateway Credits balance. Every team gets a free tier limited to a subset of models with lower per-model rate limits and a 'monthly free credit' whose dollar amount is NOT stated on the pricing page; free credits start with the first request and stop once credits are purchased."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1,
+        "note": "Zero markup on tokens including BYOK ('there is no markup or fee from AI Gateway'); BYOK requires the paid tier (purchased credits) and failed-key fallback usage is charged to credits. Payment processing fees are the customer's responsibility (Enterprise can pay by invoice). Optional surcharges deducted from credits: Custom Reporting $0.075 per 1,000 tag/user-ID/quota-entity writes and $5 per 1,000 reporting queries; team-wide Provider Allowlist $0.10 per 1,000 successful requests; team-wide Zero Data Retention $0.10 per 1,000 requests (per-request variants free). Trace Drains bill via Drains usage ($0.50/GB) with no Pro allowance. AI Gateway Credits are separate from the $20 Pro usage credit."
+      },
+      "source": "https://vercel.com/docs/ai-gateway/pricing",
+      "unverified": false
+    },
+    "vc.cron.invocations": {
+      "label": "Cron job invocations",
+      "unit": "invocations",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "No separate cron meter (null = verified). 'Cron jobs invoke Vercel Functions', so each run counts against Function invocations / Active CPU / Provisioned Memory (vc.functions.*). Hobby: 100 cron jobs per project, minimum interval once per day (more frequent expressions fail deployment), scheduling precision per-hour (±59 min)."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1,
+        "note": "'Cron jobs are included in all plans'; execution is billed as Fluid compute (vc.functions.*). Pro: 100 cron jobs per project, minimum interval once per minute, per-minute precision."
+      },
+      "source": "https://vercel.com/docs/cron-jobs/usage-and-pricing",
+      "unverified": false
     }
   },
   "notes": [
@@ -350,6 +597,12 @@
     "Firewall: DDoS mitigation, IP blocking, custom rules (log/deny/challenge/bypass), and Attack Challenge Mode are free on Hobby and Pro with no per-request charge; mitigated traffic does not incur Edge Requests or Fast Data Transfer. Priced WAF features: rate limiting (Hobby 1M allowed requests/month included, 1 rule; Pro usage-based $0.50/1M allowed, iad1) and OWASP CRS managed ruleset (Enterprise). BotID Basic free on all plans; BotID Deep Analysis Pro-only at $1 per 1,000 checkBotId() calls. Bot Protection managed ruleset is stated as free for all users in the Vercel changelog (not a docs/pricing page).",
     "Additional metered resources not in this file: Image cache reads (Hobby 300K, $0.40/1M) and writes (Hobby 100K, $4.00/1M); Edge Request CPU Duration ($0.30/hour iad1, Pro 1 hour included); Runtime Cache reads/writes (same rates as ISR); Build CPU minutes ($0.0035/CPU-min, Hobby builds free); Global Config reads $3/1M, writes $10/1K; Web Analytics (Hobby 50K events, Pro $0.03/1K); Speed Insights; Observability Plus $1.20/1M events; Private Data Transfer $0.15/GB.",
     "URL notes: https://vercel.com/docs/pricing/networking redirects to https://vercel.com/docs/manage-cdn-usage (explanatory only, no prices); https://vercel.com/docs/incremental-static-regeneration/usage-and-pricing returned 404 and the live page is https://vercel.com/docs/incremental-static-regeneration/limits-and-pricing; Attack Challenge Mode is documented at https://vercel.com/docs/vercel-firewall/attack-mode. Hobby ISR included amounts (1M reads, 200K writes) and Hobby Blob included amounts come from https://vercel.com/pricing; the ISR docs page itself lists no per-plan allowances.",
-    "Marketplace storage (Neon Postgres, Upstash Redis, Supabase, AWS Aurora, Prisma Postgres): provisioned from the Vercel dashboard or 'vercel install', with 'Unified billing: Pay for storage resources through your Vercel account'; plans and prices are set by the provider and are not published in Vercel docs, so vc.kv.commands and vc.postgres.compute_hrs are null/unverified."
+    "Marketplace storage (Neon Postgres, Upstash Redis, Supabase, AWS Aurora, Prisma Postgres): provisioned from the Vercel dashboard or 'vercel install', with 'Unified billing: Pay for storage resources through your Vercel account'; plans and prices are set by the provider and are not published in Vercel docs, so vc.kv.commands and vc.postgres.compute_hrs are null/unverified.",
+    "Edge Config was renamed Global Config (https://vercel.com/docs/global-config: 'Global Config was previously called Edge Config'); the /docs/edge-config/* URLs redirect to /docs/global-config/*. Pricing conflict: the Global Config limits page lists 'Global Config Writes $5.00' with no unit, while docs/limits says '$10 per 1K writes' and vercel.com/pricing says '$1 per 100 writes'; vc.edge_config.writes uses $10/1K and is marked unverified. Hobby allowances (100K reads, 100 writes per month) come from vercel.com/pricing only.",
+    "Routing Middleware (formerly Edge Middleware): https://vercel.com/docs/routing-middleware/limits and /docs/routing-middleware/usage-and-pricing both return 404; the live page https://vercel.com/docs/routing-middleware states it 'is priced using the fluid compute model', so there is no standalone middleware invocation meter and vc.middleware.invocations is recorded with pricePer 0 as a pointer to vc.functions.*.",
+    "Vercel Sandbox: https://vercel.com/docs/vercel-sandbox/pricing redirects to https://vercel.com/docs/sandbox/pricing. Hobby allowances are 5 CPU-hours, 420 GB-hours, 5,000 creations, 20 GB data transfer, 15 GB lifetime snapshot storage per month; Pro is fully usage-based against the $20 credit at iad1 rates $0.128/CPU-hr, $0.0212/GB-hr, $0.60/1M creations, $0.15/GB transfer, $0.08/GB-month snapshots.",
+    "Queues and Workflows: Vercel Queues (public beta) bills per API operation in 4 KiB chunks at $0.60/1M (iad1, regional); Hobby includes 1M operations/month per vercel.com/pricing. Vercel Workflows bills Workflow Events ($0.02/1K, Hobby 50K/month), Workflow Data Written ($0.50/GB, Hobby 1 GB) and Workflow Data Retained ($0.50/GB-month, not on Hobby); a normal step produces 3 events. Both also incur normal Fluid compute charges for the functions they invoke, and Workflows additionally consumes Queue operations.",
+    "Observability/analytics: https://vercel.com/docs/observability/limits-and-pricing redirects to https://vercel.com/docs/observability/observability-plus. Observability Plus ($1.20/1M events) is enabled by default for teams that became Paid Pro on or after 2026-04-03. Speed Insights on-demand events ($0.65/10K) require the Speed Insights Plus add-on ($10/project/month); without it the shared 10K/30-day allowance is a hard cap with a 14-day ingestion pause. Web Analytics Plus is a $10/month team add-on that does not change the $0.03/1K event rate.",
+    "AI Gateway is not a Vercel-metered resource: tokens are billed at provider list price with zero markup (including BYOK) from a prepaid AI Gateway Credits balance that is separate from the $20 Pro usage credit. The free tier's monthly credit amount is not published on the pricing page (recorded as unknown). Optional team-wide surcharges (Custom Reporting, Provider Allowlist, ZDR) are listed in the vc.ai_gateway.requests note."
   ]
 }
