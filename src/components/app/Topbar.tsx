@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabItem, TabsList } from "@/components/ui/tabs";
 import { Tooltip } from "@/components/ui/tooltip";
-import { REQUEST_CLASSES, REQUEST_CLASS_LABEL } from "@/engine/types";
+import { REQUEST_CLASSES, REQUEST_CLASS_LABEL, REQUEST_CLASS_DESCRIPTION, type RequestClass } from "@/engine/types";
 import { formatCount, formatElapsed } from "@/lib/format";
 import { studio, useStudio } from "@/state/store";
 
@@ -76,10 +76,37 @@ function Donut({ shares, total }: { shares: { key: string; value: number; color:
   );
 }
 
+// Log scale: 0..100 → 100 .. 100M requests per day.
+const toPerDay = (v: number) => Math.round(10 ** (2 + (v / 100) * 6));
+const fromPerDay = (n: number) => Math.max(0, Math.min(100, ((Math.log10(Math.max(100, n)) - 2) / 6) * 100));
+
+/** A compact labelled range: label and value on one line, the track beneath. */
+function MixRange({ label, value, display, color, title, onChange }: { label: string; value: number; display: string; color: string; title: string; onChange: (v: number) => void }) {
+  return (
+    <label className="mix-range flex w-[96px] shrink-0 flex-col gap-0.5" title={title} style={{ ["--mix-color" as string]: color }}>
+      <span className="flex items-baseline justify-between whitespace-nowrap text-[10.5px] leading-3 text-muted-foreground">
+        <span className="inline-flex items-center gap-1"><span className="inline-block size-1.5 rounded-full" style={{ background: color }} />{label}</span>
+        <span className="text-numeric text-foreground">{display}</span>
+      </span>
+      <input type="range" min={0} max={100} step={1} value={value} aria-label={label} onChange={(e) => onChange(Number(e.target.value))} />
+    </label>
+  );
+}
+
 export function TrafficStrip() {
   const snapshot = useStudio((s) => s.snapshot);
+  const mix = useStudio((s) => s.mix);
   const offered = REQUEST_CLASSES.reduce((s, c) => s + snapshot.offered[c], 0);
   const shown = useGlide(offered);
+  const shareTotal = REQUEST_CLASSES.reduce((s, c) => s + mix.shares[c], 0) || 1;
+  const setShare = (c: RequestClass, pct: number) => {
+    // Keep the others in proportion so the total stays 100%.
+    const others = REQUEST_CLASSES.filter((k) => k !== c);
+    const otherTotal = others.reduce((s, k) => s + mix.shares[k], 0) || 1;
+    const shares = { ...mix.shares, [c]: pct };
+    for (const k of others) shares[k] = ((1 - pct) * mix.shares[k]) / otherTotal;
+    studio.setMix({ shares });
+  };
 
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-6 bg-surface-2 px-4 py-2">
@@ -94,17 +121,28 @@ export function TrafficStrip() {
         </div>
       </div>
 
-      {/* mix donut + legend */}
-      <div className="flex min-w-0 items-center gap-3">
+      {/* mix donut + the controls that drive it */}
+      <div className="flex min-w-0 items-center gap-3 overflow-x-auto scrollbar-hide">
         <Donut shares={REQUEST_CLASSES.map((c) => ({ key: c, value: snapshot.offered[c], color: CLASS_TONE[c], dim: c === "botnet" }))} total={offered} />
-        <div className="flex min-w-0 flex-wrap gap-x-3 text-[11px] leading-4 text-numeric text-muted-foreground">
-          {REQUEST_CLASSES.map((c) => (
-            <span key={c} className="inline-flex items-center gap-1 whitespace-nowrap">
-              <span className="inline-block size-1.5 rounded-full" style={{ background: CLASS_TONE[c], opacity: c === "botnet" ? 0.6 : 1 }} />
-              {REQUEST_CLASS_LABEL[c]} <span className="text-foreground">{formatCount(snapshot.offered[c])}</span>
-            </span>
-          ))}
-        </div>
+        <MixRange
+          label="Per day"
+          title="Total requests per day across every class. Monthly figures use 30 days."
+          value={fromPerDay(mix.perDay)}
+          display={formatCount(mix.perDay)}
+          color="var(--muted-foreground)"
+          onChange={(v) => studio.setMix({ perDay: toPerDay(v) })}
+        />
+        {REQUEST_CLASSES.map((c) => (
+          <MixRange
+            key={c}
+            label={REQUEST_CLASS_LABEL[c]}
+            title={REQUEST_CLASS_DESCRIPTION[c]}
+            value={Math.round((mix.shares[c] / shareTotal) * 100)}
+            display={`${Math.round((mix.shares[c] / shareTotal) * 100)}%`}
+            color={CLASS_TONE[c]}
+            onChange={(v) => setShare(c, v / 100)}
+          />
+        ))}
       </div>
 
       {/* outcomes */}

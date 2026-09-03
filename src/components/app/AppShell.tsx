@@ -10,7 +10,7 @@
  */
 import { createContext, useContext, useMemo, useState, type ReactNode, useRef } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { BookOpen, Layers, Moon, PanelRight, Plus, Receipt, Save, Sliders, Sparkles, Sun, SunMoon } from "lucide-react";
+import {BookOpen, Layers, Moon, PanelRight, Plus, Receipt, Save, Sparkles, Sun, SunMoon } from "lucide-react";
 import { useThemeContext } from "@/lib/theme-context";
 import {
   Sidebar,
@@ -40,7 +40,6 @@ import { blueprints, useBlueprints } from "@/state/blueprints";
 import { Glyph } from "./Glyph";
 import { Topbar, TrafficStrip } from "./Topbar";
 import { Inspector } from "./Inspector";
-import { TrafficPanel } from "./TrafficPanel";
 import { BillPanel } from "./BillPanel";
 import { Chat } from "./Chat";
 import { useToolLog } from "@/state/toollog";
@@ -110,7 +109,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 const PANELS: { value: PanelId; label: string; icon: typeof Layers }[] = [
   { value: "inspect", label: "Inspect", icon: Layers },
-  { value: "traffic", label: "Traffic", icon: Sliders },
   { value: "bill", label: "Bill", icon: Receipt },
   { value: "chat", label: "AI", icon: Sparkles },
 ];
@@ -168,7 +166,6 @@ function RightRail() {
         <SidebarContent className="px-3 pb-3 pt-2">
           <div key={panel} className="panel-in min-w-0">
             {panel === "inspect" && <Inspector />}
-            {panel === "traffic" && <TrafficPanel />}
             {panel === "bill" && <BillPanel />}
           </div>
         </SidebarContent>

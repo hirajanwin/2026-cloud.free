@@ -30,7 +30,7 @@ export interface ProductAnalysis {
   source: "ai" | "heuristic";
 }
 
-export type PanelId = "inspect" | "traffic" | "bill" | "chat";
+export type PanelId = "inspect" | "bill" | "chat";
 export type ChatTab = "chat" | "code" | "activity" | "alternatives";
 /** How long the simulation runs for. The timeline spans exactly this. */
 export type Period = "day" | "month" | "year";

@@ -217,8 +217,8 @@ const FORMS: { tool: string; fields: Field[] }[] = [
     fields: [
       {
         name: "panel",
-        description: "inspect, traffic, bill or chat",
-        options: ["inspect", "traffic", "bill", "chat"],
+        description: "inspect, bill or chat",
+        options: ["inspect", "bill", "chat"],
         required: true,
       },
     ],
