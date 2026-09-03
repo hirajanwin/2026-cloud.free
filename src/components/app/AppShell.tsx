@@ -8,7 +8,7 @@
  * one; a small context bridge lets the top bar (inside the left tree) toggle
  * the right rail.
  */
-import { createContext, useContext, useMemo, useState, type ReactNode, useRef } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode, useRef } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {BookOpen, Layers, Moon, PanelRight, Plus, Receipt, Save, Sparkles, Sun, SunMoon } from "lucide-react";
 import { useThemeContext } from "@/lib/theme-context";
@@ -85,8 +85,9 @@ function RightTrigger() {
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const isStudio = pathname === "/";
+  const rightW = useRightWidth();
   return (
-    <SidebarProvider peek="hover" shortcut="]" width="24rem" className="h-svh overflow-hidden">
+    <SidebarProvider peek="hover" shortcut="]" width={`${rightW}px`} className="h-svh overflow-hidden">
       <RightSidebarBridge>
         <SidebarProvider peek="hover" className="h-svh min-w-0 flex-1 overflow-hidden">
           <AppSidebar />
@@ -140,12 +141,69 @@ function useUnseenAgentActivity(panel: PanelId): number {
   return Math.max(0, agentCalls - seen.current);
 }
 
+const RIGHT_KEY = "freenet.right.w";
+const RIGHT_MIN = 300;
+const RIGHT_DEFAULT = 384;
+let setRightWidth: (w: number) => void = () => {};
+
+/** Width of the right rail, remembered per browser. */
+function useRightWidth(): number {
+  const [w, setW] = useState(RIGHT_DEFAULT);
+  useEffect(() => {
+    try {
+      const v = Number(window.localStorage.getItem(RIGHT_KEY));
+      if (v >= RIGHT_MIN) setW(v);
+    } catch {
+      /* no storage */
+    }
+    setRightWidth = (next: number) => {
+      const clamped = Math.max(RIGHT_MIN, Math.min(Math.round(window.innerWidth * 0.6), Math.round(next)));
+      setW(clamped);
+      try {
+        window.localStorage.setItem(RIGHT_KEY, String(clamped));
+      } catch {
+        /* no storage */
+      }
+    };
+  }, []);
+  return w;
+}
+
+/** Thin grab strip on the right rail's inner edge. */
+function RightResizeHandle() {
+  const drag = useRef<{ startX: number; startW: number } | null>(null);
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize panel"
+      title="Drag to resize"
+      onPointerDown={(e) => {
+        const el = e.currentTarget.closest("[data-slot=sidebar]") as HTMLElement | null;
+        drag.current = { startX: e.clientX, startW: el?.getBoundingClientRect().width ?? RIGHT_DEFAULT };
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        if (!drag.current) return;
+        setRightWidth(drag.current.startW + (drag.current.startX - e.clientX));
+      }}
+      onPointerUp={() => (drag.current = null)}
+      onPointerCancel={() => (drag.current = null)}
+      onDoubleClick={() => setRightWidth(RIGHT_DEFAULT)}
+      className="group absolute inset-y-0 left-0 z-20 w-2 cursor-col-resize touch-none"
+    >
+      <span className="absolute left-0.5 top-1/2 h-10 w-1 -translate-y-1/2 rounded-full bg-transparent transition-colors group-hover:bg-muted-foreground" />
+    </div>
+  );
+}
+
 function RightRail() {
   const panel = useStudio((s) => s.panel);
   const chatTab = useStudio((s) => s.chatTab);
   const unseen = useUnseenAgentActivity(panel);
   return (
-    <Sidebar side="right" variant="inset" rail={false}>
+    <Sidebar side="right" variant="inset" rail className="relative">
+      <RightResizeHandle />
       <SidebarHeader className="px-2 pt-2">
         <Tabs value={panel} onValueChange={(v) => studio.setPanel(v as PanelId)} size="compact">
           <TabsList className="w-full">

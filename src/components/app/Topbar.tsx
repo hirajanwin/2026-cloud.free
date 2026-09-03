@@ -43,39 +43,6 @@ function useGlide(target: number, ms = 220): number {
   return value;
 }
 
-/** A thin donut of the request mix. Arcs are stroke-dasharray segments on one circle, so it costs nothing to animate. */
-function Donut({ shares, total }: { shares: { key: string; value: number; color: string; dim?: boolean }[]; total: number }) {
-  const r = 14;
-  const c = 2 * Math.PI * r;
-  let acc = 0;
-  return (
-    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden className="shrink-0 -rotate-90">
-      <circle cx="20" cy="20" r={r} fill="none" stroke="var(--muted)" strokeWidth="6" />
-      {total > 0 &&
-        shares.map((s) => {
-          const frac = s.value / total;
-          const dash = frac * c;
-          const el = (
-            <circle
-              key={s.key}
-              cx="20"
-              cy="20"
-              r={r}
-              fill="none"
-              stroke={s.color}
-              strokeOpacity={s.dim ? 0.6 : 1}
-              strokeWidth="6"
-              strokeDasharray={`${dash} ${c - dash}`}
-              strokeDashoffset={-acc}
-              className="transition-[stroke-dasharray,stroke-dashoffset] duration-300"
-            />
-          );
-          acc += dash;
-          return el;
-        })}
-    </svg>
-  );
-}
 
 // Log scale: 0..100 → 100 .. 100M requests per day.
 const toPerDay = (v: number) => Math.round(10 ** (2 + (v / 100) * 6));
@@ -84,7 +51,7 @@ const fromPerDay = (n: number) => Math.max(0, Math.min(100, ((Math.log10(Math.ma
 /** One FF scrubber: label on the left, value on the right, the fill is the value. */
 function MixRange({ label, value, display, color, title, onChange }: { label: string; value: number; display: string; color: string; title: string; onChange: (v: number) => void }) {
   return (
-    <div className="mix-range w-[148px] shrink-0" title={title} style={{ ["--mix-color" as string]: color }}>
+    <div className="mix-range min-w-0 flex-1" title={title} style={{ ["--mix-color" as string]: color }}>
       <SliderComfortable variant="scrubber" label={label} value={value} min={0} max={100} step={1} onChange={onChange} formatValue={() => display} className="!h-8 !px-3" />
     </div>
   );
@@ -92,22 +59,11 @@ function MixRange({ label, value, display, color, title, onChange }: { label: st
 
 export function TrafficStrip() {
   const snapshot = useStudio((s) => s.snapshot);
-  const mix = useStudio((s) => s.mix);
   const offered = REQUEST_CLASSES.reduce((s, c) => s + snapshot.offered[c], 0);
   const shown = useGlide(offered);
-  const shareTotal = REQUEST_CLASSES.reduce((s, c) => s + mix.shares[c], 0) || 1;
-  const setShare = (c: RequestClass, pct: number) => {
-    // Keep the others in proportion so the total stays 100%.
-    const others = REQUEST_CLASSES.filter((k) => k !== c);
-    const otherTotal = others.reduce((s, k) => s + mix.shares[k], 0) || 1;
-    const shares = { ...mix.shares, [c]: pct };
-    for (const k of others) shares[k] = ((1 - pct) * mix.shares[k]) / otherTotal;
-    studio.setMix({ shares });
-  };
 
   return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-6 bg-surface-2 px-4 py-2">
-
+    <div className="flex items-center justify-between gap-6 bg-surface-2 px-4 py-2">
       {/* headline number */}
       <div className="min-w-[132px]">
         <div className="text-numeric text-[18px] leading-6 text-foreground" style={{ fontVariationSettings: "'wght' 550, 'opsz' 18" }}>
@@ -118,27 +74,12 @@ export function TrafficStrip() {
         </div>
       </div>
 
-      {/* mix donut + the controls that drive it */}
-      <div className="flex min-w-0 items-center gap-3 overflow-x-auto scrollbar-hide">
-        <Donut shares={REQUEST_CLASSES.map((c) => ({ key: c, value: snapshot.offered[c], color: CLASS_TONE[c], dim: c === "botnet" }))} total={offered} />
-        <MixRange
-          label="Per day"
-          title="Total requests per day across every class. Monthly figures use 30 days."
-          value={fromPerDay(mix.perDay)}
-          display={formatCount(mix.perDay)}
-          color="var(--muted-foreground)"
-          onChange={(v) => studio.setMix({ perDay: toPerDay(v) })}
-        />
+      {/* per-class totals so far */}
+      <div className="hidden min-w-0 flex-wrap justify-center gap-x-3 text-[11px] leading-4 text-numeric text-muted-foreground md:flex">
         {REQUEST_CLASSES.map((c) => (
-          <MixRange
-            key={c}
-            label={REQUEST_CLASS_LABEL[c]}
-            title={REQUEST_CLASS_DESCRIPTION[c]}
-            value={Math.round((mix.shares[c] / shareTotal) * 100)}
-            display={`${Math.round((mix.shares[c] / shareTotal) * 100)}%`}
-            color={CLASS_TONE[c]}
-            onChange={(v) => setShare(c, v / 100)}
-          />
+          <span key={c} className="whitespace-nowrap">
+            {REQUEST_CLASS_LABEL[c]} <span style={{ color: CLASS_TONE[c] }}>{formatCount(snapshot.offered[c])}</span>
+          </span>
         ))}
       </div>
 
@@ -157,6 +98,43 @@ export function TrafficStrip() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** The traffic mix controls: requests per day and each class share, one scrubber each, filling the row. */
+export function TrafficBar() {
+  const mix = useStudio((s) => s.mix);
+  const shareTotal = REQUEST_CLASSES.reduce((s, c) => s + mix.shares[c], 0) || 1;
+  const setShare = (c: RequestClass, pct: number) => {
+    // Keep the others in proportion so the total stays 100%.
+    const others = REQUEST_CLASSES.filter((k) => k !== c);
+    const otherTotal = others.reduce((s, k) => s + mix.shares[k], 0) || 1;
+    const shares = { ...mix.shares, [c]: pct };
+    for (const k of others) shares[k] = ((1 - pct) * mix.shares[k]) / otherTotal;
+    studio.setMix({ shares });
+  };
+  return (
+    <div className="flex items-center gap-2 bg-surface-2 px-4 pb-1 pt-2">
+      <MixRange
+        label="Per day"
+        title="Total requests per day across every class. Monthly figures use 30 days."
+        value={fromPerDay(mix.perDay)}
+        display={formatCount(mix.perDay)}
+        color="var(--muted-foreground)"
+        onChange={(v) => studio.setMix({ perDay: toPerDay(v) })}
+      />
+      {REQUEST_CLASSES.map((c) => (
+        <MixRange
+          key={c}
+          label={REQUEST_CLASS_LABEL[c]}
+          title={REQUEST_CLASS_DESCRIPTION[c]}
+          value={Math.round((mix.shares[c] / shareTotal) * 100)}
+          display={`${Math.round((mix.shares[c] / shareTotal) * 100)}%`}
+          color={CLASS_TONE[c]}
+          onChange={(v) => setShare(c, v / 100)}
+        />
+      ))}
     </div>
   );
 }

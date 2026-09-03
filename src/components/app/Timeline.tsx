@@ -329,7 +329,7 @@ function TracksView({
         </div>
 
         {/* rows: one scroll container for all three columns */}
-        <div className="relative max-h-[168px] overflow-y-auto">
+        <div className="relative max-h-[calc(var(--tl-h,300px)-150px)] overflow-y-auto">
           <div className="grid grid-cols-[var(--label-w)_minmax(0,1fr)_var(--value-w)] gap-x-[var(--gap)]">
             {tracks.map((t) => {
               const l = t.line;
