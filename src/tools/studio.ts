@@ -285,6 +285,26 @@ export const studioTools: ToolDef[] = [
     },
   }),
   defineTool({
+    name: "list_services",
+    description:
+      "Third-party services you can put on the canvas next to the platform: OpenAI models and tools, Shopify commerce APIs, Netlify hosting primitives. Each has a service id, vendor pricing meters and default consumption per request. Add one with patch_diagram: add_node with kind external and attrs { service: \"openai.gpt55_chat\" }; override a meter with a numeric attr named after it, e.g. { output_tokens: 900 }.",
+    schema: z.object({ vendor: z.enum(["openai", "shopify", "netlify"]).optional() }),
+    annotations: { readOnlyHint: true },
+    execute: ({ vendor }) => ({
+      vendors: (vendor ? [vendor] : VENDOR_IDS).map((v) => ({ id: v, name: SERVICES[v].name, pricesAsOf: SERVICES[v].asOf, freePlanNote: SERVICES[v].freePlanNote })),
+      services: listServices(vendor as VendorId | undefined).map((p) => ({
+        service: p.service,
+        vendor: p.vendorName,
+        name: p.name,
+        tagline: p.tagline,
+        category: p.category,
+        role: p.role,
+        docs: p.docs,
+        meters: p.meters.map((m) => ({ id: m.id, label: m.label, unit: m.unit, pricePerUnitUsd: m.pricePerUnitUsd, freeMonthly: m.freeMonthly, defaultPerRequest: m.defaultPerRequest, note: m.perRequestNote, unverified: m.unverified || undefined })),
+      })),
+    }),
+  }),
+  defineTool({
     name: "list_blueprints",
     description: "Saved blueprints in this browser (id, name, provider, plan, node count, where it was remixed from, last updated), and which one is open.",
     schema: z.object({}),
