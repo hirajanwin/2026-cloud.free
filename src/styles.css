@@ -867,3 +867,6 @@ body, .group\/sidebar-wrapper { background: var(--shell) !important; }
 
 /* Slider values in the numeric face, like every other number in the studio. */
 .mix-range .tabular-nums { font-family: var(--font-mono); }
+
+/* Scrubber hover tooltip: the bar sits at the top of the dock, so show it below the track. */
+.mix-range .absolute.-translate-x-1\/2.z-20 { top: calc(100% - 2px) !important; }
