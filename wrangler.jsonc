@@ -10,13 +10,11 @@
 	// Custom entry: routes Agents SDK traffic before the TanStack Start handler
 	// and exports the Durable Object class. See src/server.ts.
 	"main": "src/server.ts",
-	// Production domain. Enable once the zone's placeholder A/CNAME records for
-	// freenet.free and www.freenet.free are deleted; Cloudflare refuses a custom
-	// domain while externally managed records exist on the hostname.
-	// "routes": [
-	// 	{ "pattern": "freenet.free", "custom_domain": true },
-	// 	{ "pattern": "www.freenet.free", "custom_domain": true }
-	// ],
+	// Production domain; Cloudflare manages the DNS and certificate for both hostnames.
+	"routes": [
+		{ "pattern": "freenet.free", "custom_domain": true },
+		{ "pattern": "www.freenet.free", "custom_domain": true }
+	],
 	"workers_dev": true,
 	"observability": { "enabled": true },
 	"upload_source_maps": true,

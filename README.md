@@ -105,8 +105,3 @@ Open http://localhost:5173. For WebMCP, use Chrome 149+ with `chrome://flags/#en
 
 Deploy with `npm run deploy`. The Worker needs the `AI` binding and the `ArchitectAgent` Durable Object declared in [`wrangler.jsonc`](wrangler.jsonc); both are created on first deploy.
 
-## Notices
-
-Cloudflare, the Cloudflare logo, and Cloudflare Workers are trademarks of Cloudflare, Inc. Vercel and the Vercel logo are trademarks of Vercel, Inc. Granola is a trademark of its owner. Blueprint is an independent project and is not affiliated with or endorsed by any of them. Product names are used to describe the products. Cloudflare product icons are from the cloudflare-docs repository (CC BY 4.0); Vercel has no product icon set, so Blueprint's own glyphs are used there.
-
-UI components and design tokens are vendored from Fluid Functionalism (MIT). See [LICENSE](LICENSE).
