@@ -13,6 +13,8 @@ import { REQUEST_CLASSES, REQUEST_CLASS_DESCRIPTION, REQUEST_CLASS_LABEL, PROTEC
 import { blueprints } from "@/state/blueprints";
 import { PERIOD_DAYS, periodSeconds, studio, type Period } from "@/state/store";
 import { defineTool, type ToolDef } from "./define";
+import { downloadImage, exportCanvasImage, safeFilename } from "@/lib/canvas-export";
+import { listServices, serviceMeter, SERVICES, VENDOR_IDS, type VendorId } from "@/engine/services";
 
 const round = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
 const MONTH_LEN = 365 / 12;
@@ -48,11 +50,11 @@ export const ABOUT = {
   },
   toolGuide: {
     orient: ["describe_studio", "get_diagram", "get_snapshot", "get_layers"],
-    design: ["list_templates", "load_template", "patch_diagram", "set_diagram", "list_products", "explain_product", "list_alternatives"],
+    design: ["list_templates", "load_template", "patch_diagram", "set_diagram", "list_products", "explain_product", "list_alternatives", "list_services"],
     simulate: ["set_traffic_mix", "set_protection", "set_simulation_period", "control_timeline"],
     price: ["get_bill", "compare_providers", "explain_charge", "set_provider", "set_plan"],
     fromAnIdea: ["analyze_product", "propose_architecture", "export_config"],
-    navigate: ["focus_node", "open_panel", "set_view"],
+    navigate: ["focus_node", "open_panel", "set_view", "export_canvas_image"],
     keep: ["list_blueprints", "save_blueprint", "open_blueprint", "rename_blueprint", "remix_blueprint", "delete_blueprint"],
   },
   workflows: [
@@ -160,12 +162,14 @@ export const studioTools: ToolDef[] = [
             .map(([m, daily]) => {
               const line = lineByMeter.get(m);
               const spec = PRICING[s.provider].meters[m];
+              const svc = serviceMeter(m);
               const monthly = daily * 30;
               const allowance = line?.allowanceMonthly ?? null;
               return {
                 meter: m,
-                label: spec?.label ?? m,
-                unit: spec?.unit,
+                label: line?.label ?? spec?.label ?? m,
+                unit: spec?.unit ?? svc?.meter.unit,
+                billedBy: svc ? svc.vendorName : undefined,
                 monthlyFromThisNode: Math.round(monthly),
                 accountMonthly: line ? Math.round(line.monthly) : Math.round(monthly),
                 allowanceMonthly: allowance === null ? null : Math.round(allowance),
@@ -173,7 +177,7 @@ export const studioTools: ToolDef[] = [
                 status: line?.status ?? "unmetered",
                 costUsdPerMonth: line ? round(line.costUsd) : 0,
                 pastQuota: line?.overage === "drop" ? "requests fail" : line?.overage === "block" ? "feature stops" : "keeps serving",
-                source: spec?.source,
+                source: spec?.source ?? svc?.meter.source,
               };
             })
             .sort((a, b) => (b.percentOfAllowance ?? -1) - (a.percentOfAllowance ?? -1));
@@ -280,6 +284,44 @@ export const studioTools: ToolDef[] = [
         vercel: { product: PRODUCTS.vercel[k].name, gap: PRODUCTS.vercel[k].gap ?? null, alternatives: alternativesFor("vercel", k) },
       }));
     },
+  }),
+  defineTool({
+    name: "export_canvas_image",
+    description:
+      "Render the canvas to a PNG (the whole diagram, framed). By default the browser downloads it; set download false and includeDataUrl true to get the image back as a data URL instead. Returns width, height and size.",
+    schema: z.object({
+      download: z.boolean().optional(),
+      includeDataUrl: z.boolean().optional(),
+      filename: z.string().max(80).optional(),
+      scale: z.number().min(1).max(3).optional(),
+    }),
+    annotations: { readOnlyHint: true },
+    execute: async ({ download = true, includeDataUrl = false, filename, scale }) => {
+      const img = await exportCanvasImage({ scale });
+      const name = filename ?? safeFilename(studio.get().diagram.title);
+      if (download) downloadImage(img, name);
+      return { width: img.width, height: img.height, bytes: img.bytes, downloaded: download, filename: download ? name : undefined, dataUrl: includeDataUrl ? img.dataUrl : undefined };
+    },
+  }),
+  defineTool({
+    name: "list_services",
+    description:
+      "Third-party services you can put on the canvas next to the platform: OpenAI models and tools, Shopify commerce APIs, Netlify hosting primitives. Each has a service id, vendor pricing meters and default consumption per request. Add one with patch_diagram: add_node with kind external and attrs { service: \"openai.gpt55_chat\" }; override a meter with a numeric attr named after it, e.g. { output_tokens: 900 }.",
+    schema: z.object({ vendor: z.enum(["openai", "shopify", "netlify"]).optional() }),
+    annotations: { readOnlyHint: true },
+    execute: ({ vendor }) => ({
+      vendors: (vendor ? [vendor] : VENDOR_IDS).map((v) => ({ id: v, name: SERVICES[v].name, pricesAsOf: SERVICES[v].asOf, freePlanNote: SERVICES[v].freePlanNote })),
+      services: listServices(vendor as VendorId | undefined).map((p) => ({
+        service: p.service,
+        vendor: p.vendorName,
+        name: p.name,
+        tagline: p.tagline,
+        category: p.category,
+        role: p.role,
+        docs: p.docs,
+        meters: p.meters.map((m) => ({ id: m.id, label: m.label, unit: m.unit, pricePerUnitUsd: m.pricePerUnitUsd, freeMonthly: m.freeMonthly, defaultPerRequest: m.defaultPerRequest, note: m.perRequestNote, unverified: m.unverified || undefined })),
+      })),
+    }),
   }),
   defineTool({
     name: "list_blueprints",

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { KINDS, PRODUCTS, alternativesFor, isProductKind } from "@/engine/catalog";
+import { resolveService, unitSize } from "@/engine/services";
 import { toneFor } from "@/lib/tones";
 import { applyPatch } from "@/engine/dsl";
 import { PRICING } from "@/engine/pricing";
@@ -314,6 +315,7 @@ function NodeView({ id }: { id: string }) {
   const protection = useStudio((s) => s.protections[id]);
   const spec = isProductKind(node.kind) ? KINDS[node.kind] : undefined;
   const product = isProductKind(node.kind) ? PRODUCTS[provider][node.kind] : undefined;
+  const service = node.kind === "external" ? resolveService(node.attrs["service"]) : null;
   const attrs = {
     ...(spec?.defaults ?? {}),
     ...Object.fromEntries(
@@ -372,7 +374,34 @@ function NodeView({ id }: { id: string }) {
         </Button>
       </div>
 
-      {product && (
+      {service && (
+        <div className="rounded-xl bg-surface-2 p-3 shadow-surface-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-body font-medium">{service.product.name}</p>
+            <span className="text-caption text-muted-foreground">{service.vendorName}</span>
+          </div>
+          <p className="mt-1 text-body text-muted-foreground">{service.product.tagline}</p>
+          <ul className="mt-2 flex flex-col gap-1">
+            {service.product.meters.map((m) => {
+              const perReq = typeof node.attrs[m.id] === "number" ? (node.attrs[m.id] as number) : m.defaultPerRequest;
+              return (
+                <li key={m.id} className="flex items-baseline justify-between gap-2 text-caption">
+                  <span className="min-w-0 truncate text-foreground" title={m.perRequestNote}>{m.label}</span>
+                  <span className="shrink-0 text-numeric text-muted-foreground">
+                    {perReq} / req · {m.pricePerUnitUsd > 0 ? `$${m.pricePerUnitUsd} per ${m.unit}` : "free"}
+                    {m.freeMonthly > 0 ? ` · ${m.freeMonthly * unitSize(m.unit)} free` : ""}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2 text-caption text-muted-foreground">
+            Billed by {service.vendorName}, not by {provider === "cloudflare" ? "Cloudflare" : "Vercel"}. Override a meter with a numeric attr named after it in the DSL.{" "}
+            <a href={service.product.docs} target="_blank" rel="noreferrer" className="underline">Docs</a>
+          </p>
+        </div>
+      )}
+      {product && !service && (
         <div className="rounded-xl bg-surface-2 p-3 shadow-surface-1">
           <p className="text-body">{product.tagline}</p>
           <p className="mt-2 text-caption text-muted-foreground">

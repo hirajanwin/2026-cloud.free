@@ -23,7 +23,7 @@ Everything an agent can do, a person can do, and the other way round. The diagra
 
 ## WebMCP
 
-The page registers **32 tools** on `document.modelContext` (Chrome 149+ with `chrome://flags/#enable-webmcp-testing`). A browser agent such as Gemini in Chrome can orient itself (`describe_studio`), read and rewrite the diagram, change the provider and plan, set traffic, toggle protections, read the bill and the layer view against free-tier allowances, drive the timeline (day / month / year, play, seek), arrange the canvas, focus nodes and open panels, look up alternatives, analyse a product URL, export configuration, and save, open, rename, remix or delete blueprints.
+The page registers **34 tools** on `document.modelContext` (Chrome 149+ with `chrome://flags/#enable-webmcp-testing`). A browser agent such as Gemini in Chrome can orient itself (`describe_studio`), read and rewrite the diagram, change the provider and plan, set traffic, toggle protections, read the bill and the layer view against free-tier allowances, drive the timeline (day / month / year, play, seek), arrange the canvas, focus nodes and open panels, look up alternatives, analyse a product URL, export configuration, and save, open, rename, remix or delete blueprints.
 
 The in-page architect (an Agents SDK `Agent` on a Durable Object, streaming over HTTP through the AI SDK, with Workers AI) uses **the same tool definitions**. Its tools have no server-side `execute`: the stream stops at each call, the browser runs it, and the AI SDK continues the turn. Its tool calls are routed through `document.modelContext.executeTool` when the browser exposes it, so WebMCP is the single execution path for both agents. Without WebMCP the assistant runs the identical tools directly, and the badge in the top bar says so. The **Tools** tab lists every call, who made it, and which path it took.
 
@@ -46,7 +46,11 @@ Three layers, all backed by the same tool definitions:
 
 1. **Inline registration in `<head>`.** The tool surface (names, descriptions, JSON Schemas) is rendered into the server HTML and registered on `document.modelContext` before any bundle loads, so `getTools()` is never empty. The stubs wait for the app and hand off to the full implementations once React mounts.
 2. **Declarative forms.** Twelve tools are also announced as `<form toolname tooldescription toolautosubmit>` with `toolparamdescription` on each field, visually hidden. Agents that only read the declarative surface, or that inspect the page before JavaScript runs, still see them; submissions answer through `SubmitEvent.respondWith`.
-3. **Imperative bridge.** After hydration the full set of 32 tools is registered with `registerTool`, logged in the Tools tab and shared with the in-page architect.
+3. **Imperative bridge.** After hydration the full set of 34 tools is registered with `registerTool`, logged in the Tools tab and shared with the in-page architect.
+
+## Third-party services
+
+OpenAI, Shopify and Netlify products sit on any canvas as `external` nodes with a `service` attr (`openai.gpt55_chat`, `shopify.storefront_api`, `netlify.functions`). Each meters its own units per request (tokens, calls, GB) from `src/engine/services.json`, priced from the vendor's pricing page with source URLs, and shows up as its own lines on the bill, marked as billed by the vendor rather than the platform. The left sidebar lists them next to Cloudflare and Vercel; the filter narrows by vendor. `list_services` exposes the same catalogue to agents, and `export_canvas_image` renders the canvas to a PNG.
 
 ## How the numbers work
 

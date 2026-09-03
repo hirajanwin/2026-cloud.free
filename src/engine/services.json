@@ -1,0 +1,120 @@
+{
+  "openai": {
+    "name": "OpenAI",
+    "asOf": "2026-09-03",
+    "freePlanNote": "No free API tier; usage is pay-as-you-go per token or call (File Search storage includes 1 GB free).",
+    "products": [
+      { "id": "gpt55_chat", "name": "GPT-5.5 (Responses API)", "tagline": "Flagship reasoning and chat model, billed per input and output token", "category": "ai", "docs": "https://developers.openai.com/api/docs/pricing", "role": "compute",
+        "meters": [
+          { "id": "input_tokens", "label": "Input tokens", "unit": "1M tokens", "pricePerUnitUsd": 5.0, "freeMonthly": 0, "defaultPerRequest": 800, "perRequestNote": "prompt tokens per chat call (uncached)", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "cached_input_tokens", "label": "Cached input tokens", "unit": "1M tokens", "pricePerUnitUsd": 0.5, "freeMonthly": 0, "defaultPerRequest": 0, "perRequestNote": "prompt-cache hit tokens per call", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "output_tokens", "label": "Output tokens", "unit": "1M tokens", "pricePerUnitUsd": 30.0, "freeMonthly": 0, "defaultPerRequest": 400, "perRequestNote": "completion tokens, including reasoning, per call", "source": "https://developers.openai.com/api/docs/pricing" }
+        ] },
+      { "id": "gpt54_mini_chat", "name": "GPT-5.4 mini", "tagline": "Small, low-cost model for classification, extraction and simple replies", "category": "ai", "docs": "https://developers.openai.com/api/docs/pricing", "role": "compute",
+        "meters": [
+          { "id": "input_tokens", "label": "Input tokens", "unit": "1M tokens", "pricePerUnitUsd": 0.75, "freeMonthly": 0, "defaultPerRequest": 800, "perRequestNote": "prompt tokens per call", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "cached_input_tokens", "label": "Cached input tokens", "unit": "1M tokens", "pricePerUnitUsd": 0.075, "freeMonthly": 0, "defaultPerRequest": 0, "perRequestNote": "prompt-cache hit tokens per call", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "output_tokens", "label": "Output tokens", "unit": "1M tokens", "pricePerUnitUsd": 4.5, "freeMonthly": 0, "defaultPerRequest": 300, "perRequestNote": "completion tokens per call", "source": "https://developers.openai.com/api/docs/pricing" }
+        ] },
+      { "id": "embeddings", "name": "Embeddings (text-embedding-3)", "tagline": "Vector embeddings for search and RAG, billed per input token", "category": "ai", "docs": "https://developers.openai.com/api/docs/pricing", "role": "compute",
+        "meters": [
+          { "id": "small_tokens", "label": "text-embedding-3-small tokens", "unit": "1M tokens", "pricePerUnitUsd": 0.02, "freeMonthly": 0, "defaultPerRequest": 300, "perRequestNote": "tokens embedded per call (one query or chunk)", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "large_tokens", "label": "text-embedding-3-large tokens", "unit": "1M tokens", "pricePerUnitUsd": 0.13, "freeMonthly": 0, "defaultPerRequest": 0, "perRequestNote": "tokens embedded per call when using the large model", "source": "https://developers.openai.com/api/docs/pricing" }
+        ] },
+      { "id": "image_generation", "name": "Image generation (gpt-image-2)", "tagline": "Text-to-image and image editing, billed per image input and output token", "category": "media", "docs": "https://developers.openai.com/api/docs/pricing", "role": "compute",
+        "meters": [
+          { "id": "image_input_tokens", "label": "Input tokens (text + image)", "unit": "1M tokens", "pricePerUnitUsd": 8.0, "freeMonthly": 0, "defaultPerRequest": 150, "perRequestNote": "prompt tokens per generated image", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "image_output_tokens", "label": "Image output tokens", "unit": "1M tokens", "pricePerUnitUsd": 30.0, "freeMonthly": 0, "defaultPerRequest": 1050, "perRequestNote": "approx. output tokens for one 1024x1024 medium-quality image", "source": "https://developers.openai.com/api/docs/pricing", "unverified": true }
+        ] },
+      { "id": "realtime", "name": "Realtime API (gpt-realtime-2.1)", "tagline": "Low-latency speech-to-speech sessions, billed per audio and text token", "category": "ai", "docs": "https://developers.openai.com/api/docs/pricing", "role": "compute",
+        "meters": [
+          { "id": "audio_input_tokens", "label": "Audio input tokens", "unit": "1M tokens", "pricePerUnitUsd": 32.0, "freeMonthly": 0, "defaultPerRequest": 300, "perRequestNote": "approx. 10 s of user audio per turn", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "audio_output_tokens", "label": "Audio output tokens", "unit": "1M tokens", "pricePerUnitUsd": 64.0, "freeMonthly": 0, "defaultPerRequest": 300, "perRequestNote": "approx. 10 s of spoken reply per turn", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "text_input_tokens", "label": "Text input tokens", "unit": "1M tokens", "pricePerUnitUsd": 4.0, "freeMonthly": 0, "defaultPerRequest": 500, "perRequestNote": "instructions and context tokens per turn", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "text_output_tokens", "label": "Text output tokens", "unit": "1M tokens", "pricePerUnitUsd": 24.0, "freeMonthly": 0, "defaultPerRequest": 100, "perRequestNote": "transcript tokens per turn", "source": "https://developers.openai.com/api/docs/pricing" }
+        ] },
+      { "id": "speech", "name": "Speech (TTS and transcription)", "tagline": "gpt-4o-mini-tts text-to-speech and gpt-4o-transcribe speech-to-text", "category": "media", "docs": "https://developers.openai.com/api/docs/pricing", "role": "compute",
+        "meters": [
+          { "id": "tts_audio_output_tokens", "label": "TTS audio output tokens", "unit": "1M tokens", "pricePerUnitUsd": 12.0, "freeMonthly": 0, "defaultPerRequest": 300, "perRequestNote": "approx. 15 s of synthesized speech", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "tts_text_input_tokens", "label": "TTS text input tokens", "unit": "1M tokens", "pricePerUnitUsd": 0.6, "freeMonthly": 0, "defaultPerRequest": 60, "perRequestNote": "text tokens sent for synthesis", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "transcribe_minutes", "label": "gpt-4o-transcribe audio", "unit": "minute", "pricePerUnitUsd": 0.006, "freeMonthly": 0, "defaultPerRequest": 0.25, "perRequestNote": "minutes of audio transcribed per call (15 s)", "source": "https://developers.openai.com/api/docs/pricing" }
+        ] },
+      { "id": "builtin_tools", "name": "Built-in tools (web search, file search)", "tagline": "Hosted tools for the Responses API, billed per call and per GB stored", "category": "data", "docs": "https://developers.openai.com/api/docs/pricing", "role": "store",
+        "meters": [
+          { "id": "web_search_calls", "label": "Web search tool calls", "unit": "1k calls", "pricePerUnitUsd": 10.0, "freeMonthly": 0, "defaultPerRequest": 0.2, "perRequestNote": "fraction of user requests that trigger a web search", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "file_search_calls", "label": "File search tool calls", "unit": "1k calls", "pricePerUnitUsd": 2.5, "freeMonthly": 0, "defaultPerRequest": 0.5, "perRequestNote": "fraction of user requests that run a vector-store search", "source": "https://developers.openai.com/api/docs/pricing" },
+          { "id": "file_search_storage", "label": "File search vector storage", "unit": "GB-day", "pricePerUnitUsd": 0.1, "freeMonthly": 30, "defaultPerRequest": 0, "perRequestNote": "time-based, not per request; 1 GB free (30 GB-days a month)", "source": "https://developers.openai.com/api/docs/pricing" }
+        ] }
+    ]
+  },
+  "shopify": {
+    "name": "Shopify",
+    "asOf": "2026-09-03",
+    "freePlanNote": "No free production plan. Development stores are free to build on; paid plans include the Storefront API, Functions, Flow and Oxygen at no extra charge.",
+    "products": [
+      { "id": "storefront_api", "name": "Storefront API", "tagline": "GraphQL API for products, collections, cart and search", "category": "commerce", "docs": "https://shopify.dev/docs/api/storefront", "role": "gate",
+        "meters": [
+          { "id": "storefront_requests", "label": "Storefront API requests", "unit": "1k requests", "pricePerUnitUsd": 0, "freeMonthly": 0, "defaultPerRequest": 1, "perRequestNote": "one GraphQL call per end-user request; free, no fixed rate limit for buyer traffic (tokenless queries capped at complexity 1,000)", "source": "https://shopify.dev/docs/api/usage/rate-limits" }
+        ] },
+      { "id": "shopify_functions", "name": "Shopify Functions", "tagline": "WebAssembly extensions for discounts, delivery, payment and validation at checkout", "category": "compute", "docs": "https://shopify.dev/docs/api/functions/latest", "role": "compute",
+        "meters": [
+          { "id": "function_runs", "label": "Function executions", "unit": "1k executions", "pricePerUnitUsd": 0, "freeMonthly": 0, "defaultPerRequest": 1, "perRequestNote": "one run per cart or checkout event; not metered, limited to 11M instructions, 128 kB input, 20 kB output; custom-app functions need Plus", "source": "https://shopify.dev/docs/api/functions/latest" }
+        ] },
+      { "id": "oxygen_hosting", "name": "Hydrogen on Oxygen", "tagline": "Shopify-hosted edge runtime for Hydrogen storefronts, included with paid plans", "category": "edge", "docs": "https://shopify.dev/docs/storefronts/headless/hydrogen/fundamentals", "role": "compute",
+        "meters": [
+          { "id": "oxygen_requests", "label": "Oxygen worker requests", "unit": "1k requests", "pricePerUnitUsd": 0, "freeMonthly": 0, "defaultPerRequest": 1, "perRequestNote": "no per-request or bandwidth charge; 128 MB memory, 400 ms startup limit; 1 public environment (25 on Plus)", "source": "https://shopify.dev/docs/storefronts/headless/hydrogen/environments" }
+        ] },
+      { "id": "checkout_payments", "name": "Checkout and Shopify Payments", "tagline": "Hosted checkout; card processing fees per order", "category": "commerce", "docs": "https://help.shopify.com/en/manual/payments/shopify-payments/transactions/credit-card-rates", "role": "sink",
+        "meters": [
+          { "id": "online_card_rate", "label": "Online card rate (Basic, 2.9% of order value)", "unit": "USD of order value", "pricePerUnitUsd": 0.029, "freeMonthly": 0, "defaultPerRequest": 60, "perRequestNote": "order value in USD per completed checkout; Grow 2.7%, Advanced 2.5%", "source": "https://www.shopify.com/blog/credit-card-processing-fees", "unverified": true },
+          { "id": "online_card_fixed_fee", "label": "Online card fixed fee", "unit": "transaction", "pricePerUnitUsd": 0.3, "freeMonthly": 0, "defaultPerRequest": 1, "perRequestNote": "per completed online transaction", "source": "https://www.shopify.com/blog/credit-card-processing-fees" }
+        ] },
+      { "id": "admin_api", "name": "Admin GraphQL API and webhooks", "tagline": "Backend API for orders, products and customers; rate-limited by query cost, not billed", "category": "commerce", "docs": "https://shopify.dev/docs/api/admin-graphql", "role": "gate",
+        "meters": [
+          { "id": "admin_cost_points", "label": "Admin API query cost points", "unit": "1k points", "pricePerUnitUsd": 0, "freeMonthly": 0, "defaultPerRequest": 10, "perRequestNote": "free, leaky-bucket limited to 100 points/s (Standard), 200 (Advanced), 1,000 (Plus)", "source": "https://shopify.dev/docs/api/usage/rate-limits" },
+          { "id": "webhook_deliveries", "label": "Webhook deliveries", "unit": "1k deliveries", "pricePerUnitUsd": 0, "freeMonthly": 0, "defaultPerRequest": 0.3, "perRequestNote": "event pushes per end-user request; free, delivery not guaranteed", "source": "https://shopify.dev/docs/apps/build/webhooks" }
+        ] },
+      { "id": "shopify_flow", "name": "Shopify Flow", "tagline": "No-code automation; free on Basic, Grow, Advanced and Plus", "category": "messaging", "docs": "https://help.shopify.com/en/manual/shopify-flow", "role": "sink",
+        "meters": [
+          { "id": "flow_runs", "label": "Workflow runs", "unit": "1k runs", "pricePerUnitUsd": 0, "freeMonthly": 0, "defaultPerRequest": 0.1, "perRequestNote": "workflow runs per end-user request; free, capped by the plan's API limits", "source": "https://help.shopify.com/en/manual/shopify-flow" }
+        ] }
+    ]
+  },
+  "netlify": {
+    "name": "Netlify",
+    "asOf": "2026-09-03",
+    "freePlanNote": "Free plan: a shared pool of 300 credits a month (about $2 of usage) across bandwidth, compute, web requests and production deploys; projects pause when credits run out.",
+    "products": [
+      { "id": "functions", "name": "Netlify Functions", "tagline": "Serverless, scheduled and background functions billed by GB-hour plus web requests", "category": "compute", "docs": "https://docs.netlify.com/build/functions/usage-and-billing/", "role": "compute",
+        "meters": [
+          { "id": "compute_gb_hours", "label": "Compute", "unit": "GB-hour", "pricePerUnitUsd": 0.07, "freeMonthly": 0, "defaultPerRequest": 0.000056, "perRequestNote": "1 GB memory for about 0.2 s per invocation; 10 credits per GB-hour", "source": "https://www.netlify.com/pricing/" },
+          { "id": "function_requests", "label": "Web requests (invocations)", "unit": "1k requests", "pricePerUnitUsd": 0.001, "freeMonthly": 0, "defaultPerRequest": 1, "perRequestNote": "each invocation is a web request; 2 credits per 10k", "source": "https://www.netlify.com/pricing/" }
+        ] },
+      { "id": "edge_functions", "name": "Edge Functions", "tagline": "Deno-based functions at the CDN edge, billed as web requests", "category": "edge", "docs": "https://docs.netlify.com/build/edge-functions/limits/", "role": "compute",
+        "meters": [
+          { "id": "edge_invocations", "label": "Edge invocations (web requests)", "unit": "1k requests", "pricePerUnitUsd": 0.001, "freeMonthly": 0, "defaultPerRequest": 1, "perRequestNote": "one invocation per request; cached responses not counted", "source": "https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/how-credits-work/" }
+        ] },
+      { "id": "blobs", "name": "Netlify Blobs", "tagline": "Key/value object store for unstructured data; objects up to 5 GB", "category": "storage", "docs": "https://docs.netlify.com/build/data-and-storage/netlify-blobs/", "role": "store",
+        "meters": [
+          { "id": "blob_egress", "label": "Blob reads served (bandwidth)", "unit": "GB", "pricePerUnitUsd": 0.13, "freeMonthly": 0, "defaultPerRequest": 0.00001, "perRequestNote": "approx. 10 kB read per request, metered as bandwidth (20 credits per GB); no standalone storage rate is published", "source": "https://www.netlify.com/pricing/", "unverified": true }
+        ] },
+      { "id": "image_cdn", "name": "Image CDN", "tagline": "On-demand image transformation and format negotiation on the CDN", "category": "media", "docs": "https://docs.netlify.com/build/image-cdn/overview/", "role": "cache",
+        "meters": [
+          { "id": "image_bandwidth", "label": "Image bandwidth", "unit": "GB", "pricePerUnitUsd": 0.13, "freeMonthly": 0, "defaultPerRequest": 0.0002, "perRequestNote": "approx. 200 kB of images per page view; 20 credits per GB", "source": "https://www.netlify.com/pricing/" }
+        ] },
+      { "id": "forms", "name": "Netlify Forms", "tagline": "Built-in HTML form handling with spam filtering; free and unlimited", "category": "data", "docs": "https://docs.netlify.com/manage/forms/usage-and-billing/", "role": "sink",
+        "meters": [
+          { "id": "form_submissions", "label": "Form submissions", "unit": "1k submissions", "pricePerUnitUsd": 0, "freeMonthly": 0, "defaultPerRequest": 0.02, "perRequestNote": "submissions per end-user request; free since April 2026", "source": "https://www.netlify.com/changelog/2026-04-14-pricing-updates-april-2026/" }
+        ] },
+      { "id": "identity", "name": "Netlify Identity", "tagline": "Hosted auth (signup, login, OAuth, invite-only) at no additional cost", "category": "auth", "docs": "https://docs.netlify.com/manage/security/secure-access-to-sites/identity/overview/", "role": "gate",
+        "meters": [
+          { "id": "auth_requests", "label": "Auth API calls (web requests)", "unit": "1k requests", "pricePerUnitUsd": 0.001, "freeMonthly": 0, "defaultPerRequest": 0.2, "perRequestNote": "unlimited active users; auth calls count as web requests", "source": "https://docs.netlify.com/manage/security/secure-access-to-sites/identity/overview/" }
+        ] },
+      { "id": "hosting", "name": "CDN bandwidth and web requests", "tagline": "Static hosting metered by bandwidth and web requests; builds not metered", "category": "edge", "docs": "https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/credit-based-pricing-plans/", "role": "cache",
+        "meters": [
+          { "id": "bandwidth", "label": "Bandwidth", "unit": "GB", "pricePerUnitUsd": 0.13, "freeMonthly": 0, "defaultPerRequest": 0.0005, "perRequestNote": "approx. 500 kB served per page view; 20 credits per GB", "source": "https://www.netlify.com/pricing/" },
+          { "id": "web_requests", "label": "Web requests", "unit": "1k requests", "pricePerUnitUsd": 0.001, "freeMonthly": 0, "defaultPerRequest": 1, "perRequestNote": "page view, API call, asset or redirect; 2 credits per 10k", "source": "https://www.netlify.com/pricing/" }
+        ] }
+    ]
+  }
+}

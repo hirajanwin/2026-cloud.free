@@ -17,6 +17,7 @@
  * hard caps ("drop"/"block" overage) as a served fraction at the capped
  * node, so anything downstream of a cut-off Worker is cut off too.
  */
+import { resolveService, serviceMeterId } from "./services";
 import type { Diagram, DiagramEdge, DiagramNode, Provider } from "./dsl";
 import { CACHE_HIT_BY_CLASS, KINDS, PRODUCTS, isProductKind } from "./catalog";
 import type { ProductSpec } from "./catalog";
@@ -265,9 +266,11 @@ export function computeRates(input: SimInput): Rates {
           flow.blocked[c] += blocked;
           // Inspection is billed on everything that arrived.
           bill(flow, daily, product, attrs, a);
+          billService(flow, daily, node, attrs, a);
           a -= blocked;
         } else {
           bill(flow, daily, product, attrs, a);
+          billService(flow, daily, node, attrs, a);
         }
 
         // 2. Free-plan cap at this node.
@@ -349,6 +352,31 @@ export function computeRates(input: SimInput): Rates {
     caps,
     warnings,
   };
+}
+
+/**
+ * External nodes that point at a third-party service ("service: openai.gpt55_chat")
+ * meter that vendor's units per request. A numeric attr named after a meter
+ * id overrides its default consumption (e.g. `output_tokens: 900`).
+ */
+function billService(
+  flow: Flow,
+  daily: MeterReadings,
+  node: DiagramNode,
+  attrs: Record<string, number>,
+  amount: number,
+) {
+  if (node.kind !== "external") return;
+  const res = resolveService(node.attrs["service"]);
+  if (!res) return;
+  for (const m of res.product.meters) {
+    const per = attrs[m.id] ?? m.defaultPerRequest;
+    const v = per * amount;
+    if (!Number.isFinite(v) || v <= 0) continue;
+    const id = serviceMeterId(res.vendor, res.product.id, m.id);
+    flow.meters[id] = (flow.meters[id] ?? 0) + v;
+    daily[id] = (daily[id] ?? 0) + v;
+  }
 }
 
 function bill(

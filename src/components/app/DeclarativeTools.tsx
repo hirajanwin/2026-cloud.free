@@ -227,6 +227,7 @@ const FORMS: { tool: string; fields: Field[] }[] = [
     fields: [{ name: "name", description: "Optional name for the saved blueprint" }],
   },
   { tool: "describe_studio", fields: [] },
+  { tool: "export_canvas_image", fields: [] },
   { tool: "get_layers", fields: [] },
   { tool: "list_blueprints", fields: [] },
   { tool: "compare_providers", fields: [] },

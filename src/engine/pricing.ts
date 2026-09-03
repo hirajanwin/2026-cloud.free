@@ -8,6 +8,7 @@
 import { z } from "zod";
 import type { Provider } from "./dsl";
 import type { MeterReadings, Plan } from "./types";
+import { serviceMeter, unitSize } from "./services";
 import cloudflareRaw from "./pricing.cloudflare.json";
 import vercelRaw from "./pricing.vercel.json";
 
@@ -127,6 +128,32 @@ export function computeBill(
   const lines: BillLine[] = [];
 
   for (const [meter, d] of Object.entries(daily)) {
+    // Third-party services bill the same on either plan; the platform never sees them.
+    const svc = serviceMeter(meter);
+    if (svc) {
+      const m = d * DAYS_PER_MONTH;
+      const size = unitSize(svc.meter.unit);
+      const allowance = svc.meter.freeMonthly * size;
+      const over = Math.max(0, m - allowance);
+      const costUsd = svc.meter.pricePerUnitUsd > 0 ? (over / size) * svc.meter.pricePerUnitUsd : 0;
+      lines.push({
+        meter,
+        label: `${svc.vendorName} · ${svc.meter.label}`,
+        unit: svc.meter.unit,
+        daily: d,
+        monthly: m,
+        allowanceMonthly: allowance > 0 ? allowance : null,
+        allowancePeriod: "month",
+        overMonthly: over,
+        costUsd,
+        status: svc.meter.pricePerUnitUsd > 0 ? (costUsd > 0 ? "charged" : "ok") : "unmetered",
+        overage: "none",
+        unverified: svc.meter.unverified === true,
+        note: `Billed by ${svc.vendorName}, not by the platform. ${svc.meter.perRequestNote}.`,
+        source: svc.meter.source,
+      });
+      continue;
+    }
     const spec = pricing.meters[meter];
     if (!spec) continue;
     const m = d * DAYS_PER_MONTH;
@@ -202,11 +229,16 @@ export function computeBill(
 
   lines.sort((a, b) => b.costUsd - a.costUsd || b.monthly - a.monthly);
 
-  const usageUsd = lines.reduce((s, l) => s + l.costUsd, 0);
+  // Vendor lines (OpenAI, Shopify, Netlify) are paid to the vendor: they are
+  // never covered by the platform's plan credit and they cost money on the
+  // free plan too.
+  const vendorUsd = lines.filter((l) => serviceMeter(l.meter)).reduce((s, l) => s + l.costUsd, 0);
+  const platformUsd = lines.reduce((s, l) => s + l.costUsd, 0) - vendorUsd;
+  const usageUsd = platformUsd + vendorUsd;
   const creditUsd = plan === "paid" ? (planInfo.creditUsd ?? 0) : 0;
   const planFeeUsd = planInfo.monthlyUsd;
   const totalUsd =
-    plan === "free" ? 0 : planFeeUsd + Math.max(0, usageUsd - creditUsd);
+    (plan === "free" ? 0 : planFeeUsd + Math.max(0, platformUsd - creditUsd)) + vendorUsd;
   const breaches = lines.filter((l) => l.status === "over-free");
   const caveats = lines
     .filter((l) => l.unverified)

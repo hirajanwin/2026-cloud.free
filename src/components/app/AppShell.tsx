@@ -10,7 +10,7 @@
  */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode, useRef } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import {Layers, Moon, PanelRight, Plus, Receipt, Sparkles, Sun, SunMoon } from "lucide-react";
+import {Layers, Moon, PanelRight, Plus, Receipt, Sparkles, Sun, SunMoon, SlidersHorizontal } from "lucide-react";
 import { useThemeContext } from "@/lib/theme-context";
 import {
   Sidebar,
@@ -33,6 +33,10 @@ import { TabsSubtle, TabsSubtleItem } from "@/components/ui/tabs-subtle";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { CATEGORY_LABEL, CATEGORY_ORDER, KINDS, PRODUCTS, PRODUCT_KINDS, type ProductKind } from "@/engine/catalog";
+import type { Provider } from "@/engine/dsl";
+import { SERVICES, VENDOR_IDS, type VendorId } from "@/engine/services";
+
+const PROVIDER_LABEL: Record<Provider, string> = { cloudflare: "Cloudflare", vercel: "Vercel" };
 import { applyPatch } from "@/engine/dsl";
 import { TEMPLATES } from "@/engine/templates";
 import { studio, useStudio, type PanelId } from "@/state/store";
@@ -286,7 +290,24 @@ function AppSidebar() {
     if (pathname !== "/") void navigate({ to: "/" });
   };
 
-  const addNode = (kind: ProductKind) => {
+  const [providerFilter, setProviderFilter] = useState<"all" | Provider | VendorId>("all");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const addService = (service: string, label: string) => {
+    const s = studio.get();
+    const base = service.split(".")[1] ?? "service";
+    let nid = base;
+    let i = 2;
+    while (s.diagram.nodes.some((n) => n.id === nid) || s.diagram.groups.some((g) => g.id === nid)) nid = `${base}-${i++}`;
+    const { diagram } = applyPatch(s.diagram, [{ op: "add_node", id: nid, kind: "external", label, attrs: { service } }]);
+    studio.setDiagram(diagram);
+    studio.select(nid);
+    studio.setPanel("inspect");
+    goStudio();
+  };
+
+  const addNode = (kind: ProductKind, from: Provider = provider) => {
+    if (from !== provider) studio.setProvider(from);
     const s = studio.get();
     let nid: string = kind;
     let i = 2;
@@ -300,17 +321,37 @@ function AppSidebar() {
 
   const starters = TEMPLATES.filter((t) => !t.verdict && match(t.name, t.tagline));
   const mine = saved.filter((b) => match(b.name));
-  const kindsByCategory = useMemo(() => {
-    const out: Record<string, ProductKind[]> = {};
-    for (const k of PRODUCT_KINDS) {
-      if (k === "client") continue;
-      const p = PRODUCTS[provider][k];
-      if (!match(p.name, KINDS[k].name, p.tagline, k)) continue;
-      (out[KINDS[k].category] ??= []).push(k);
+  // Products from every provider, grouped "Provider · Category"; the filter
+  // narrows to one provider. Adding a product from the other provider switches
+  // the canvas to it, since a design prices against one provider at a time.
+  const productSections = useMemo(() => {
+    const isVendor = (VENDOR_IDS as readonly string[]).includes(providerFilter);
+    const providers: Provider[] = providerFilter === "all" ? ["cloudflare", "vercel"] : isVendor ? [] : [providerFilter as Provider];
+    const out: { key: string; label: string; provider: Provider; kinds: ProductKind[]; services?: { service: string; name: string; tagline: string }[] }[] = [];
+    for (const pv of providers) {
+      const byCat: Record<string, ProductKind[]> = {};
+      for (const k of PRODUCT_KINDS) {
+        if (k === "client" || k === "external") continue;
+        const p = PRODUCTS[pv][k];
+        if (p.gap?.severity === "missing") continue;
+        if (!match(p.name, KINDS[k].name, p.tagline, k, pv)) continue;
+        (byCat[KINDS[k].category] ??= []).push(k);
+      }
+      for (const c of CATEGORY_ORDER) {
+        if (!byCat[c]?.length) continue;
+        out.push({ key: `${pv}:${c}`, label: `${PROVIDER_LABEL[pv]} · ${CATEGORY_LABEL[c]}`, provider: pv, kinds: byCat[c] });
+      }
+    }
+    const vendors: VendorId[] = providerFilter === "all" ? [...VENDOR_IDS] : isVendor ? [providerFilter as VendorId] : [];
+    for (const v of vendors) {
+      const items = SERVICES[v].products
+        .filter((p) => match(p.name, p.tagline, SERVICES[v].name, p.category))
+        .map((p) => ({ service: `${v}.${p.id}`, name: p.name, tagline: p.tagline }));
+      if (items.length) out.push({ key: `svc:${v}`, label: SERVICES[v].name, provider: "cloudflare", kinds: [], services: items });
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider, q]);
+  }, [providerFilter, q]);
 
   return (
     <Sidebar variant="inset">
@@ -322,7 +363,23 @@ function AppSidebar() {
           <ThemeButton />
         </div>
         <div className="flex flex-col gap-0.5">
-          <SidebarSearchField placeholder="Search freenets, products…" shortcut="/" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <div className="flex items-center gap-1">
+            <div className="min-w-0 flex-1">
+              <SidebarSearchField placeholder="Search freenets, products…" shortcut="/" value={query} onChange={(e) => setQuery(e.target.value)} />
+            </div>
+            <Button variant="ghost" size="compact" aria-label="Filter products" aria-pressed={showFilters} onClick={() => setShowFilters((v) => !v)} className={showFilters ? "text-foreground" : "text-muted-foreground"}>
+              <SlidersHorizontal className="size-3.5" />
+            </Button>
+          </div>
+          {showFilters && (
+            <Tabs value={providerFilter} onValueChange={(v) => setProviderFilter(v as "all" | Provider | VendorId)} size="compact" aria-label="Provider filter">
+              <TabsList className="w-full">
+                <TabItem value="all" label="All" className="flex-1 justify-center" />
+                <TabItem value="cloudflare" label="Cloudflare" className="flex-1 justify-center" />
+                <TabItem value="vercel" label="Vercel" className="flex-1 justify-center" />
+              </TabsList>
+            </Tabs>
+          )}
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -387,20 +444,31 @@ function AppSidebar() {
         )}
 
 
-        {CATEGORY_ORDER.filter((c) => kindsByCategory[c]?.length).map((c) => (
-          <SidebarGroup key={c}>
-            <SidebarGroupLabel>
-              {CATEGORY_LABEL[c]}
-            </SidebarGroupLabel>
+        {productSections.map((sec) => (
+          <SidebarGroup key={sec.key}>
+            <SidebarGroupLabel>{sec.label}</SidebarGroupLabel>
             <SidebarMenu>
-              {kindsByCategory[c].map((k) => {
-                const p = PRODUCTS[provider][k];
+              {sec.services?.map((sv) => (
+                <SidebarMenuItem key={sv.service}>
+                  <Tooltip content={sv.tagline} side="right">
+                    <SidebarMenuButton onClick={() => addService(sv.service, sv.name)} className="group/add">
+                      <span className="flex size-4 items-center justify-center text-muted-foreground">
+                        <Glyph kind="external" size={15} />
+                      </span>
+                      <span className="truncate">{sv.name}</span>
+                      <Plus className="ml-auto size-3.5 opacity-0 transition-opacity group-hover/add:opacity-100" />
+                    </SidebarMenuButton>
+                  </Tooltip>
+                </SidebarMenuItem>
+              ))}
+              {sec.kinds.map((k) => {
+                const p = PRODUCTS[sec.provider][k];
                 return (
                   <SidebarMenuItem key={k}>
                     <Tooltip content={p.tagline} side="right">
-                      <SidebarMenuButton onClick={() => addNode(k)} className="group/add">
+                      <SidebarMenuButton onClick={() => addNode(k, sec.provider)} className="group/add">
                         <span className="flex size-4 items-center justify-center text-muted-foreground">
-                          <Glyph kind={k} size={15} provider={provider} />
+                          <Glyph kind={k} size={15} provider={sec.provider} />
                         </span>
                         <span className="truncate">{p.name}</span>
                         <Plus className="ml-auto size-3.5 opacity-0 transition-opacity group-hover/add:opacity-100" />
@@ -412,7 +480,7 @@ function AppSidebar() {
             </SidebarMenu>
           </SidebarGroup>
         ))}
-        {q && mine.length + starters.length + Object.keys(kindsByCategory).length === 0 && (
+        {q && mine.length + starters.length + productSections.length === 0 && (
           <div className="px-3 py-2 text-caption text-muted-foreground">Nothing matches “{query}”.</div>
         )}
       </SidebarContent>

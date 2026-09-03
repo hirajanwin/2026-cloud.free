@@ -197,7 +197,7 @@ const architectureTools: ToolDef[] = [
   defineTool({
     name: "patch_diagram",
     description:
-      "Apply small edits to the architecture: add/remove/set nodes, groups and edges, or set direction/title/provider. Node attrs that matter to the simulator: hit (cache 0..1), cpuMs, bytesKb, rowsRead, writeShare, limitRps, neurons, ops on edges.",
+      "Apply small edits to the architecture: add/remove/set nodes, groups and edges, or set direction/title/provider. Node attrs that matter to the simulator: hit (cache 0..1), cpuMs, bytesKb, rowsRead, writeShare, limitRps, neurons, ops on edges. Third-party services: kind external with attrs { service: \"openai.gpt55_chat\" } (ids from list_services).",
     schema: z.object({ ops: z.array(PatchOpSchema).min(1).max(50) }),
     execute: ({ ops }) => {
       const { diagram, errors } = applyPatch(
