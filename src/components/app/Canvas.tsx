@@ -474,7 +474,7 @@ function CanvasInner() {
     const { x, y } = abs(target);
     const w = target.width ?? NODE_W;
     const h = target.height ?? NODE_H;
-    const t = setTimeout(() => setCenter(x + w / 2, y + h / 2, { zoom: target.type === "group" ? 0.8 : 1.1, duration: 350 }), 30);
+    const t = setTimeout(() => setCenter(x + w / 2, y + h / 2, { zoom: target.type === "group" ? 0.8 : 1.1, duration: document.visibilityState === "visible" ? 350 : 0 }), 30);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusNonce]);
