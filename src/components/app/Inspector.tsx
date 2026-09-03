@@ -86,7 +86,7 @@ function Overview() {
         />
         <div className="text-caption text-muted-foreground">
           {diagram.nodes.length} nodes · {diagram.edges.length} edges · {diagram.groups.length} groups
-          {open ? " · saved blueprint" : t ? " · template" : ""}
+          {open ? " · saved freenet" : t ? " · template" : ""}
           {open?.from ? ` · remixed from ${open.from.name}` : ""}
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -101,7 +101,7 @@ function Overview() {
             </>
           ) : (
             <Button variant="tertiary" size="compact" leadingIcon={Save} onClick={() => blueprints.saveCurrent()}>
-              Save as blueprint
+              Save as freenet
             </Button>
           )}
         </div>

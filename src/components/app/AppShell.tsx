@@ -10,7 +10,7 @@
  */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode, useRef } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { Layers, Moon, PanelRight, Plus, Receipt, Save, Sparkles, Sun, SunMoon } from "lucide-react";
+import {Layers, Moon, PanelRight, Plus, Receipt, Sparkles, Sun, SunMoon } from "lucide-react";
 import { useThemeContext } from "@/lib/theme-context";
 import {
   Sidebar,
@@ -267,7 +267,7 @@ function ThemeButton() {
 }
 
 /* ------------------------------------------------------------------ *
- * Left sidebar: blueprints, templates, verdicts, products
+ * Left sidebar: freenets (saved designs), templates, products
  * ------------------------------------------------------------------ */
 
 function AppSidebar() {
@@ -322,7 +322,7 @@ function AppSidebar() {
           <ThemeButton />
         </div>
         <div className="flex flex-col gap-0.5">
-          <SidebarSearchField placeholder="Search blueprints, products…" shortcut="/" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <SidebarSearchField placeholder="Search freenets, products…" shortcut="/" value={query} onChange={(e) => setQuery(e.target.value)} />
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -333,16 +333,9 @@ function AppSidebar() {
                   goStudio();
                 }}
               >
-                New blueprint
+                New freenet
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {!blueprintId && pathname === "/" && (
-              <SidebarMenuItem>
-                <SidebarMenuButton icon={Save} onClick={() => blueprints.saveCurrent()}>
-                  Save canvas as blueprint
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
           </SidebarMenu>
         </div>
       </SidebarHeader>
@@ -350,7 +343,7 @@ function AppSidebar() {
       <SidebarContent>
         {(mine.length > 0 || !q) && (
           <SidebarGroup>
-            <SidebarGroupLabel>Blueprints</SidebarGroupLabel>
+            <SidebarGroupLabel>Freenets</SidebarGroupLabel>
             <SidebarMenu>
               {mine.length === 0 && <div className="px-2 py-1 text-caption text-muted-foreground">Nothing saved yet. Remix a template or save the canvas.</div>}
               {mine.map((b) => (

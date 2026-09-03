@@ -864,3 +864,6 @@ body, .group\/sidebar-wrapper { background: var(--shell) !important; }
 
 /* ── Traffic strip scrubbers ─────────────────────────────────────────────── */
 .mix-range .absolute.left-0.top-0.bottom-0 { background-color: color-mix(in oklab, var(--mix-color) 30%, var(--surface-4)) !important; }
+
+/* Slider values in the numeric face, like every other number in the studio. */
+.mix-range .tabular-nums { font-family: var(--font-mono); }

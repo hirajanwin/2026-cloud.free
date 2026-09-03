@@ -39,7 +39,7 @@ export const ABOUT = {
   requestClasses: REQUEST_CLASSES.map((c) => ({ id: c, label: REQUEST_CLASS_LABEL[c], description: REQUEST_CLASS_DESCRIPTION[c] })),
   protectionModes: PROTECTION_MODE_LABEL,
   ui: {
-    leftSidebar: "Search, New blueprint, Save canvas as blueprint, then Blueprints, Templates and Products by category. Theme toggle in its header.",
+    leftSidebar: "Search, New freenet, then Freenets (your saved designs), Templates and Products by category. Theme toggle in its header.",
     topBar: "Cloudflare / Vercel provider tabs on the left, Free / Paid plan in the centre, the WebMCP switch on the right.",
     trafficStrip: "Requests so far, a donut of the class mix, sliders for requests per day and each class share, and served / blocked / dropped counts.",
     canvas: "Nodes with product icons inside coloured groups. Snake, vertical or horizontal layout; curved, step or straight edges; reset re-runs auto layout.",
@@ -135,7 +135,7 @@ export const studioTools: ToolDef[] = [
   defineTool({
     name: "describe_studio",
     description:
-      "Start here. What Blueprint is and how it thinks (request classes, gates, caches, free-tier quotas), a map of the UI, which tool to use for what, common workflows, and the current state: provider, plan, traffic, clock position, view, selection, open blueprint.",
+      "Start here. What freenet.free is and how it thinks (request classes, gates, caches, free-tier quotas), a map of the UI, which tool to use for what, common workflows, and the current state: provider, plan, traffic, clock position, view, selection, open blueprint.",
     schema: z.object({}),
     annotations: { readOnlyHint: true },
     execute: () => ({ ...ABOUT, state: stateSummary() }),

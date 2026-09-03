@@ -14,11 +14,11 @@ import { computeBill, type BillLine } from "@/engine/pricing";
 import { PRODUCTS, isProductKind } from "@/engine/catalog";
 import {formatCount } from "@/lib/format";
 import { PERIOD_DAYS, periodSeconds, studio, useStudio, type Period } from "@/state/store";
-import { Tooltip } from "@/components/ui/tooltip";
+import { TabItem, Tabs, TabsList } from "@/components/ui/tabs";
 import { toneFor } from "@/lib/tones";
 
 const DAY = 86_400;
-const MONTH_DAYS = 30;
+const DAYS_PER_MONTH = 30;
 /** One hue per meter so the legend and the markers read together. */
 const METER_TONES = ["var(--info)", "var(--success)", "var(--warning)", "#a78bfa", "#f472b6", "#22d3ee", "#fb923c", "#34d399"];
 const PERIODS: { value: Period; label: string; help: string }[] = [
@@ -57,7 +57,7 @@ export function Timeline() {
         .map((l) => {
           const isDaily = l.allowancePeriod === "day";
           const allowance = l.allowanceMonthly!;
-          const crossDay = isDaily ? (l.daily > 0 ? allowance / MONTH_DAYS / l.daily : Infinity) : l.daily > 0 ? allowance / l.daily : Infinity;
+          const crossDay = isDaily ? (l.daily > 0 ? allowance / DAYS_PER_MONTH / l.daily : Infinity) : l.daily > 0 ? allowance / l.daily : Infinity;
           return { ...l, crossDay, isDaily };
         })
         .sort((a, b) => a.crossDay - b.crossDay),
@@ -102,6 +102,26 @@ export function Timeline() {
   };
   const atEnd = elapsed >= periodS;
 
+  // Zoom window over the period, shared by the header control and the tracks.
+  const SPANS = SPANS_FOR[period];
+  const MONTH_DAYS = periodDays;
+  const [span, setSpan] = useState<number>(periodDays);
+  const [start, setStart] = useState(0);
+  // A new period resets the window to the whole period.
+  const [seenPeriod, setSeenPeriod] = useState(period);
+  if (seenPeriod !== period) {
+    setSeenPeriod(period);
+    setSpan(periodDays);
+    setStart(0);
+  }
+  const day = elapsed / DAY;
+  const zoom = (dir: 1 | -1) => {
+    const i = Math.max(0, SPANS.indexOf(span));
+    const next = SPANS[Math.min(SPANS.length - 1, Math.max(0, i + dir))];
+    setSpan(next);
+    setStart(Math.min(MONTH_DAYS - next, Math.max(0, day - next / 2)));
+  };
+
   return (
     <div className="bg-surface-2 px-4 py-2.5">
       {/* header: clock, position, speed, view */}
@@ -136,24 +156,26 @@ export function Timeline() {
           <span className="ml-1 inline-flex items-center gap-1 text-[10.5px]">
             <span className="hidden lg:inline">Simulate a</span>
           </span>
-          <span className="inline-flex overflow-hidden rounded-md bg-muted p-0.5">
-            {PERIODS.map((p) => (
-              <Tooltip key={p.value} content={p.help}>
-                <button
-                  type="button"
-                  onClick={() => studio.setPeriod(p.value)}
-                  className={`rounded px-2 py-0.5 text-[10.5px] transition-colors ${period === p.value ? "bg-surface-4 text-foreground shadow-surface-1" : "text-muted-foreground hover:text-foreground"}`}
-                  aria-pressed={period === p.value}
-                >
-                  {p.label}
-                </button>
-              </Tooltip>
-            ))}
+          <Tabs value={period} onValueChange={(v) => studio.setPeriod(v as Period)} size="compact" aria-label="Simulated period">
+            <TabsList>
+              {PERIODS.map((p) => (
+                <TabItem key={p.value} value={p.value} label={p.label} title={p.help} />
+              ))}
+            </TabsList>
+          </Tabs>
+        </span>
+        <span className="inline-flex items-center gap-1 text-[10.5px]">
+          <span className="hidden lg:inline">Window</span>
+          <span className="inline-flex overflow-hidden rounded-xl bg-muted p-0.5">
+            <button type="button" aria-label="Zoom out" onClick={() => zoom(-1)} disabled={span >= MONTH_DAYS} className="rounded-lg px-1.5 text-[11px] disabled:opacity-40 hover:text-foreground">−</button>
+            <span className="px-1.5 text-numeric text-foreground">{span >= 1 ? `${span}d` : `${span * 24}h`}</span>
+            <button type="button" aria-label="Zoom in" onClick={() => zoom(1)} disabled={span <= SPANS[SPANS.length - 1]} className="rounded-lg px-1.5 text-[11px] disabled:opacity-40 hover:text-foreground">+</button>
           </span>
+          {span < MONTH_DAYS && <span className="text-numeric">from day {start.toFixed(1)}</span>}
         </span>
       </div>
 
-        <TracksView tracks={tracks} tone={tone} pos={pos} trackRef={trackRef} scrubHandlers={scrubHandlers} elapsed={elapsed} plan={plan} selectedId={selectedId} period={period} />
+        <TracksView tracks={tracks} tone={tone} pos={pos} trackRef={trackRef} scrubHandlers={scrubHandlers} elapsed={elapsed} plan={plan} selectedId={selectedId} period={period} span={span} start={start} setStart={setStart} />
 
     </div>
   );
@@ -213,8 +235,14 @@ function TracksView({
   plan,
   selectedId,
   period,
+  span,
+  start,
+  setStart,
 }: {
   tracks: { id: string; label: string; product: string; line?: TrackLine; tone: string }[];
+  span: number;
+  start: number;
+  setStart: React.Dispatch<React.SetStateAction<number>>;
   tone: Map<string, string>;
   pos: number;
   trackRef: React.RefObject<HTMLDivElement | null>;
@@ -226,17 +254,7 @@ function TracksView({
 }) {
   const day = elapsed / DAY;
   const MONTH_DAYS = PERIOD_DAYS[period];
-  const SPANS = SPANS_FOR[period];
   const snapshot = useStudio((s) => s.snapshot);
-  const [span, setSpan] = useState<number>(MONTH_DAYS);
-  const [start, setStart] = useState(0);
-  // A new period resets the window to the whole period.
-  const [seenPeriod, setSeenPeriod] = useState(period);
-  if (seenPeriod !== period) {
-    setSeenPeriod(period);
-    setSpan(MONTH_DAYS);
-    setStart(0);
-  }
   const [hover, setHover] = useState<string | null>(null);
   void pos;
 
@@ -248,12 +266,6 @@ function TracksView({
   }, [day, start, span]);
   if (winStart !== start) setStart(winStart);
 
-  const zoom = (dir: 1 | -1) => {
-    const i = Math.max(0, SPANS.indexOf(span));
-    const next = SPANS[Math.min(SPANS.length - 1, Math.max(0, i + dir))];
-    setSpan(next);
-    setStart(Math.min(MONTH_DAYS - next, Math.max(0, day - next / 2)));
-  };
   const seekAt = (clientX: number) => {
     const el = trackRef.current;
     if (!el) return;
@@ -300,21 +312,9 @@ function TracksView({
   }
 
   return (
-    <div className="mt-2">
-      <div className="mb-1 flex items-center justify-between text-[10.5px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          Window
-          <span className="inline-flex overflow-hidden rounded-md bg-muted p-0.5">
-            <button type="button" aria-label="Zoom out" onClick={() => zoom(-1)} disabled={span >= MONTH_DAYS} className="rounded px-1.5 text-[11px] disabled:opacity-40 hover:text-foreground">−</button>
-            <span className="px-1.5 text-numeric text-foreground">{span >= 1 ? `${span}d` : `${span * 24}h`}</span>
-            <button type="button" aria-label="Zoom in" onClick={() => zoom(1)} disabled={span <= SPANS[SPANS.length - 1]} className="rounded px-1.5 text-[11px] disabled:opacity-40 hover:text-foreground">+</button>
-          </span>
-          {span < MONTH_DAYS && <span className="text-numeric">from day {start.toFixed(1)}</span>}
-        </span>
-      </div>
-
+    <div className="mt-1">
       {/* Fixed label/value widths so one playhead can span every row in the scroll area. */}
-      <div className="relative" style={{ ["--label-w" as string]: "176px", ["--value-w" as string]: "72px", ["--gap" as string]: "12px" }}>
+      <div className="relative pt-7" style={{ ["--label-w" as string]: "176px", ["--value-w" as string]: "72px", ["--gap" as string]: "12px" }}>
         {/* ruler */}
         <div className="grid grid-cols-[var(--label-w)_minmax(0,1fr)_var(--value-w)] gap-x-[var(--gap)] gap-y-1.5">
           <div className="h-4" />
@@ -391,7 +391,7 @@ function TracksView({
         {/* readout rides the playhead above the ruler */}
         {inWindow && (
           <div
-            className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-surface-4 px-2 py-0.5 text-[10.5px] text-numeric text-foreground shadow-surface-3"
+            className="pointer-events-none absolute top-6 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-surface-4 px-2 py-0.5 text-[10.5px] text-numeric text-foreground shadow-surface-3"
             style={{ left: `calc(var(--label-w) + var(--gap) + (100% - var(--label-w) - var(--value-w) - 2 * var(--gap)) * ${playX / 100})` }}
           >
             <RollingNumber value={fmtDay(day, period)} /> · <RollingNumber value={formatCount(offered)} /> req · <span className="text-destructive"><RollingNumber value={formatCount(snapshot.outcomes.blocked)} /> blocked</span> · <span className="text-warning"><RollingNumber value={formatCount(snapshot.outcomes.dropped)} /> dropped</span>
