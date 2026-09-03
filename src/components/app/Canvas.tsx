@@ -52,7 +52,7 @@ type ProductNodeData = {
   service?: unknown;
 };
 type GroupNodeData = { id: string; label?: string; tone: string };
-type FlowEdgeData = { key: string; label?: string; style: string; outIndex: number };
+type FlowEdgeData = { key: string; label?: string; style: string; outIndex: number; tone?: string };
 
 type RFNode = Node<ProductNodeData, "product"> | Node<GroupNodeData, "group">;
 type RFEdge = Edge<FlowEdgeData, "flow">;
@@ -247,7 +247,7 @@ const FlowEdge = memo(function FlowEdge({
         path={path}
         markerEnd={isAnnotation ? undefined : "url(#flow-arrow)"}
         style={{
-          stroke: isAnnotation ? "var(--muted-foreground)" : "color-mix(in oklab, var(--foreground) 28%, transparent)",
+          stroke: isAnnotation ? "var(--muted-foreground)" : data?.tone ? `color-mix(in oklab, ${data.tone} 55%, transparent)` : "color-mix(in oklab, var(--foreground) 28%, transparent)",
           strokeWidth: width + 0.5,
           strokeDasharray: isAnnotation ? "3 4" : undefined,
         }}
@@ -442,6 +442,7 @@ function CanvasInner() {
             key: edgeKey(e.style === "back" ? { ...e, from: e.to, to: e.from } : e),
             label: e.label,
             style: e.style,
+            tone: toneFor(e.style === "back" ? e.to : e.from, diagram.nodes.map((n) => n.id)),
             outIndex: (() => {
               const src = e.style === "back" ? e.to : e.from;
               const n = outSeen.get(src) ?? 0;

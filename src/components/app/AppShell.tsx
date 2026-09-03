@@ -10,7 +10,7 @@
  */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode, useRef } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import {Layers, Moon, PanelRight, Plus, Receipt, Sparkles, Sun, SunMoon, SlidersHorizontal } from "lucide-react";
+import {Layers, Moon, PanelRight, Plus, Receipt, Sparkles, Sun, SunMoon } from "lucide-react";
 import { useThemeContext } from "@/lib/theme-context";
 import {
   Sidebar,
@@ -131,6 +131,48 @@ function ChatTabs() {
           <TabsSubtleItem key={t.value} index={i} label={t.label} className="flex-1 justify-center" />
         ))}
       </TabsSubtle>
+    </div>
+  );
+}
+
+/** A horizontal strip you can drag (or wheel) to reveal what does not fit. */
+function DragScroll({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
+  return (
+    <div
+      ref={ref}
+      className={`scrollbar-hide overflow-x-auto cursor-grab active:cursor-grabbing ${className}`}
+      onPointerDown={(e) => {
+        const el = ref.current;
+        if (!el) return;
+        drag.current = { x: e.clientX, left: el.scrollLeft, moved: false };
+      }}
+      onPointerMove={(e) => {
+        const el = ref.current;
+        if (!el || !drag.current) return;
+        const dx = e.clientX - drag.current.x;
+        if (Math.abs(dx) > 4) drag.current.moved = true;
+        if (drag.current.moved) {
+          el.scrollLeft = drag.current.left - dx;
+          el.setPointerCapture(e.pointerId);
+        }
+      }}
+      onPointerUp={() => (drag.current = null)}
+      onPointerCancel={() => (drag.current = null)}
+      onClickCapture={(e) => {
+        // A drag must not count as a tab click.
+        if (drag.current?.moved) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      }}
+      onWheel={(e) => {
+        const el = ref.current;
+        if (el && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY;
+      }}
+    >
+      {children}
     </div>
   );
 }
@@ -289,7 +331,6 @@ function AppSidebar() {
   };
 
   const [providerFilter, setProviderFilter] = useState<"all" | Provider | VendorId>("all");
-  const [showFilters, setShowFilters] = useState(false);
   const [tab, setTab] = useState<"net" | "node">("net");
   /** Opening a net moves you to Node so the next click adds to it. */
   const openNet = () => {
@@ -374,27 +415,20 @@ function AppSidebar() {
           </TabsList>
         </Tabs>
         <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-1">
-            <div className="min-w-0 flex-1">
-              <SidebarSearchField placeholder={tab === "net" ? "Search freenets…" : "Search products…"} shortcut="/" value={query} onChange={(e) => setQuery(e.target.value)} />
-            </div>
-            {tab === "node" && (
-              <Button variant="ghost" size="compact" aria-label="Filter products" aria-pressed={showFilters} onClick={() => setShowFilters((v) => !v)} className={showFilters ? "text-foreground" : "text-muted-foreground"}>
-                <SlidersHorizontal className="size-3.5" />
-              </Button>
-            )}
-          </div>
-          {tab === "node" && showFilters && (
-            <Tabs value={providerFilter} onValueChange={(v) => setProviderFilter(v as "all" | Provider | VendorId)} size="compact" aria-label="Provider filter">
-              <TabsList className="w-full">
-                <TabItem value="all" label="All" className="flex-1 justify-center" />
-                <TabItem value="cloudflare" label="CF" title="Cloudflare" className="flex-1 justify-center" />
-                <TabItem value="vercel" label="Vercel" className="flex-1 justify-center" />
-                <TabItem value="openai" label="OpenAI" className="flex-1 justify-center" />
-                <TabItem value="shopify" label="Shopify" className="flex-1 justify-center" />
-                <TabItem value="netlify" label="Netlify" className="flex-1 justify-center" />
-              </TabsList>
-            </Tabs>
+          <SidebarSearchField placeholder={tab === "net" ? "Search freenets…" : "Search products…"} shortcut="/" value={query} onChange={(e) => setQuery(e.target.value)} />
+          {tab === "node" && (
+            <DragScroll className="-mx-1 px-1">
+              <Tabs value={providerFilter} onValueChange={(v) => setProviderFilter(v as "all" | Provider | VendorId)} size="compact" aria-label="Provider filter">
+                <TabsList>
+                  <TabItem value="all" label="All" />
+                  <TabItem value="cloudflare" label="Cloudflare" />
+                  <TabItem value="vercel" label="Vercel" />
+                  <TabItem value="openai" label="OpenAI" />
+                  <TabItem value="shopify" label="Shopify" />
+                  <TabItem value="netlify" label="Netlify" />
+                </TabsList>
+              </Tabs>
+            </DragScroll>
           )}
         </div>
       </SidebarHeader>

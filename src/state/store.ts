@@ -115,7 +115,7 @@ function createInitial(): StudioState {
     panel: "inspect",
     chatTab: "chat",
     viewLayout: "snake",
-    edgeStyle: "curved",
+    edgeStyle: "step",
     analysis: null,
     webmcp: { supported: false, registered: 0, enabled: true },
     revision: 0,

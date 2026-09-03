@@ -3,7 +3,7 @@
  * knobs, and the numbers flowing through it. With nothing selected it shows
  * the document's summary and the template's lesson.
  */
-import { ArrowLeft, Copy, Pencil, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, Pencil, Save, Trash2, ChevronRight } from "lucide-react";
 import { blueprints, useBlueprints } from "@/state/blueprints";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -242,7 +242,7 @@ function LayerList() {
             <button
               type="button"
               onClick={() => studio.focus(n.id)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover"
+              className="group/row flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover"
               style={{ paddingLeft: 8 + depth * 14 }}
             >
               <span className="flex size-6 shrink-0 items-center justify-center rounded-md" style={{ background: `color-mix(in oklab, ${tone} 16%, transparent)`, color: `color-mix(in oklab, ${tone} 78%, var(--foreground))` }}>
@@ -256,6 +256,7 @@ function LayerList() {
                 {n.kind === "client" ? `${formatCount(arrivals)}/d` : `${formatCount(arrivals)}/d`}
                 {blocked > 0 && <span className="block text-destructive">⊘{formatCount(blocked)}</span>}
               </span>
+              <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50 transition-[transform,color] group-hover/row:translate-x-0.5 group-hover/row:text-foreground" aria-hidden />
             </button>
           </li>,
         );
