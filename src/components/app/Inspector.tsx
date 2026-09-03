@@ -14,7 +14,8 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { useEffect, useState } from "react";
-import { KINDS, PRODUCTS, isProductKind, type ProductKind } from "@/engine/catalog";
+import { KINDS, PRODUCTS, alternativesFor, isProductKind, type ProductKind } from "@/engine/catalog";
+import { toneFor } from "@/lib/tones";
 import { applyPatch } from "@/engine/dsl";
 import { PRICING } from "@/engine/pricing";
 import { defaultProtection } from "@/engine/sim";
@@ -273,6 +274,7 @@ function LayerList() {
               className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover"
               style={{ paddingLeft: 8 + depth * 14 }}
             >
+              <span className="inline-block size-2 shrink-0 rounded-full" style={{ background: toneFor(n.id, diagram.nodes.map((x) => x.id)) }} aria-hidden />
               <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
                 <Glyph kind={n.kind} size={14} provider={provider} />
               </span>
@@ -335,7 +337,9 @@ function GroupView({ id, label }: { id: string; label?: string }) {
 
 function NodeView({ id }: { id: string }) {
   const node = useStudio((s) => s.diagram.nodes.find((n) => n.id === id))!;
+  const diagram = useStudio((s) => s.diagram);
   const provider = useStudio((s) => s.provider);
+  const alternatives = alternativesFor(provider, node.kind);
   const rates = useStudio((s) => s.rates.nodes[id]);
   const cap = useStudio((s) => s.rates.caps[id]);
   const protection = useStudio((s) => s.protections[id]);
@@ -367,7 +371,8 @@ function NodeView({ id }: { id: string }) {
     <div className="flex flex-col gap-4 text-body">
       <BackToLayers />
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
+        <div className="relative flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
+          <span aria-hidden className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full" style={{ background: toneFor(id, diagram.nodes.map((x) => x.id)) }} />
           <Glyph kind={node.kind} size={24} provider={provider} />
         </div>
         <div className="min-w-0 flex-1">
@@ -425,6 +430,18 @@ function NodeView({ id }: { id: string }) {
               className={`mt-2 rounded-md px-2 py-1.5 text-caption ${product.gap.severity === "missing" ? "bg-destructive-light text-destructive" : "bg-warning-light text-warning"}`}
             >
               {product.gap.note}
+            </div>
+          )}
+          {alternatives.length > 0 && (
+            <div className="mt-2">
+              <div className="text-[11px] text-muted-foreground">Alternatives</div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {alternatives.map((a) => (
+                  <Badge key={a} color="gray" variant="dot" size="compact">
+                    {a}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
           {product.docs && (

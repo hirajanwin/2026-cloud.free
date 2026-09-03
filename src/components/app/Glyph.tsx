@@ -270,6 +270,114 @@ export function Glyph({
           <path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" />
         </svg>
       );
+    case "hyperdrive":
+      return (
+        <svg {...common}>
+          <ellipse cx="7" cy="7" rx="4" ry="2" />
+          <path d="M3 7v6c0 1.1 1.8 2 4 2s4-.9 4-2V7" />
+          <path d="M13 12h3l2-3 2 3M16 12v5" />
+          <path d="M11 19h6" />
+        </svg>
+      );
+    case "images":
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="5" width="17" height="14" rx="2" />
+          <circle cx="9" cy="10" r="1.6" />
+          <path d="m5 17 5-5 3 3 2.5-2.5L20 17" />
+        </svg>
+      );
+    case "stream":
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+          <path d="m10 9 5 3-5 3V9Z" />
+        </svg>
+      );
+    case "browser":
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+          <path d="M3.5 9h17M7 6.8h.01M9.5 6.8h.01" />
+          <path d="m9 15 2-2-2-2M13 15h3" />
+        </svg>
+      );
+    case "turnstile":
+      return (
+        <svg {...common}>
+          <path d="M12 3 4.5 6v5.5c0 4.4 3.2 7.6 7.5 9.5 4.3-1.9 7.5-5.1 7.5-9.5V6L12 3Z" />
+          <circle cx="12" cy="11.5" r="2.2" />
+          <path d="M9 16.5a3 3 0 0 1 6 0" />
+        </svg>
+      );
+    case "email":
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+          <path d="m4 7 8 6 8-6" />
+        </svg>
+      );
+    case "load-balancer":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="5.5" r="2" />
+          <circle cx="5" cy="18.5" r="2" />
+          <circle cx="12" cy="18.5" r="2" />
+          <circle cx="19" cy="18.5" r="2" />
+          <path d="M12 7.5V12M12 12 5 16.5M12 12v4.5M12 12l7 4.5" />
+        </svg>
+      );
+    case "zaraz":
+      return (
+        <svg {...common}>
+          <path d="M4 5h16M4 12h10M4 19h16" />
+          <circle cx="17.5" cy="12" r="2" />
+        </svg>
+      );
+    case "analytics":
+      return (
+        <svg {...common}>
+          <path d="M4 20V4M4 20h16" />
+          <path d="M8 16v-5M12 16V8M16 16v-3" />
+        </svg>
+      );
+    case "access":
+      return (
+        <svg {...common}>
+          <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
+          <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
+          <circle cx="12" cy="15.5" r="1.3" />
+        </svg>
+      );
+    case "container":
+      return (
+        <svg {...common}>
+          <path d="M3.5 8.5 12 4l8.5 4.5v7L12 20l-8.5-4.5v-7Z" />
+          <path d="M3.5 8.5 12 13l8.5-4.5M12 13v7M7.5 6.3l8.5 4.5" />
+        </svg>
+      );
+    case "flags":
+      return (
+        <svg {...common}>
+          <path d="M6 21V4" />
+          <path d="M6 4h10l-2 3.5 2 3.5H6" />
+        </svg>
+      );
+    case "sandbox":
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="4" width="17" height="16" rx="2" strokeDasharray="3 2.5" />
+          <path d="m9 10-2 2 2 2M15 10l2 2-2 2M13 9l-2 6" />
+        </svg>
+      );
+    case "middleware":
+      return (
+        <svg {...common}>
+          <path d="M3 12h5M16 12h5" />
+          <rect x="8" y="8" width="8" height="8" rx="2" />
+          <path d="M12 8V5M12 19v-3" />
+        </svg>
+      );
     default:
       return (
         <svg {...common}>

@@ -1499,3 +1499,32 @@ export function gapsIn(
   }
   return out;
 }
+
+/** Worth-knowing alternatives, shown next to a product; mostly where a provider has a gap. */
+export const ALTERNATIVES: Partial<Record<`${Provider}:${ProductKind}`, string[]>> = {
+  "vercel:kv": ["Upstash Redis", "Vercel Edge Config for read-mostly flags"],
+  "vercel:sql": ["Neon", "Supabase", "PlanetScale", "Turso"],
+  "vercel:queue": ["Vercel Queues (beta)", "Inngest", "Upstash QStash", "Trigger.dev"],
+  "vercel:actor": ["Upstash Redis + Functions", "PartyKit", "Cloudflare Durable Objects"],
+  "vercel:realtime": ["Ably", "Pusher", "Liveblocks", "PartyKit", "Supabase Realtime"],
+  "vercel:vector": ["Upstash Vector", "Pinecone", "pgvector on Neon"],
+  "vercel:search": ["Algolia", "Typesense", "Meilisearch", "Postgres full-text"],
+  "vercel:llm": ["OpenAI", "Anthropic", "Google", "xAI via AI Gateway"],
+  "vercel:stream": ["Mux", "Cloudflare Stream", "api.video"],
+  "vercel:browser": ["Browserbase", "Browserless", "Puppeteer in a Fluid function"],
+  "vercel:email": ["Resend", "Postmark", "Loops"],
+  "vercel:load-balancer": ["Cloudflare Load Balancing in front", "DNS-level failover"],
+  "vercel:zaraz": ["Google Tag Manager", "Segment"],
+  "vercel:access": ["Clerk", "Auth.js", "WorkOS", "Auth0"],
+  "vercel:container": ["Fly.io", "Railway", "Cloudflare Containers", "Vercel Sandbox for short jobs"],
+  "vercel:hyperdrive": ["Neon pooled connection string", "Supabase Supavisor", "PgBouncer"],
+  "cloudflare:search": ["D1 FTS5", "Algolia", "Typesense", "Meilisearch"],
+  "cloudflare:llm": ["OpenAI", "Anthropic", "Google via AI Gateway"],
+  "cloudflare:sql": ["Hyperdrive to Postgres", "Neon", "Turso"],
+  "cloudflare:email": ["Resend", "Postmark for high volume"],
+  "cloudflare:analytics": ["PostHog", "Tinybird"],
+};
+
+export function alternativesFor(provider: Provider, kind: string): string[] {
+  return isProductKind(kind) ? (ALTERNATIVES[`${provider}:${kind}`] ?? []) : [];
+}

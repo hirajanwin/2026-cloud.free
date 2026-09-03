@@ -104,7 +104,7 @@ function createInitial(): StudioState {
     blueprintId: null,
     panel: "inspect",
     chatTab: "chat",
-    viewLayout: "flow",
+    viewLayout: "snake",
     analysis: null,
     webmcp: { supported: false, registered: 0, enabled: true },
     revision: 0,
@@ -242,6 +242,11 @@ export const studio = {
 
   setChatTab(chatTab: ChatTab) {
     set({ chatTab, panel: "chat" });
+  },
+
+  /** Re-run auto-layout, discarding manual nudges. */
+  relayout() {
+    set({ revision: state.revision + 1 });
   },
 
   setViewLayout(viewLayout: ViewLayout) {

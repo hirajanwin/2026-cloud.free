@@ -16,7 +16,7 @@ import {
   Position,
   ReactFlow,
   ReactFlowProvider,
-  getSmoothStepPath,
+  getBezierPath,
   useReactFlow,
   useNodesInitialized,
   type Edge,
@@ -36,12 +36,15 @@ import { applyPatch } from "@/engine/dsl";
 import { useResolvedTheme } from "@/lib/use-resolved-theme";
 import { type Connection, type IsValidConnection } from "@xyflow/react";
 import { Glyph } from "./Glyph";
+import { toneFor } from "@/lib/tones";
+import { RotateCcw } from "lucide-react";
 
 type ProductNodeData = {
   id: string;
   kind: string;
   label?: string;
   direction: Direction;
+  tone: string;
 };
 type GroupNodeData = { id: string; label?: string };
 type FlowEdgeData = { key: string; label?: string; style: string; outIndex: number };
@@ -104,11 +107,12 @@ const ProductNode = memo(function ProductNode({
     <div
       className={[
         "node-in group/node relative grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-xl bg-surface-3 px-3 shadow-surface-2 transition-[box-shadow,background-color] duration-150",
-        selected ? "node-selected ring-2 ring-[color:var(--focus-ring)] shadow-surface-5" : "hover:shadow-surface-3",
+        selected ? "node-selected ring-2 ring-[color:var(--node-tone)] shadow-surface-5" : "hover:shadow-surface-3",
         gap?.severity === "missing" ? "outline outline-1 outline-dashed outline-destructive/60" : "",
       ].join(" ")}
-      style={{ width: NODE_W, height: NODE_H }}
+      style={{ width: NODE_W, height: NODE_H, ["--node-tone" as string]: data.tone }}
     >
+      <span aria-hidden className="absolute bottom-3 left-0 top-3 w-[3px] rounded-r-full" style={{ background: data.tone }} />
       <Handle type="target" position={pos.target} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
       <Handle type="source" position={pos.source} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
 
@@ -211,15 +215,7 @@ const FlowEdge = memo(function FlowEdge({
   const anchor = horizontal
     ? { x: sourceX + dir * 44, y: sourceY - 12 - idx * 15, tx: dir > 0 ? "0, -100%" : "-100%, -100%" }
     : { x: sourceX + 10, y: sourceY + dir * (28 + idx * 15), tx: "0, -50%" };
-  const [path] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    sourcePosition,
-    targetPosition,
-    borderRadius: 10,
-  });
+  const [path] = getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, curvature: 0.28 });
   const total = flow ? sum(flow) : 0;
   const isAnnotation = data?.style === "line" || data?.style === "dotted";
   const width = isAnnotation
@@ -302,9 +298,9 @@ function LayoutToggle() {
     <div className="flex items-center gap-0.5 rounded-lg bg-surface-3 p-0.5 shadow-surface-2" role="radiogroup" aria-label="Canvas layout">
       {(
         [
-          ["horizontal", "Horizontal", "M4 12h16M14 6l6 6-6 6"],
-          ["vertical", "Vertical", "M12 4v16M6 14l6 6 6-6"],
           ["snake", "Snake", "M4 6h12a3 3 0 0 1 0 6H8a3 3 0 0 0 0 6h12"],
+          ["vertical", "Vertical", "M12 4v16M6 14l6 6 6-6"],
+          ["horizontal", "Horizontal", "M4 12h16M14 6l6 6-6 6"],
         ] as const
       ).map(([m, label, d]) => (
         <button
@@ -322,6 +318,17 @@ function LayoutToggle() {
           {label}
         </button>
       ))}
+      <span className="mx-0.5 h-4 w-px bg-border" aria-hidden />
+      <button
+        type="button"
+        title="Reset positions (re-run auto-layout)"
+        aria-label="Reset positions"
+        onClick={() => studio.relayout()}
+        className="flex h-7 items-center gap-1.5 rounded-md px-2 text-[11px] text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+      >
+        <RotateCcw className="size-3.5" />
+        Reset
+      </button>
     </div>
   );
 }
@@ -380,6 +387,7 @@ function CanvasInner() {
     layoutDiagram(diagram, viewLayout, el ? { width: el.clientWidth, height: el.clientHeight } : undefined).then((layout) => {
       if (run !== layoutRun.current) return;
       const byId = new Map(layout.nodes.map((n) => [n.id, n]));
+      const ids = diagram.nodes.map((n) => n.id);
       const next: RFNode[] = [];
       for (const g of diagram.groups) {
         const l = byId.get(g.id);
@@ -389,7 +397,7 @@ function CanvasInner() {
       for (const n of diagram.nodes) {
         const l = byId.get(n.id);
         if (!l) continue;
-        next.push({ id: n.id, type: "product", position: { x: l.x, y: l.y }, width: NODE_W, height: NODE_H, parentId: l.parentId,  data: { id: n.id, kind: n.kind, label: n.label, direction: l.direction ?? diagram.direction } });
+        next.push({ id: n.id, type: "product", position: { x: l.x, y: l.y }, width: NODE_W, height: NODE_H, parentId: l.parentId,  data: { id: n.id, kind: n.kind, label: n.label, direction: l.direction ?? diagram.direction, tone: toneFor(n.id, ids) } });
       }
       pendingFit.current = true;
       nodesRef.current = next;

@@ -14,6 +14,7 @@ import { PRODUCTS, isProductKind } from "@/engine/catalog";
 import { formatCount, formatUnit } from "@/lib/format";
 import { MONTH_S, studio, useStudio } from "@/state/store";
 import { Tooltip } from "@/components/ui/tooltip";
+import { toneFor } from "@/lib/tones";
 
 const DAY = 86_400;
 const MONTH_DAYS = 30;
@@ -71,7 +72,7 @@ export function Timeline() {
         candidates.sort((a, b) => a.crossDay - b.crossDay);
         const line = candidates[0];
         const product = isProductKind(n.kind) ? PRODUCTS[provider][n.kind] : undefined;
-        return { id: n.id, label: n.label ?? product?.name ?? n.kind, product: product?.name ?? n.kind, line };
+        return { id: n.id, label: n.label ?? product?.name ?? n.kind, product: product?.name ?? n.kind, line, tone: toneFor(n.id, diagram.nodes.map((x) => x.id)) };
       })
       // Metered rows first, tightest first; unmetered layers trail so the
       // rows that can break are the ones on screen.
@@ -253,135 +254,242 @@ function BarView({
 }
 
 /* ------------------------------------------------------------------ *
- * Tracks view: one row per layer, percent of allowance over the month
+ * Tracks view: one row per layer, percent of allowance over a zoomable
+ * window of the month, one continuous playhead, live readout while scrubbing.
  * ------------------------------------------------------------------ */
 
-/** Path for a meter's usage as percent of allowance over 30 days, in a 30 × Y_MAX space (y grows downward). */
-function trackPath(line: TrackLine): { path: string; overPath: string } {
+const SPANS = [30, 14, 7, 3, 1] as const;
+
+/** Path for a meter's usage as percent of allowance over [start, start+span] days, in a span × Y_MAX space (y grows downward). */
+function trackPath(line: TrackLine, start: number, span: number): { path: string; overPath: string } {
   const allowance = line.allowanceMonthly!;
   const y = (pct: number) => Y_MAX - Math.min(Y_MAX, pct);
+  const X = (d: number) => d - start;
   if (!line.isDaily) {
-    const endPct = (line.monthly / allowance) * 100;
-    const path = `M0,${y(0)} L30,${y(endPct)}`;
-    if (endPct <= 100) return { path, overPath: "" };
-    const xCross = 100 / endPct * 30;
-    // Region between the line and the 100% rule after the crossing.
-    const overPath = `M${xCross},${y(100)} L30,${y(endPct)} L30,${y(100)} Z`;
+    const slope = (line.daily / allowance) * 100; // percent per day
+    const p0 = slope * start;
+    const p1 = slope * (start + span);
+    const path = `M0,${y(p0)} L${span},${y(p1)}`;
+    if (p1 <= 100) return { path, overPath: "" };
+    const xCross = Math.max(0, X(100 / slope));
+    const overPath = `M${xCross},${y(Math.max(100, p0))} L${span},${y(p1)} L${span},${y(100)} L${xCross},${y(100)} Z`;
     return { path, overPath };
   }
-  // Daily: sawtooth. Each day climbs at the daily rate, clips at the cap, drops at midnight.
   const dailyPct = (line.daily / (allowance / MONTH_DAYS)) * 100;
   const parts: string[] = [];
   const over: string[] = [];
-  for (let d = 0; d < MONTH_DAYS; d += 1) {
+  const first = Math.floor(start);
+  const last = Math.ceil(start + span);
+  for (let d = first; d < last; d += 1) {
     if (dailyPct <= 100) {
-      parts.push(`M${d},${y(0)} L${d + 1},${y(dailyPct)}`);
+      parts.push(`M${X(d)},${y(0)} L${X(d + 1)},${y(dailyPct)}`);
     } else {
       const xHit = d + 100 / dailyPct;
-      parts.push(`M${d},${y(0)} L${xHit},${y(100)} L${d + 1},${y(100)}`);
-      // The clipped stretch: demand kept climbing; the platform did not serve it.
-      over.push(`M${xHit},${y(100)} L${d + 1},${y(Math.min(Y_MAX, dailyPct))} L${d + 1},${y(100)} Z`);
+      parts.push(`M${X(d)},${y(0)} L${X(xHit)},${y(100)} L${X(d + 1)},${y(100)}`);
+      over.push(`M${X(xHit)},${y(100)} L${X(d + 1)},${y(Math.min(Y_MAX, dailyPct))} L${X(d + 1)},${y(100)} Z`);
     }
   }
   return { path: parts.join(" "), overPath: over.join(" ") };
 }
 
+function fmtDay(d: number): string {
+  const day = Math.floor(d);
+  const h = Math.floor((d - day) * 24);
+  const m = Math.floor(((d - day) * 24 - h) * 60);
+  return `Day ${day} · ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function TracksView({
   tracks,
-  tone,
   pos,
   trackRef,
-  scrubHandlers,
   elapsed,
   plan,
   selectedId,
 }: {
-  tracks: { id: string; label: string; product: string; line?: TrackLine }[];
+  tracks: { id: string; label: string; product: string; line?: TrackLine; tone: string }[];
   tone: Map<string, string>;
   pos: number;
   trackRef: React.RefObject<HTMLDivElement | null>;
-  scrubHandlers: { onPointerDown: (e: React.PointerEvent<HTMLElement>) => void; onPointerMove: (e: React.PointerEvent<HTMLElement>) => void };
+  scrubHandlers: unknown;
   elapsed: number;
   plan: "free" | "paid";
   selectedId: string | null;
 }) {
   const day = elapsed / DAY;
+  const snapshot = useStudio((s) => s.snapshot);
+  const [span, setSpan] = useState<number>(30);
+  const [start, setStart] = useState(0);
+  const [hover, setHover] = useState<string | null>(null);
+  void pos;
+
+  // Follow the playhead when it leaves the window.
+  const winStart = useMemo(() => {
+    if (span >= 30) return 0;
+    if (day < start || day > start + span) return Math.min(MONTH_DAYS - span, Math.max(0, day - span * 0.2));
+    return start;
+  }, [day, start, span]);
+  if (winStart !== start) setStart(winStart);
+
+  const zoom = (dir: 1 | -1) => {
+    const i = SPANS.indexOf(span as (typeof SPANS)[number]);
+    const next = SPANS[Math.min(SPANS.length - 1, Math.max(0, i + dir))];
+    setSpan(next);
+    setStart(Math.min(MONTH_DAYS - next, Math.max(0, day - next / 2)));
+  };
+  const seekAt = (clientX: number) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const k = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+    studio.seek((start + k * span) * DAY);
+  };
+  const scrub = {
+    onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      seekAt(e.clientX);
+    },
+    onPointerMove: (e: React.PointerEvent<HTMLElement>) => {
+      if (e.buttons & 1) seekAt(e.clientX);
+    },
+    onWheel: (e: React.WheelEvent<HTMLElement>) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && span < 30) {
+        setStart((v) => Math.min(MONTH_DAYS - span, Math.max(0, v + (e.deltaX / 400) * span)));
+      }
+    },
+  };
+
   const valueAt = (l: TrackLine): number => {
     const allowance = l.allowanceMonthly!;
     if (!l.isDaily) return (l.daily * day) / allowance;
     const frac = day - Math.floor(day);
     const dailyPct = l.daily / (allowance / MONTH_DAYS);
-    return Math.min(dailyPct * frac, Math.max(1, Math.min(dailyPct * frac, 1)));
+    return Math.min(1, dailyPct * frac);
   };
   const overTone = plan === "free" ? "var(--destructive)" : "var(--warning)";
+  const playX = Math.min(1, Math.max(0, (day - start) / span)) * 100;
+  const inWindow = day >= start && day <= start + span;
+  const ROW = 32;
+  const offered = Object.values(snapshot.offered).reduce((a, b) => a + b, 0);
+
+  // Ruler ticks: days when wide, hours when tight.
+  const ticks: { x: number; label: string }[] = [];
+  if (span >= 7) for (let d = Math.ceil(start); d <= start + span; d += span >= 20 ? 5 : 1) ticks.push({ x: (d - start) / span, label: `${d}` });
+  else {
+    const stepH = span >= 3 ? 12 : 6;
+    for (let h = Math.ceil(start * 24 / stepH) * stepH; h <= (start + span) * 24; h += stepH) ticks.push({ x: (h / 24 - start) / span, label: h % 24 === 0 ? `d${h / 24}` : `${h % 24}h` });
+  }
 
   return (
-    <div className="mt-2 grid grid-cols-[minmax(150px,200px)_minmax(0,1fr)_64px] gap-x-3">
-      {/* rows */}
-      <div className="contents">
-        <div />
-        <div ref={trackRef} className="relative cursor-ew-resize select-none" {...scrubHandlers} role="slider" aria-label="Simulated time" aria-valuemin={0} aria-valuemax={MONTH_DAYS} aria-valuenow={Number(day.toFixed(1))} tabIndex={0}>
-          {/* day ruler */}
-          <div className="relative h-4 text-[9.5px] text-numeric text-muted-foreground">
-            {[0, 5, 10, 15, 20, 25, 30].map((d) => (
-              <span key={d} className="absolute -translate-x-1/2" style={{ left: `${(d / MONTH_DAYS) * 100}%` }}>
-                {d}
-              </span>
+    <div className="mt-2">
+      <div className="mb-1 flex items-center justify-between text-[10.5px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          Window
+          <span className="inline-flex overflow-hidden rounded-md bg-muted p-0.5">
+            <button type="button" aria-label="Zoom out" onClick={() => zoom(-1)} disabled={span >= 30} className="rounded px-1.5 text-[11px] disabled:opacity-40 hover:text-foreground">−</button>
+            <span className="px-1.5 text-numeric text-foreground">{span}d</span>
+            <button type="button" aria-label="Zoom in" onClick={() => zoom(1)} disabled={span <= 1} className="rounded px-1.5 text-[11px] disabled:opacity-40 hover:text-foreground">+</button>
+          </span>
+          {span < 30 && <span className="text-numeric">from day {start.toFixed(1)}</span>}
+        </span>
+        <span>Drag to scrub · shift-scroll to pan · click a row to focus its node</span>
+      </div>
+
+      <div className="grid grid-cols-[minmax(150px,200px)_minmax(0,1fr)_72px] gap-x-3">
+        {/* labels */}
+        <div className="flex flex-col">
+          <div className="h-4" />
+          <div className="max-h-[168px] overflow-hidden">
+            {tracks.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => studio.focus(t.id)}
+                onMouseEnter={() => setHover(t.id)}
+                onMouseLeave={() => setHover(null)}
+                style={{ height: ROW }}
+                className={`flex w-full min-w-0 items-center gap-2 rounded-md px-2 text-left leading-4 hover:bg-hover ${selectedId === t.id ? "bg-hover" : ""}`}
+                title={t.line ? `${t.line.label} · account total against its allowance` : "No metered quota"}
+              >
+                <span className="inline-block size-2 shrink-0 rounded-full" style={{ background: t.tone }} aria-hidden />
+                <span className="min-w-0">
+                  <span className="block truncate text-[11.5px] text-foreground">{t.label}</span>
+                  <span className="block truncate text-[10px] text-muted-foreground">{t.line ? t.line.label : `${t.product} · unmetered`}</span>
+                </span>
+              </button>
             ))}
           </div>
         </div>
-        <div />
-      </div>
-      <div className="col-span-3 max-h-[188px] overflow-y-auto">
-        <div className="relative grid grid-cols-[minmax(150px,200px)_minmax(0,1fr)_64px] gap-x-3 gap-y-1">
-          {tracks.map((t) => {
-            const l = t.line;
-            const selected = selectedId === t.id;
-            const paths = l ? trackPath(l) : null;
-            const now = l ? valueAt(l) : 0;
-            const over = l ? l.status === "over-free" || l.status === "charged" : false;
-            return (
-              <div key={t.id} className="contents">
-                <button
-                  type="button"
-                  onClick={() => studio.focus(t.id)}
-                  className={`flex min-w-0 flex-col items-start rounded-md px-2 py-0.5 text-left leading-4 hover:bg-hover ${selected ? "bg-hover" : ""}`}
-                  title={l ? `${l.label} · account total against its allowance` : "No metered quota"}
-                >
-                  <span className="w-full truncate text-[11.5px] text-foreground">{t.label}</span>
-                  <span className="w-full truncate text-[10px] text-muted-foreground">{l ? l.label : `${t.product} · unmetered`}</span>
-                </button>
-                <div className={`relative cursor-ew-resize select-none rounded-md bg-surface-3/60 ${l ? "h-8" : "h-5"}`} {...scrubHandlers}>
-                  <svg viewBox={`0 0 30 ${Y_MAX}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden>
-                    {/* 100% rule */}
-                    <line x1="0" x2="30" y1={Y_MAX - 100} y2={Y_MAX - 100} stroke="color-mix(in oklab, var(--foreground) 28%, transparent)" strokeWidth="1" vectorEffect="non-scaling-stroke" strokeDasharray="3 3" />
-                    {paths && paths.overPath && <path d={paths.overPath} fill={overTone} fillOpacity="0.35" />}
-                    {paths ? (
-                      <path d={paths.path} fill="none" stroke={tone.get(l!.meter)} strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-                    ) : (
-                      <line x1="0" x2="30" y1={Y_MAX - 4} y2={Y_MAX - 4} stroke="var(--muted-foreground)" strokeOpacity="0.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                    )}
-                    {/* elapsed shade */}
-                    <rect x={pos * 30} y="0" width={30 - pos * 30} height={Y_MAX} fill="var(--background)" fillOpacity="0.45" />
-                  </svg>
-                  <div className="pointer-events-none absolute inset-y-0 w-px bg-foreground" style={{ left: `${pos * 100}%` }} />
+
+        {/* tracks column: ruler + rows + ONE playhead */}
+        <div ref={trackRef} className="relative cursor-ew-resize select-none" {...scrub} role="slider" aria-label="Simulated time" aria-valuemin={0} aria-valuemax={MONTH_DAYS} aria-valuenow={Number(day.toFixed(1))} tabIndex={0}>
+          <div className="relative h-4 text-[9.5px] text-numeric text-muted-foreground">
+            {ticks.map((t) => (
+              <span key={t.label + t.x} className="absolute -translate-x-1/2" style={{ left: `${t.x * 100}%` }}>
+                {t.label}
+              </span>
+            ))}
+          </div>
+          <div className="max-h-[168px] overflow-hidden">
+            {tracks.map((t) => {
+              const l = t.line;
+              const paths = l ? trackPath(l, start, span) : null;
+              return (
+                <div key={t.id} style={{ height: ROW }} className="py-0.5" onMouseEnter={() => setHover(t.id)} onMouseLeave={() => setHover(null)}>
+                  <div className={`relative h-full rounded-md ${hover === t.id || selectedId === t.id ? "bg-surface-4/70" : "bg-surface-3/60"}`}>
+                    <svg viewBox={`0 0 ${span} ${Y_MAX}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden>
+                      <line x1="0" x2={span} y1={Y_MAX - 100} y2={Y_MAX - 100} stroke="color-mix(in oklab, var(--foreground) 28%, transparent)" strokeWidth="1" vectorEffect="non-scaling-stroke" strokeDasharray="3 3" />
+                      {paths && paths.overPath && <path d={paths.overPath} fill={overTone} fillOpacity="0.35" />}
+                      {paths ? (
+                        <path d={paths.path} fill="none" stroke={t.tone} strokeWidth="1.6" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+                      ) : (
+                        <line x1="0" x2={span} y1={Y_MAX - 4} y2={Y_MAX - 4} stroke="var(--muted-foreground)" strokeOpacity="0.4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                      )}
+                      {inWindow && <rect x={(day - start)} y="0" width={Math.max(0, span - (day - start))} height={Y_MAX} fill="var(--background)" fillOpacity="0.45" />}
+                    </svg>
+                  </div>
                 </div>
-                <div className={`self-center text-right text-[11px] text-numeric ${over ? "text-destructive" : "text-muted-foreground"}`}>
+              );
+            })}
+          </div>
+          {inWindow && (
+            <>
+              <div className="pointer-events-none absolute bottom-0 top-4 w-px bg-foreground" style={{ left: `${playX}%` }} />
+              <div
+                className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-surface-4 px-2 py-0.5 text-[10.5px] text-numeric text-foreground shadow-surface-3"
+                style={{ left: `${playX}%` }}
+              >
+                {fmtDay(day)} · {formatCount(offered)} req · <span className="text-destructive">{formatCount(snapshot.outcomes.blocked)} blocked</span> · <span className="text-warning">{formatCount(snapshot.outcomes.dropped)} dropped</span>
+                {hover && (() => { const t = tracks.find((x) => x.id === hover); return t?.line ? <> · {t.label} {Math.round(valueAt(t.line) * 100)}%</> : null; })()}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* values */}
+        <div className="flex flex-col">
+          <div className="h-4" />
+          <div className="max-h-[168px] overflow-hidden">
+            {tracks.map((t) => {
+              const l = t.line;
+              const over = l ? l.status === "over-free" || l.status === "charged" : false;
+              return (
+                <div key={t.id} style={{ height: ROW }} className={`flex flex-col justify-center text-right text-[11px] text-numeric ${over ? "text-destructive" : "text-muted-foreground"}`}>
                   {l ? (
                     <>
-                      <div className="text-foreground">{Math.round(now * 100)}%</div>
+                      <div className="text-foreground">{Math.round(valueAt(l) * 100)}%</div>
                       <div className="text-[9.5px]">{l.isDaily ? (Number.isFinite(l.crossDay) && l.crossDay < 1 ? `cap ${(l.crossDay * 24).toFixed(0)}h` : "daily") : Number.isFinite(l.crossDay) && l.crossDay <= MONTH_DAYS ? `day ${l.crossDay.toFixed(0)}` : "in budget"}</div>
                     </>
                   ) : (
                     <div className="text-[9.5px]">–</div>
                   )}
                 </div>
-              </div>
-            );
-          })}
-          {tracks.length === 0 && <div className="col-span-3 py-2 text-caption text-muted-foreground">Add nodes to see their quota tracks.</div>}
+              );
+            })}
+          </div>
         </div>
       </div>
+      {tracks.length === 0 && <div className="py-2 text-caption text-muted-foreground">Add nodes to see their quota tracks.</div>}
     </div>
   );
 }
