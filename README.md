@@ -91,6 +91,6 @@ Deploy with `npm run deploy`. The Worker needs the `AI` binding and the `Archite
 
 ## Notices
 
-Cloudflare, the Cloudflare logo, and Cloudflare Workers are trademarks of Cloudflare, Inc. Vercel and the Vercel logo are trademarks of Vercel, Inc. Granola is a trademark of its owner. Blueprint is an independent project and is not affiliated with or endorsed by any of them. Product names are used to describe the products; the product glyphs on the canvas are Blueprint's own.
+Cloudflare, the Cloudflare logo, and Cloudflare Workers are trademarks of Cloudflare, Inc. Vercel and the Vercel logo are trademarks of Vercel, Inc. Granola is a trademark of its owner. Blueprint is an independent project and is not affiliated with or endorsed by any of them. Product names are used to describe the products. Cloudflare product icons are from the cloudflare-docs repository (CC BY 4.0); Vercel has no product icon set, so Blueprint's own glyphs are used there.
 
 UI components and design tokens are vendored from Fluid Functionalism (MIT). See [LICENSE](LICENSE).

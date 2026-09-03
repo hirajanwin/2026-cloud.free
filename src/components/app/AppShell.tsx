@@ -354,7 +354,7 @@ function AppSidebar() {
                     <Tooltip content={p.tagline} side="right">
                       <SidebarMenuButton onClick={() => addNode(k)} className="group/add">
                         <span className="flex size-4 items-center justify-center text-muted-foreground">
-                          <Glyph kind={k} size={15} />
+                          <Glyph kind={k} size={15} provider={provider} />
                         </span>
                         <span className="truncate">{p.name}</span>
                         <Plus className="ml-auto size-3.5 opacity-0 transition-opacity group-hover/add:opacity-100" />

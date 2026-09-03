@@ -159,7 +159,7 @@ function Overview() {
               return (
                 <li key={k} className="flex items-start gap-2 text-caption">
                   <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-muted-foreground">
-                    <Glyph kind={k} size={13} />
+                    <Glyph kind={k} size={13} provider={provider} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className={here.gap?.severity === "missing" ? "text-destructive" : "text-foreground"}>{here.name}</span>
@@ -274,7 +274,7 @@ function LayerList() {
               style={{ paddingLeft: 8 + depth * 14 }}
             >
               <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
-                <Glyph kind={n.kind} size={14} />
+                <Glyph kind={n.kind} size={14} provider={provider} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-body text-foreground">{n.label ?? product?.name ?? n.kind}</span>
@@ -368,7 +368,7 @@ function NodeView({ id }: { id: string }) {
       <BackToLayers />
       <div className="flex items-start gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
-          <Glyph kind={node.kind} size={22} />
+          <Glyph kind={node.kind} size={24} provider={provider} />
         </div>
         <div className="min-w-0 flex-1">
           <input

@@ -6,11 +6,78 @@
 import type { ProductKind } from "@/engine/catalog";
 import type { SVGProps } from "react";
 
+/**
+ * Cloudflare's own product icons, from cloudflare/cloudflare-docs (CC BY 4.0).
+ * They are monochrome paths, so they are inlined and take `currentColor`.
+ * Used only when the canvas shows Cloudflare; Vercel and generic views use
+ * the hand-drawn glyphs below so two icon families never mix on one canvas.
+ */
+const CF_ICON_FILES = import.meta.glob("/src/assets/cf/*.svg", { eager: true, query: "?raw", import: "default" }) as Record<string, string>;
+const cfIcon = (file: string) => CF_ICON_FILES[`/src/assets/cf/${file}.svg`];
+export const CF_ICONS: Partial<Record<string, string | undefined>> = {
+  "edge-cache": cfIcon("cache"),
+  waf: cfIcon("waf"),
+  "bot-shield": cfIcon("bots"),
+  "rate-limit": cfIcon("rules"),
+  static: cfIcon("pages"),
+  ssr: cfIcon("workers"),
+  compute: cfIcon("workers"),
+  kv: cfIcon("kv"),
+  sql: cfIcon("d1"),
+  blob: cfIcon("r2"),
+  queue: cfIcon("queues"),
+  actor: cfIcon("durable-objects"),
+  workflow: cfIcon("workflows"),
+  vector: cfIcon("vectorize"),
+  llm: cfIcon("workers-ai"),
+  "ai-gateway": cfIcon("ai-gateway"),
+  search: cfIcon("ai-search"),
+  cron: cfIcon("workers"),
+  realtime: cfIcon("realtime"),
+  hyperdrive: cfIcon("hyperdrive"),
+  images: cfIcon("images"),
+  stream: cfIcon("stream"),
+  browser: cfIcon("browser-run"),
+  turnstile: cfIcon("turnstile"),
+  email: cfIcon("email-routing"),
+  "load-balancer": cfIcon("load-balancing"),
+  zaraz: cfIcon("zaraz"),
+  analytics: cfIcon("analytics"),
+  access: cfIcon("access"),
+  container: cfIcon("containers"),
+};
+
+/** Normalise a docs icon: size it, make it inherit colour, strip hard-coded black. */
+function prepareSvg(raw: string, size: number): string {
+  return raw
+    .replace(/<svg([^>]*)>/, (_m, attrs: string) => {
+      const cleaned = attrs.replace(/\s(width|height)="[^"]*"/g, "");
+      return `<svg${cleaned} width="${size}" height="${size}" fill="currentColor" aria-hidden="true" focusable="false">`;
+    })
+    .replace(/fill="#000(000)?"/g, 'fill="currentColor"')
+    .replace(/fill="#fff(fff)?"/g, 'fill="var(--surface-3)"');
+}
+
 export function Glyph({
   kind,
   size = 18,
+  provider,
   ...rest
-}: { kind: ProductKind | string; size?: number } & SVGProps<SVGSVGElement>) {
+}: {
+  kind: ProductKind | string;
+  size?: number;
+  provider?: "cloudflare" | "vercel";
+} & SVGProps<SVGSVGElement>) {
+  const cf = provider === "cloudflare" ? CF_ICONS[kind] : undefined;
+  if (cf) {
+    return (
+      <span
+        className="inline-flex text-current"
+        style={{ width: size, height: size }}
+        dangerouslySetInnerHTML={{ __html: prepareSvg(cf, size) }}
+      />
+    );
+  }
   const common = {
     width: size,
     height: size,

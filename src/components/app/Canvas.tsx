@@ -113,7 +113,7 @@ const ProductNode = memo(function ProductNode({
       <Handle type="source" position={pos.source} className="!h-2.5 !w-2.5 !border-2 !border-foreground/60 !bg-surface-1" />
 
       <div className={`flex size-9 items-center justify-center rounded-lg ${iconTone}`}>
-        <Glyph kind={data.kind} size={19} />
+        <Glyph kind={data.kind} size={20} provider={provider} />
       </div>
 
       <div className="min-w-0">
