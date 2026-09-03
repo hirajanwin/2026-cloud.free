@@ -35,7 +35,18 @@ function ThemeProvider({
   children: ReactNode;
   defaultTheme?: Theme;
 }) {
-  const [theme, setThemeState] = useState<Theme>(defaultTheme);
+  // Same key the inline boot script in <head> reads, so the class it applied
+  // before hydration is the one this provider keeps. Theme only drives root
+  // classes from an effect, so the lazy client read cannot mismatch markup.
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return defaultTheme;
+    try {
+      const stored = window.localStorage.getItem("theme");
+      return stored === "light" || stored === "dark" ? stored : defaultTheme;
+    } catch {
+      return defaultTheme;
+    }
+  });
   const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Skip the `.transitioning` guard on mount — only user-triggered theme
   // changes should suppress/retime transitions.
@@ -43,6 +54,12 @@ function ThemeProvider({
 
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
+    try {
+      if (next === "system") window.localStorage.removeItem("theme");
+      else window.localStorage.setItem("theme", next);
+    } catch {
+      /* storage unavailable */
+    }
   }, []);
 
   // Single source of truth for the DOM side effects: swap the root classes,
