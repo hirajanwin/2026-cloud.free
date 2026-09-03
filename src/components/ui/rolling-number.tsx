@@ -18,7 +18,7 @@ export function RollingNumber({ value, className }: { value: string; className?:
         if (d < 0)
           return (
             <span key={key} className="rolling-static" aria-hidden="true">
-              {ch}
+              {ch === " " ? "\u00A0" : ch}
             </span>
           );
         return (
