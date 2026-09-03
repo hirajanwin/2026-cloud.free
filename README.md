@@ -11,11 +11,21 @@ freenet.free is a WebMCP-powered studio for the question "how would I vibecode t
 
 Everything an agent can do, a person can do, and the other way round. The diagram is a small text DSL; the canvas, the simulator and the exports are all views of it.
 
+## Use cases
+
+- **Choose a stack before writing code.** Describe the product, let the architect propose the design, then press `P` to price the same graph on Cloudflare and on Vercel. The gaps are explicit: partner products, missing primitives, different overage rules. Decide with a bill in front of you instead of six pricing tabs.
+- **Find out where the free tier breaks.** Set a realistic traffic mix, simulate a month, and read the layers: which meter crosses its allowance, on which day, and whether the platform drops requests or turns the feature off. Then raise a cache hit rate or add a gate and watch the verdict change.
+- **Size the cost of bots and crawlers.** Push scrapers and botnet traffic up and see what reaches billable compute and rows. Turn on Bot Fight Mode or a WAF and watch the blocked count and the bill. Block AI crawlers but keep search, and confirm Googlebot still passes.
+- **Budget an AI feature honestly.** Drop an OpenAI model on the canvas with its tokens per call, feed it a fraction of your requests, and see the vendor line on the bill, separate from the platform, on the free plan too.
+- **Explain a bill you already have.** Rebuild the architecture, match the traffic, and use `explain_charge` to see which nodes and which request classes drive each meter.
+- **Let an agent do the design review.** With WebMCP in Chrome, ask the browser's agent to analyse a URL, propose an architecture, run the month and report the breaches. Every tool call lands in the conversation, so the review is auditable.
+- **Teach the platforms.** Templates for a static site with an API, a SaaS app, an upload pipeline, realtime rooms and a retrieval assistant each carry a lesson about what breaks first and why.
+
 ## Flows
 
-- **Start**: pick a template, open a saved blueprint, or press *New blueprint* for an empty canvas. Remix any template or blueprint into a saved copy; blueprints autosave to the browser.
+- **Start**: pick a default net, open a saved freenet, or press *New freenet* for an empty canvas. Remix any of them into a saved copy; freenets autosave to the browser.
 - **Analyse a product**: ask the architect (or your browser agent) to analyse a URL or description. It proposes an architecture on the canvas and explains why each piece is there.
-- **Shape it**: click a product in the left rail to add it, drag a node's handle onto another to connect, double-click to inspect, Delete to remove. Every edit is also available as a tool and in the DSL panel.
+- **Shape it**: click a product in the left rail to add it, drag a node's handle onto another to connect, double-click to inspect, Delete to remove. Every edit is also available as a tool.
 - **Load it**: set requests per day and the class mix. Scrub the timeline to see the day each quota is crossed; daily caps show the hour they hit.
 - **Protect it**: flip a gate's protection and watch blocked traffic, bills and search visibility change together.
 - **Price it**: switch Cloudflare/Vercel and Free/Paid in the top bar. Every bill line links to the pricing page it came from.
