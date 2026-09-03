@@ -20,7 +20,6 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -280,7 +279,6 @@ function AppSidebar() {
   const templateId = useStudio((s) => s.templateId);
   const blueprintId = useStudio((s) => s.blueprintId);
   const provider = useStudio((s) => s.provider);
-  const nodeCount = useStudio((s) => s.diagram.nodes.length);
   const saved = useBlueprints();
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
@@ -429,7 +427,6 @@ function AppSidebar() {
                     }}
                   >
                     <span className="truncate">{b.name}</span>
-                    {blueprintId === b.id && pathname === "/" && <SidebarMenuBadge>{nodeCount}</SidebarMenuBadge>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -439,7 +436,6 @@ function AppSidebar() {
 
         {tab === "net" && starters.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel>Default nets</SidebarGroupLabel>
             <SidebarMenu>
               {starters.map((t) => (
                 <SidebarMenuItem key={t.id}>
@@ -452,7 +448,6 @@ function AppSidebar() {
                     }}
                   >
                     <span className="truncate">{t.name}</span>
-                    <SidebarMenuBadge>default</SidebarMenuBadge>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
