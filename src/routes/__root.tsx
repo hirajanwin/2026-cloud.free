@@ -7,8 +7,13 @@ import { ShapeProvider } from "@/lib/shape-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/app/AppShell";
 import { WebMcpBridge } from "@/components/app/WebMcpBridge";
+import { DeclarativeTools } from "@/components/app/DeclarativeTools";
 import { ClockStarter } from "@/components/app/ClockStarter";
 import appCss from "../styles.css?url";
+import { tools } from "@/tools";
+import { earlyRegistrationScript } from "@/tools/early";
+
+const WEBMCP_EARLY_SCRIPT = earlyRegistrationScript(tools);
 
 const THEME_INIT_SCRIPT = `(function(){try{var s=window.localStorage.getItem('theme');var r=document.documentElement;r.classList.remove('light','dark');if(s==='light'||s==='dark'){r.classList.add(s);}}catch(e){}})();`;
 
@@ -41,6 +46,7 @@ function RootDocument({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: WEBMCP_EARLY_SCRIPT }} />
         <HeadContent />
       </head>
       <body className="font-sans antialiased">
@@ -51,6 +57,7 @@ function RootDocument({ children }: { children: ReactNode }) {
                 <TooltipProvider>
                   <AppShell>{children}</AppShell>
                   <WebMcpBridge />
+                  <DeclarativeTools />
                   <ClockStarter />
                 </TooltipProvider>
               </ShapeProvider>

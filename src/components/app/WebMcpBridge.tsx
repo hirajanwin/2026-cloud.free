@@ -9,7 +9,8 @@ import { tools } from "@/tools";
 import { activeCaller, registerTools, webmcpSupported } from "@/tools/webmcp";
 import { studio } from "@/state/store";
 import { toolLog } from "@/state/toollog";
-import { toWebMcpTool } from "@/tools/define";
+import { runTool, toWebMcpTool } from "@/tools/define";
+import "@/tools/early";
 
 export function WebMcpBridge() {
   const enabled = useStudio((s) => s.webmcp.enabled);
@@ -41,6 +42,17 @@ export function WebMcpBridge() {
     }));
     // toWebMcpTool is referenced to keep the mapping in one place; registerTools does the conversion.
     void toWebMcpTool;
+
+    // Hand the real runner to the early inline stubs, then retire them so the
+    // full registrations below are the only ones the browser sees.
+    const byName = new Map(logged.map((d) => [d.name, d]));
+    window.__webmcpReady?.((name, input) => {
+      const def = byName.get(name);
+      if (!def) return Promise.reject(new Error(`Unknown tool ${name}`));
+      return runTool(def, input);
+    });
+    window.__webmcpEarly?.abort();
+    window.__webmcpEarly = undefined;
 
     registerTools(logged).then(({ registered, unregister: un }) => {
       if (cancelled) {

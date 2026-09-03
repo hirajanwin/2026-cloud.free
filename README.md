@@ -40,6 +40,14 @@ Tool definitions live in [`src/tools/index.ts`](src/tools/index.ts); the schema 
 | `analyze_product`, `propose_architecture`                         | URL or description → breakdown → diagram   |
 | `export_config`                                                   | Deployable config and stack notes          |
 
+### How agents find the tools
+
+Three layers, all backed by the same tool definitions:
+
+1. **Inline registration in `<head>`.** The tool surface (names, descriptions, JSON Schemas) is rendered into the server HTML and registered on `document.modelContext` before any bundle loads, so `getTools()` is never empty. The stubs wait for the app and hand off to the full implementations once React mounts.
+2. **Declarative forms.** Twelve tools are also announced as `<form toolname tooldescription toolautosubmit>` with `toolparamdescription` on each field, visually hidden. Agents that only read the declarative surface, or that inspect the page before JavaScript runs, still see them; submissions answer through `SubmitEvent.respondWith`.
+3. **Imperative bridge.** After hydration the full set of 18 tools is registered with `registerTool`, logged in the Tools tab and shared with the in-page architect.
+
 ## How the numbers work
 
 Not a queueing simulator. Each request class is walked through the diagram as a rate; each node blocks it, answers it, or bills it and forwards it along its edges. Rates are computed once per configuration and the clock only accumulates them, so the canvas runs at 60 fps for free.
