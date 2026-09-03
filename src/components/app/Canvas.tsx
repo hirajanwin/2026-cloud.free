@@ -123,10 +123,10 @@ const ProductNode = memo(function ProductNode({
 
       <div className="min-w-0">
         <div className="truncate text-[13px] leading-[18px] text-foreground" style={{ fontVariationSettings: "'wght' 550, 'opsz' 18" }} title={title}>
-          {title}
+          <span key={title} className="text-in">{title}</span>
         </div>
         <div className="truncate text-[11px] leading-[16px] text-muted-foreground" title={subtitle}>
-          {subtitle}
+          <span key={subtitle} className="text-in">{subtitle}</span>
         </div>
       </div>
 

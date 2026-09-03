@@ -4,7 +4,7 @@ import { Timeline } from "@/components/app/Timeline";
 
 export const Route = createFileRoute("/")({
   component: Studio,
-  head: () => ({ meta: [{ title: "Blueprint · Studio" }] }),
+  head: () => ({ meta: [{ title: "freenet.free · Studio" }] }),
 });
 
 function Studio() {

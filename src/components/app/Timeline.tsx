@@ -7,6 +7,7 @@
  * so the node that breaks first is the one whose line hits the 100% rule
  * first. Nothing here is sampled.
  */
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { useMemo, useRef, useState } from "react";
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { computeBill, type BillLine } from "@/engine/pricing";
@@ -515,7 +516,7 @@ function TracksView({
             className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-surface-4 px-2 py-0.5 text-[10.5px] text-numeric text-foreground shadow-surface-3"
             style={{ left: `calc(var(--label-w) + var(--gap) + (100% - var(--label-w) - var(--value-w) - 2 * var(--gap)) * ${playX / 100})` }}
           >
-            {fmtDay(day, period)} · {formatCount(offered)} req · <span className="text-destructive">{formatCount(snapshot.outcomes.blocked)} blocked</span> · <span className="text-warning">{formatCount(snapshot.outcomes.dropped)} dropped</span>
+            <RollingNumber value={fmtDay(day, period)} /> · <RollingNumber value={formatCount(offered)} /> req · <span className="text-destructive"><RollingNumber value={formatCount(snapshot.outcomes.blocked)} /> blocked</span> · <span className="text-warning"><RollingNumber value={formatCount(snapshot.outcomes.dropped)} /> dropped</span>
             {hover && (() => { const t = tracks.find((x) => x.id === hover); return t?.line ? <> · {t.label} {Math.round(valueAt(t.line) * 100)}%</> : null; })()}
           </div>
         )}

@@ -29,7 +29,7 @@ const APP_JSON_LD = JSON.stringify({
 
 const THEME_INIT_SCRIPT = `(function(){try{var s=window.localStorage.getItem('theme');var r=document.documentElement;r.classList.remove('light','dark');if(s==='light'||s==='dark'){r.classList.add(s);}}catch(e){}})();`;
 
-const SITE_TITLE = "Blueprint";
+const SITE_TITLE = "freenet.free";
 const SITE_DESCRIPTION =
   "Design how to build a product on Cloudflare or Vercel, watch requests flow and get billed, and let your browser's agent drive the canvas through WebMCP.";
 

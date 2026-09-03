@@ -61,7 +61,7 @@ async function fetchPageText(
       headers: {
         accept: "text/html,application/xhtml+xml",
         "user-agent":
-          "Mozilla/5.0 (compatible; BlueprintAnalyzer/1.0; +https://github.com/)",
+          "Mozilla/5.0 (compatible; freenet.free-analyzer/1.0; +https://github.com/)",
       },
     });
     if (!res.ok) return null;

@@ -24,7 +24,7 @@ const PanelSchema = z.enum(["inspect", "traffic", "bill", "chat"]);
 const ChatTabSchema = z.enum(["chat", "code", "activity", "alternatives"]);
 
 export const ABOUT = {
-  name: "Blueprint",
+  name: "freenet.free",
   tagline: "Design how to build a product on Cloudflare or Vercel, then watch requests flow and get billed.",
   whatItIs:
     "A studio for cloud architecture. You lay out products (Workers, KV, D1, R2, Vercel Functions, Postgres...) as nodes on a canvas, connect them, and a request-accounting simulator sends a daily mix of humans, search crawlers, AI crawlers, scrapers and botnet traffic through the graph. Every node meters what it does (requests, reads, writes, CPU, storage) and the bill is priced from the providers' official pricing pages, with free-tier allowances and what happens when you breach them.",

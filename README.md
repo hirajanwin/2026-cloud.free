@@ -1,8 +1,8 @@
-# Blueprint
+# freenet.free
 
 **Design how to build a product on Cloudflare or Vercel, watch requests flow and get billed, and let your browser's agent drive the canvas through WebMCP.**
 
-Blueprint is a WebMCP-powered studio for the question "how would I vibecode this, and what will it cost me?"
+freenet.free is a WebMCP-powered studio for the question "how would I vibecode this, and what will it cost me?"
 
 - Paste a product URL or describe an app. The architect splits it into a core loop and polish, decides which platform primitives the core loop needs, and draws the architecture.
 - Flip one switch to price the same design on **Cloudflare** or **Vercel**, free tier or paid. Every number comes from the official pricing pages, with a source link and an as-of date on every line.

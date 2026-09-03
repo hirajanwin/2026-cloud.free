@@ -18,7 +18,7 @@ export const Route = createFileRoute("/verdict/$slug")({
     return {
       meta: t?.verdict
         ? [
-            { title: `Can I build ${t.verdict.product}? · Blueprint` },
+            { title: `Can I build ${t.verdict.product}? · freenet.free` },
             {
               name: "description",
               content: `${t.verdict.product}: ${t.tagline} How to rebuild the core loop on Cloudflare or Vercel, with a priced architecture.`,

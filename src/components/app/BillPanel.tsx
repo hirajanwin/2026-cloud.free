@@ -2,6 +2,7 @@
  * The bill. Every line links to the pricing page it came from, shows the
  * as-of date, and flags anything the data file could not verify.
  */
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { computeBill, type BillLine } from "@/engine/pricing";
@@ -43,7 +44,7 @@ export function BillPanel() {
           </div>
         </div>
         <div className="mt-1 text-numeric text-[28px] font-medium leading-8">
-          {formatUsd(bill.totalUsd)}
+          <RollingNumber value={formatUsd(bill.totalUsd)} />
         </div>
         {plan === "paid" ? (
           <div className="mt-1 text-caption text-muted-foreground">

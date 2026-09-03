@@ -8,7 +8,7 @@
  * one; a small context bridge lets the top bar (inside the left tree) toggle
  * the right rail.
  */
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode, useRef } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { BookOpen, Layers, Moon, PanelRight, Plus, Receipt, Save, Sliders, Sparkles, Sun, SunMoon } from "lucide-react";
 import { useThemeContext } from "@/lib/theme-context";
@@ -43,6 +43,7 @@ import { Inspector } from "./Inspector";
 import { TrafficPanel } from "./TrafficPanel";
 import { BillPanel } from "./BillPanel";
 import { Chat } from "./Chat";
+import { useToolLog } from "@/state/toollog";
 import { DslEditor } from "./DslEditor";
 import { ActivityPanel } from "./ActivityPanel";
 import { AlternativesPanel } from "./AlternativesPanel";
@@ -111,7 +112,7 @@ const PANELS: { value: PanelId; label: string; icon: typeof Layers }[] = [
   { value: "inspect", label: "Inspect", icon: Layers },
   { value: "traffic", label: "Traffic", icon: Sliders },
   { value: "bill", label: "Bill", icon: Receipt },
-  { value: "chat", label: "Chat", icon: Sparkles },
+  { value: "chat", label: "AI", icon: Sparkles },
 ];
 
 function ChatTabs() {
@@ -134,16 +135,31 @@ function ChatTabs() {
   );
 }
 
+/** Browser-agent tool calls that arrived while the AI panel was not showing. */
+function useUnseenAgentActivity(panel: PanelId): number {
+  const log = useToolLog();
+  const agentCalls = log.filter((e) => e.caller === "browser-agent").length;
+  const seen = useRef(agentCalls);
+  if (panel === "chat") seen.current = agentCalls;
+  return Math.max(0, agentCalls - seen.current);
+}
+
 function RightRail() {
   const panel = useStudio((s) => s.panel);
   const chatTab = useStudio((s) => s.chatTab);
+  const unseen = useUnseenAgentActivity(panel);
   return (
     <Sidebar side="right" variant="inset" rail={false}>
       <SidebarHeader className="px-2 pt-2">
         <Tabs value={panel} onValueChange={(v) => studio.setPanel(v as PanelId)} size="compact">
           <TabsList className="w-full">
             {PANELS.map((p) => (
-              <TabItem key={p.value} value={p.value} label={p.label} className="flex-1 justify-center" />
+              <span key={p.value} className="relative flex flex-1">
+                <TabItem value={p.value} label={p.label} className="flex-1 justify-center" />
+                {p.value === "chat" && unseen > 0 && (
+                  <span className="dot-pulse pointer-events-none absolute right-1.5 top-1 size-1.5 rounded-full bg-focus-ring" aria-label={`${unseen} new agent actions`} />
+                )}
+              </span>
             ))}
           </TabsList>
         </Tabs>
@@ -252,7 +268,7 @@ function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
-            <SidebarWorkspaceHeader name="Blueprint" tile={<WorkspaceTile>B</WorkspaceTile>} />
+            <SidebarWorkspaceHeader name="freenet.free" tile={<WorkspaceTile>F</WorkspaceTile>} />
           </div>
           <ThemeButton />
         </div>

@@ -27,6 +27,8 @@ import { tools, toolByName } from "@/tools";
 import { toClientTools } from "@/tools/define";
 import { routeToolCall } from "@/tools/webmcp";
 import Markdown from "react-markdown";
+import { CyclingText } from "@/components/ui/cycling-text";
+import { useToolLog, type ToolEvent } from "@/state/toollog";
 import remarkGfm from "remark-gfm";
 
 const SUGGESTIONS = [
@@ -36,6 +38,33 @@ const SUGGESTIONS = [
   "Block AI crawlers but keep Googlebot, then show what changed",
   "Raise traffic to 2M/day with a 30% botnet and tell me what breaks on the free plan",
 ];
+
+const HINTS = [
+  "will the free tier hold at 1M requests a day?",
+  "what happens when botnet traffic triples?",
+  "block AI crawlers but keep search",
+  "price this on Vercel instead",
+  "why is KV the biggest line on the bill?",
+  "analyse a product URL and build it",
+];
+
+/** One row in the transcript: a chat message or a burst of tool calls made from outside the chat. */
+type Row =
+  | { kind: "message"; at: number; message: UIMessage }
+  | { kind: "activity"; at: number; caller: ToolEvent["caller"]; events: ToolEvent[] };
+
+/** Consecutive calls from the same caller within a few seconds read as one action. */
+function groupActivity(events: ToolEvent[]): Row[] {
+  const rows: Row[] = [];
+  for (const e of [...events].reverse()) {
+    if (e.caller === "assistant") continue;
+    const last = rows[rows.length - 1];
+    if (last && last.kind === "activity" && last.caller === e.caller && e.at - last.events[last.events.length - 1].at < 4000) {
+      last.events.push(e);
+    } else rows.push({ kind: "activity", at: e.at, caller: e.caller, events: [e] });
+  }
+  return rows;
+}
 
 function sessionName(): string {
   if (typeof window === "undefined") return "ssr";
@@ -120,6 +149,17 @@ export function Chat() {
 
   const streaming = status === "streaming" || status === "submitted";
 
+  // Everything the browser agent (or a declarative form) does through WebMCP
+  // lands in the conversation too, in time order with the messages.
+  const log = useToolLog();
+  const firstSeen = useRef(new Map<string, number>());
+  for (const m of messages) if (!firstSeen.current.has(m.id)) firstSeen.current.set(m.id, Date.now());
+  const rows: Row[] = useMemo(() => {
+    const msgRows: Row[] = messages.map((m) => ({ kind: "message", at: firstSeen.current.get(m.id) ?? 0, message: m }));
+    return [...msgRows, ...groupActivity(log)].sort((a, b) => a.at - b.at);
+  }, [messages, log]);
+  const agentCalls = log.filter((e) => e.caller !== "assistant").length;
+
   useEffect(() => {
     const el = document.getElementById("chat-scroll");
     if (el) el.scrollTop = el.scrollHeight;
@@ -129,7 +169,9 @@ export function Chat() {
     <div className="flex h-full min-h-0 flex-col">
       <div className="mb-1 flex items-center justify-between">
         <span className="text-caption text-muted-foreground">
-          {messages.length === 0 ? "The architect drives the canvas through the page's tools." : `${messages.length} messages`}
+          {messages.length === 0 && agentCalls === 0
+            ? "The architect drives the canvas through the page's tools."
+            : [messages.length ? `${messages.length} messages` : null, agentCalls ? `${agentCalls} agent action${agentCalls > 1 ? "s" : ""} via WebMCP` : null].filter(Boolean).join(" · ")}
         </span>
         {messages.length > 0 && (
           <Button variant="ghost" size="compact" onClick={() => setMessages([])}>
@@ -143,6 +185,9 @@ export function Chat() {
       >
         {messages.length === 0 && (
           <div className="flex flex-col gap-2 pt-2">
+            <p className="px-1 text-caption text-muted-foreground">
+              Ask the architect: <CyclingText phrases={HINTS} className="text-foreground" />
+            </p>
             {SUGGESTIONS.map((s) => (
               <button
                 key={s}
@@ -156,9 +201,13 @@ export function Chat() {
           </div>
         )}
         <div className="flex flex-col gap-3 pt-2">
-          {messages.map((m) => (
-            <Message key={m.id} message={m} />
-          ))}
+          {rows.map((r) =>
+            r.kind === "message" ? (
+              <Message key={r.message.id} message={r.message} />
+            ) : (
+              <Activity key={`act-${r.at}`} row={r} />
+            ),
+          )}
           {streaming && messages[messages.length - 1]?.role !== "assistant" && (
             <ThinkingIndicator />
           )}
@@ -289,6 +338,36 @@ function Message({ message }: { message: UIMessage }) {
           )}
         </ChatMessage>
       )}
+    </div>
+  );
+}
+
+/** A burst of tool calls made from outside this chat: the browser's agent or a declarative form. */
+function Activity({ row }: { row: Extract<Row, { kind: "activity" }> }) {
+  const who = row.caller === "browser-agent" ? "Browser agent" : "You";
+  const n = row.events.length;
+  return (
+    <div className="act-in flex min-w-0 flex-col gap-1 rounded-xl border border-dashed border-border bg-surface-2 px-3 py-2">
+      <div className="flex items-center justify-between gap-2 text-caption">
+        <span className="inline-flex items-center gap-1.5 text-foreground">
+          <span className="inline-block size-1.5 rounded-full bg-focus-ring" />
+          {who} ran {n} tool{n > 1 ? "s" : ""} via WebMCP
+        </span>
+        <span className="text-numeric text-muted-foreground">
+          {new Date(row.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        </span>
+      </div>
+      <ul className="flex flex-col gap-0.5">
+        {row.events.map((e, i) => (
+          <li key={i} className="flex min-w-0 items-baseline gap-2 text-caption">
+            <code className="shrink-0 text-foreground">{e.name}</code>
+            <span className="truncate text-muted-foreground" title={shortJson(e.input)}>
+              {e.input && Object.keys(e.input as object).length ? shortJson(e.input) : "no input"}
+            </span>
+            <span className="ml-auto shrink-0 text-numeric text-muted-foreground">{e.durationMs} ms</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

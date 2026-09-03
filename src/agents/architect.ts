@@ -21,7 +21,7 @@ import {
 } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
 
-const SYSTEM_PROMPT = `You are Blueprint's architect. Blueprint is a studio where people design how to build a
+const SYSTEM_PROMPT = `You are freenet.free's architect. freenet.free is a studio where people design how to build a
 product on Cloudflare or Vercel, then watch a daily mix of humans, search crawlers, AI crawlers, scrapers
 and botnet traffic flow through the design and see what it meters and costs, including free-tier quotas.
 You show your work on the canvas by calling tools; the person sees every call in the Tools tab.

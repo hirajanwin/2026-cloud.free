@@ -2,6 +2,7 @@
  * The top bar: sidebar triggers at both ends, the live traffic strip with the
  * clock controls, and the provider / plan switches.
  */
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Switch } from "@/components/ui/switch";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -86,7 +87,7 @@ export function TrafficStrip() {
       {/* headline number */}
       <div className="min-w-[132px]">
         <div className="text-numeric text-[18px] leading-6 text-foreground" style={{ fontVariationSettings: "'wght' 550, 'opsz' 18" }}>
-          {formatCount(shown)}
+          <RollingNumber value={formatCount(shown)} />
         </div>
         <div className="whitespace-nowrap text-[11px] leading-4 text-muted-foreground">
           requests · <span className="text-numeric text-foreground">{formatElapsed(snapshot.elapsedS)}</span>
