@@ -94,7 +94,7 @@ function createInitial(): StudioState {
     source: DEFAULT_TEMPLATE.dsl,
     parseErrors: errors,
     ...base,
-    speed: 3600, // one simulated hour per second
+    speed: 4 * 3600, // four simulated hours per second: a month in three minutes
     running: true,
     snapshot: engine.snapshot(),
     rates: engine.currentRates,
@@ -265,7 +265,8 @@ export const studio = {
   },
 
   setRunning(running: boolean) {
-    set({ running });
+    if (running && engine.snapshot().elapsedS >= MONTH_S) engine.reset();
+    set({ running, snapshot: engine.snapshot() });
   },
 
   resetClock() {
@@ -298,30 +299,53 @@ export const studio = {
  * ------------------------------------------------------------------ */
 
 let rafId: number | null = null;
+let intervalId: ReturnType<typeof setInterval> | null = null;
 let lastT = 0;
 let lastPublish = 0;
 const PUBLISH_MS = 100;
+export const MONTH_S = 30 * 86_400;
+
+function tick(nowMs: number) {
+  const dt = Math.min(1, Math.max(0, (nowMs - lastT) / 1000));
+  lastT = nowMs;
+  if (state.running) {
+    const before = engine.snapshot().elapsedS;
+    if (before >= MONTH_S) {
+      // End of the simulated month: stop, so "play" reads as "run the month".
+      set({ running: false });
+    } else {
+      engine.advance(Math.min(dt * state.speed, MONTH_S - before));
+    }
+  }
+  if (nowMs - lastPublish >= PUBLISH_MS) {
+    lastPublish = nowMs;
+    set({ snapshot: engine.snapshot() });
+  }
+}
 
 export function startClock() {
   if (rafId !== null || typeof window === "undefined") return;
   lastT = performance.now();
   lastPublish = lastT;
   const frame = (t: number) => {
-    const dt = Math.min(0.25, Math.max(0, (t - lastT) / 1000));
-    lastT = t;
-    if (state.running && document.visibilityState === "visible") engine.advance(dt * state.speed);
-    if (t - lastPublish >= PUBLISH_MS) {
-      lastPublish = t;
-      set({ snapshot: engine.snapshot() });
-    }
+    tick(t);
     rafId = requestAnimationFrame(frame);
   };
   rafId = requestAnimationFrame(frame);
+  // requestAnimationFrame pauses in background tabs; a coarse interval keeps
+  // the simulated month moving so the clock is where you left it on return.
+  intervalId = setInterval(() => {
+    if (document.visibilityState === "hidden") tick(performance.now());
+  }, 1000);
+  // Handy for demos and debugging from the console.
+  (window as unknown as { __blueprint?: typeof studio }).__blueprint = studio;
 }
 
 export function stopClock() {
   if (rafId !== null) cancelAnimationFrame(rafId);
+  if (intervalId !== null) clearInterval(intervalId);
   rafId = null;
+  intervalId = null;
 }
 
 /* ------------------------------------------------------------------ *
