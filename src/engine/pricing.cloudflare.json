@@ -446,6 +446,329 @@
       },
       "source": "https://developers.cloudflare.com/waf/rate-limiting-rules/",
       "unverified": false
+    },
+    "cf.hyperdrive.queries": {
+      "label": "Hyperdrive database queries",
+      "unit": "queries",
+      "free": {
+        "quota": 100000,
+        "period": "day",
+        "overage": "drop",
+        "note": "Hyperdrive is included in both the Free and Paid Workers plans. Free plan: 100,000 database queries/day (any statement via Hyperdrive: SELECT, INSERT/UPDATE/DELETE, DDL; cached and uncached count equally). The page does not state the failure behaviour past the cap; 'drop' is a placeholder."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1000000,
+        "note": "Unlimited queries on Workers Paid; connection pooling and query caching incur no additional charges. No egress charge. included=null means unmetered."
+      },
+      "source": "https://developers.cloudflare.com/hyperdrive/platform/pricing/",
+      "unverified": false
+    },
+    "cf.images.transformations": {
+      "label": "Images unique transformations",
+      "unit": "transformations",
+      "free": {
+        "quota": 5000,
+        "period": "month",
+        "overage": "drop",
+        "note": "Up to 5,000 unique transformations each month for free (transformations of externally stored images, e.g. R2). Beyond that, new transformations return an error and incur no charge until you upgrade."
+      },
+      "paid": {
+        "included": 5000,
+        "period": "month",
+        "pricePer": 0.5,
+        "per": 1000,
+        "note": "First 5,000 unique transformations included + $0.50 per 1,000 unique transformations/month."
+      },
+      "source": "https://developers.cloudflare.com/images/pricing/",
+      "unverified": false
+    },
+    "cf.images.stored": {
+      "label": "Images stored",
+      "unit": "images",
+      "free": {
+        "quota": 0,
+        "period": "month",
+        "overage": "block",
+        "note": "Image storage is a paid-plan feature; the Free plan covers only transformations of externally stored images."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 5,
+        "per": 100000,
+        "note": "$5 per 100,000 images stored per month. No included allowance stated."
+      },
+      "source": "https://developers.cloudflare.com/images/pricing/",
+      "unverified": false
+    },
+    "cf.images.delivered": {
+      "label": "Images delivered",
+      "unit": "images",
+      "free": {
+        "quota": 0,
+        "period": "month",
+        "overage": "block",
+        "note": "Delivery of Cloudflare-stored images is a paid-plan feature."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 1,
+        "per": 100000,
+        "note": "$1 per 100,000 images delivered per month. No included allowance stated."
+      },
+      "source": "https://developers.cloudflare.com/images/pricing/",
+      "unverified": false
+    },
+    "cf.stream.minutes_stored": {
+      "label": "Stream minutes stored",
+      "unit": "minutes",
+      "free": {
+        "quota": 0,
+        "period": "month",
+        "overage": "block",
+        "note": "No free tier for Stream storage. Storage is prepaid in increments; when it runs out you cannot upload new videos or start new live broadcasts until storage is increased or videos deleted."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 5,
+        "per": 1000,
+        "note": "$5 per 1,000 minutes stored, regardless of file size; consumption rounded up to the second. Stream is a separate subscription, not part of Workers Paid."
+      },
+      "source": "https://developers.cloudflare.com/stream/pricing/",
+      "unverified": false
+    },
+    "cf.stream.minutes_delivered": {
+      "label": "Stream minutes delivered",
+      "unit": "minutes",
+      "free": {
+        "quota": 0,
+        "period": "month",
+        "overage": "block",
+        "note": "No free tier for Stream delivery (Media Transformations have a separate free monthly allocation of 5,000, not modelled here)."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 1,
+        "per": 1000,
+        "note": "$1 per 1,000 minutes delivered, post-paid usage-based."
+      },
+      "source": "https://developers.cloudflare.com/stream/pricing/",
+      "unverified": false
+    },
+    "cf.browser_rendering.hours": {
+      "label": "Browser Rendering browser hours",
+      "unit": "hours",
+      "free": {
+        "quota": 0.1666667,
+        "period": "day",
+        "overage": "drop",
+        "note": "Free plan: 10 minutes of browser time per day (quota expressed here as hours = 10/60), 3 concurrent browsers (Sessions only). Browser hours shared across Quick Actions and Sessions."
+      },
+      "paid": {
+        "included": 10,
+        "period": "month",
+        "pricePer": 0.09,
+        "per": 1,
+        "note": "10 browser hours/month included, then $0.09 per additional hour. Concurrency: 10 browsers included (averaged monthly), then $2.00 per additional browser (Sessions only; Quick Actions are charged for hours only). Usage of 1,800 s or more rounds up to the nearest hour, 1,799 s or less rounds down."
+      },
+      "source": "https://developers.cloudflare.com/browser-rendering/platform/pricing/",
+      "unverified": false
+    },
+    "cf.turnstile.requests": {
+      "label": "Turnstile challenges",
+      "unit": "requests",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "Turnstile is free with unlimited challenges (traffic or verification requests). Free plan: up to 20 widgets, 10 hostnames per widget, 7-day analytics. Enterprise (Contact Sales): unlimited widgets, 200 hostnames/widget, 30-day analytics, wildcard hostnames, ephemeral IDs, off-label branding."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1000000,
+        "note": "No per-request charge; Workers Paid does not change Turnstile entitlements (Turnstile plans are Free and Enterprise only)."
+      },
+      "source": "https://developers.cloudflare.com/turnstile/plans/",
+      "unverified": false
+    },
+    "cf.email_routing.messages": {
+      "label": "Email Routing messages",
+      "unit": "messages",
+      "free": {
+        "quota": null,
+        "period": "month",
+        "overage": "none",
+        "note": "Email Routing is free and available on Free and Paid plans; no per-message charge. Limits: 200 routing rules per domain, 200 destination addresses per account, 25 MiB inbound message size."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": 0,
+        "per": 1000,
+        "note": "Free on all plans; sending to verified destination addresses in your account is also free."
+      },
+      "source": "https://developers.cloudflare.com/email-routing/",
+      "unverified": false
+    },
+    "cf.email_sending.messages": {
+      "label": "Email Sending messages",
+      "unit": "messages",
+      "free": {
+        "quota": 0,
+        "period": "month",
+        "overage": "block",
+        "note": "Email Sending to arbitrary recipients is not available on Workers Free; it requires the Workers Paid plan. Sends to verified destination addresses are free on all plans and do not count toward quota."
+      },
+      "paid": {
+        "included": 3000,
+        "period": "month",
+        "pricePer": 0.35,
+        "per": 1000,
+        "note": "3,000 emails/month included on Workers Paid, then $0.35 per 1,000 emails. Product is in beta; daily send quotas scale up over time based on sending behaviour."
+      },
+      "source": "https://developers.cloudflare.com/email-service/platform/pricing/",
+      "unverified": false
+    },
+    "cf.load_balancing.queries": {
+      "label": "Load Balancing DNS queries",
+      "unit": "queries",
+      "free": {
+        "quota": 0,
+        "period": "month",
+        "overage": "block",
+        "note": "Load Balancing is a paid add-on requiring a billing profile; not available for free (Enterprise non-contract preview excepted)."
+      },
+      "paid": {
+        "included": null,
+        "period": "month",
+        "pricePer": null,
+        "per": 500000,
+        "note": "UNVERIFIED: base monthly price, included DNS queries and per-500,000-query overage are not published on any developers.cloudflare.com page fetched (https://developers.cloudflare.com/load-balancing/reference/pricing/ returns 404; docs point to the dashboard for pricing). Values left null rather than guessed."
+      },
+      "source": "https://developers.cloudflare.com/load-balancing/get-started/enable-load-balancing/",
+      "unverified": true
+    },
+    "cf.zaraz.events": {
+      "label": "Zaraz events",
+      "unit": "events",
+      "free": {
+        "quota": 1000000,
+        "period": "month",
+        "overage": "block",
+        "note": "Every Cloudflare account gets 1,000,000 free Zaraz Events per month; warning emails at 50/80/90%. If usage exceeds the limit without paid billing enabled, Zaraz is disabled automatically."
+      },
+      "paid": {
+        "included": 1000000,
+        "period": "month",
+        "pricePer": 5,
+        "per": 1000000,
+        "note": "Zaraz Paid: $5 per month for each additional 1,000,000 Zaraz Events. Available on all Cloudflare tiers; this is a Zaraz subscription, independent of Workers Paid."
+      },
+      "source": "https://developers.cloudflare.com/zaraz/pricing-info/",
+      "unverified": false
+    },
+    "cf.analytics_engine.datapoints": {
+      "label": "Analytics Engine data points written",
+      "unit": "datapoints",
+      "free": {
+        "quota": 100000,
+        "period": "day",
+        "overage": "drop",
+        "note": "Workers Free: 100,000 data points written included per day. Behaviour past the cap is not stated; 'drop' is a placeholder."
+      },
+      "paid": {
+        "included": 10000000,
+        "period": "month",
+        "pricePer": 0.25,
+        "per": 1000000,
+        "note": "Workers Paid: 10 million data points/month included, +$0.25 per additional million. Cloudflare states you are currently NOT billed for Analytics Engine; pricing is published as advance notice."
+      },
+      "source": "https://developers.cloudflare.com/analytics/analytics-engine/pricing/",
+      "unverified": false
+    },
+    "cf.analytics_engine.read_queries": {
+      "label": "Analytics Engine read queries",
+      "unit": "queries",
+      "free": {
+        "quota": 10000,
+        "period": "day",
+        "overage": "drop",
+        "note": "Workers Free: 10,000 read queries included per day. Behaviour past the cap is not stated; 'drop' is a placeholder."
+      },
+      "paid": {
+        "included": 1000000,
+        "period": "month",
+        "pricePer": 1,
+        "per": 1000000,
+        "note": "Workers Paid: 1 million read queries/month included, +$1.00 per additional million. Currently not billed (advance-notice pricing)."
+      },
+      "source": "https://developers.cloudflare.com/analytics/analytics-engine/pricing/",
+      "unverified": false
+    },
+    "cf.access.users": {
+      "label": "Cloudflare Access users (seats)",
+      "unit": "users",
+      "free": {
+        "quota": 50,
+        "period": "month",
+        "overage": "block",
+        "note": "Zero Trust Free plan: $0 forever, 50 user limit. A user consumes a seat on an authentication event regardless of how many apps they access."
+      },
+      "paid": {
+        "included": 0,
+        "period": "month",
+        "pricePer": 7,
+        "per": 1,
+        "note": "Pay-as-you-go: $7 per user/month (paid annually). Contract plan: custom price per user/month. This is a Zero Trust subscription, independent of Workers Paid."
+      },
+      "source": "https://www.cloudflare.com/zero-trust/products/access/",
+      "unverified": false
+    },
+    "cf.containers.vcpu_seconds": {
+      "label": "Containers vCPU time",
+      "unit": "vCPU-s",
+      "free": {
+        "quota": 0,
+        "period": "month",
+        "overage": "block",
+        "note": "Containers require the $5/month Workers Paid plan; unavailable on Workers Free."
+      },
+      "paid": {
+        "included": 22500,
+        "period": "month",
+        "pricePer": 0.00002,
+        "per": 1,
+        "note": "375 vCPU-minutes/month included (= 22,500 vCPU-seconds), then $0.000020 per additional vCPU-second. Also billed: memory 25 GiB-hours/month included then $0.0000025 per GiB-second; disk 200 GB-hours/month included then $0.00000007 per GB-second; egress NA/EU 1 TB included then $0.025/GB, Oceania/Korea/Taiwan 500 GB then $0.05/GB, elsewhere 500 GB then $0.04/GB. Workers, Durable Objects and Workers Logs usage billed separately."
+      },
+      "source": "https://developers.cloudflare.com/containers/pricing/",
+      "unverified": false
+    },
+    "cf.workflows.steps": {
+      "label": "Workflows steps",
+      "unit": "steps",
+      "free": {
+        "quota": 3000,
+        "period": "day",
+        "overage": "drop",
+        "note": "Workflows is included in Free and Paid Workers plans. Free: 3,000 steps/day and 100,000 invocations/day; instance state retained 3 days; 1 GB storage."
+      },
+      "paid": {
+        "included": 500000,
+        "period": "month",
+        "pricePer": 0.8,
+        "per": 100000,
+        "note": "500,000 steps/month included, +$0.80 per additional 100,000 steps. Workflow invocations (10M/month then $0.30/million) and CPU time are billed under the Workers meters (cf.workers.requests, cf.workers.cpu_ms); subrequests from a Workflow incur no extra request cost. Storage: 1 GB-month included, then $0.20/GB-month; state retained 30 days."
+      },
+      "source": "https://developers.cloudflare.com/workflows/reference/pricing/",
+      "unverified": false
     }
   },
   "notes": [
@@ -460,6 +783,14 @@
     "Durable Objects Free plan supports SQLite-backed objects only; SQLite storage on Free: 5M rows read/day, 100k rows written/day, 5 GB total. Key-Value backend is Paid only. Source: https://developers.cloudflare.com/durable-objects/platform/pricing/",
     "Queues on Workers Free: 10,000 operations/day with 24-hour non-configurable retention; Paid allows retention up to 14 days. Source: https://developers.cloudflare.com/queues/platform/pricing/",
     "Vectorize stored dimensions is a total-stored figure (5M on Free, 10M included on Paid) rather than monthly consumption; the schema period 'month' is nominal for it.",
-    "All values fetched 2026-09-02 from developers.cloudflare.com pages listed in each meter's source field."
+    "All values fetched 2026-09-02 from developers.cloudflare.com pages listed in each meter's source field.",
+    "Stream, Images storage/delivery, Zaraz Paid, Zero Trust (Access) and Load Balancing are separate subscriptions/add-ons; their paid blocks do not depend on the Workers Paid plan. Hyperdrive, Workflows, Browser Rendering, Analytics Engine, Containers and Email Sending follow the Workers Free/Paid plan.",
+    "Browser Rendering free quota is 10 minutes/day, stored as 0.1666667 hours/day so the unit matches the paid block (hours). Concurrency ($2.00 per additional browser above 10 on Paid) is not modelled as a meter.",
+    "Workers Analytics Engine: Cloudflare states usage is currently not billed; the published numbers are advance notice for cost estimation. Source: https://developers.cloudflare.com/analytics/analytics-engine/pricing/",
+    "Workflows invocations and CPU time are billed via the Workers requests/CPU meters; only steps (and storage) are Workflows-specific. Source: https://developers.cloudflare.com/workflows/reference/pricing/",
+    "Load Balancing pricing (base price, included DNS queries, per-500k overage) could not be verified: https://developers.cloudflare.com/load-balancing/reference/pricing/ and /pricing-and-plans/ return 404 and the docs defer to the dashboard for pricing. cf.load_balancing.queries paid values are null and the meter is unverified.",
+    "Zero Trust Free plan: 50 user limit; Pay-as-you-go $7 per user/month paid annually. Source (cloudflare.com marketing page): https://www.cloudflare.com/zero-trust/products/access/",
+    "Containers included vCPU is published as 375 vCPU-minutes/month; cf.containers.vcpu_seconds stores it as 22,500 vCPU-seconds to match the per-second overage unit.",
+    "Meters added 2026-09-03: cf.hyperdrive.queries, cf.images.*, cf.stream.*, cf.browser_rendering.hours, cf.turnstile.requests, cf.email_routing.messages, cf.email_sending.messages, cf.load_balancing.queries, cf.zaraz.events, cf.analytics_engine.*, cf.access.users, cf.containers.vcpu_seconds, cf.workflows.steps."
   ]
 }
