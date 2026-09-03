@@ -11,6 +11,20 @@ freenet.free is a WebMCP-powered studio for the question "how would I vibecode t
 
 Everything an agent can do, a person can do, and the other way round. The diagram is a small text DSL; the canvas, the simulator and the exports are all views of it.
 
+## Why this is needed
+
+**The people building software changed.** Vibe coding, indie hacking and AI-assisted development have put shipping in reach of designers, founders and students who have never read a pricing page. They start on free tiers because the tiers are generous, and they find the limits the way everyone does: a paused project, a dropped request, or an invoice. The tooling for choosing and validating a stack has not kept up with the number of people who now need it.
+
+**Free tiers are quotas, not discounts.** Cloudflare's Free plan and Vercel's Hobby plan are real production tiers, but each is a bundle of separate meters with separate windows: requests per day, rows per day, writes per day, GB per month, minutes per month. A design that fits the headline number can still fail on the meter you did not think about. Nothing in either dashboard shows you that before you deploy.
+
+**Traffic is not what the calculator assumes.** Industry bot reports have put automated traffic at roughly half of all web requests for years, and AI crawlers are now a visible share of that. Bots never hit the cache, hit the long tail, and ignore robots.txt, so they land on exactly the metered paths. A cost model that only counts human visitors is wrong by the amount that matters. Blocking is not free either: block the wrong crawler and you leave search.
+
+**Provider choice is a real decision again.** Cloudflare and Vercel now cover overlapping ground with different primitives, different free allowances, different overage rules and different partner dependencies. Pricing pages change every few months. Comparing the same design on both, honestly, is a spreadsheet exercise almost nobody does, so teams pick on familiarity and discover the gaps later.
+
+**Agents need a place to design, not just to code.** Coding agents write the code they are asked for; the expensive mistakes happen a step earlier, in the architecture. WebMCP lets an agent operate a real tool with real rules. A studio that exposes design, simulation and pricing as tools gives the agent, and the person watching it, a way to reason about cost and failure before the first commit.
+
+freenet.free exists for that gap: one canvas where the diagram, the traffic model, the quota rules and the bill are the same object, and where a person and an agent can work it together.
+
 ## Use cases
 
 - **Choose a stack before writing code.** Describe the product, let the architect propose the design, then press `P` to price the same graph on Cloudflare and on Vercel. The gaps are explicit: partner products, missing primitives, different overage rules. Decide with a bill in front of you instead of six pricing tabs.
