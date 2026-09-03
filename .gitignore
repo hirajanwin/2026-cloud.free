@@ -12,7 +12,15 @@ dist-ssr
 __unconfig*
 todos.json
 
-.dev.vars*
+# Environment and secrets: never commit real values
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.env
+*.pem
+*.key
+.secrets/
 !.dev.vars.example
 !.env.example
 
