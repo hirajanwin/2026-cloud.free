@@ -14,6 +14,7 @@ import { blueprints } from "@/state/blueprints";
 import { PERIOD_DAYS, periodSeconds, studio, type Period } from "@/state/store";
 import { defineTool, type ToolDef } from "./define";
 import { listServices, serviceMeter, SERVICES, VENDOR_IDS, type VendorId } from "@/engine/services";
+import { SHORTCUTS } from "@/lib/shortcuts";
 
 const round = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
 const MONTH_LEN = 365 / 12;
@@ -47,6 +48,7 @@ export const ABOUT = {
     timeline: "Play, pause and reset; Day / Month / Year period; Bar view with markers or Tracks view with one row per layer, its percent of allowance and daily caps as a sawtooth.",
     rightSidebar: "Inspect (overview, layers, node details, protection), Bill (per-meter lines with sources) and AI (the in-page architect, tool activity log, alternatives).",
   },
+  keyboardShortcuts: SHORTCUTS.map((s) => `${s.keys}: ${s.label}`),
   toolGuide: {
     orient: ["describe_studio", "get_diagram", "get_snapshot", "get_layers"],
     design: ["list_templates", "load_template", "patch_diagram", "set_diagram", "list_products", "explain_product", "list_alternatives", "list_services"],

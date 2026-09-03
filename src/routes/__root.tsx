@@ -9,6 +9,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { WebMcpBridge } from "@/components/app/WebMcpBridge";
 import { DeclarativeTools } from "@/components/app/DeclarativeTools";
 import { ClockStarter } from "@/components/app/ClockStarter";
+import { ShortcutsHelp } from "@/components/app/ShortcutsHelp";
 import appCss from "../styles.css?url";
 import { tools } from "@/tools";
 import { earlyRegistrationScript } from "@/tools/early";
@@ -72,6 +73,7 @@ function RootDocument({ children }: { children: ReactNode }) {
                   <WebMcpBridge />
                   <DeclarativeTools />
                   <ClockStarter />
+                  <ShortcutsHelp />
                 </TooltipProvider>
               </ShapeProvider>
             </SizeProvider>

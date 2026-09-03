@@ -29,6 +29,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { KINDS, PRODUCTS, isProductKind } from "@/engine/catalog";
 import { resolveService } from "@/engine/services";
+import { FIT_EVENT } from "@/lib/shortcuts";
 import type { Direction } from "@/engine/dsl";
 import { layoutDiagram, NODE_H, NODE_W } from "@/engine/layout";
 import { defaultProtection, edgeKey } from "@/engine/sim";
@@ -400,6 +401,13 @@ function CanvasInner() {
   const refit = useCallback(() => {
     requestAnimationFrame(() => requestAnimationFrame(() => fitAll(250)));
     setTimeout(() => fitAll(200), 400);
+  }, [fitAll]);
+
+  // "F" and the fit shortcut.
+  useEffect(() => {
+    const onFit = () => fitAll(250);
+    window.addEventListener(FIT_EVENT, onFit);
+    return () => window.removeEventListener(FIT_EVENT, onFit);
   }, [fitAll]);
 
   useEffect(() => {

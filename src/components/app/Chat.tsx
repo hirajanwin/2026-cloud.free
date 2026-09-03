@@ -13,7 +13,8 @@ import {
 } from "ai";
 import { ChatMessage } from "@/components/ui/chat-message";
 import { InputMessage } from "@/components/ui/input-message";
-import { ThinkingIndicator } from "@/components/ui/thinking-indicator";
+import { ThinkingOrb } from "thinking-orbs";
+import { BorderBeam } from "border-beam";
 import {
   ThinkingStep,
   ThinkingSteps,
@@ -159,6 +160,16 @@ export function Chat() {
     return [...msgRows, ...groupActivity(log)].sort((a, b) => a.at - b.at);
   }, [messages, log]);
   const agentCalls = log.filter((e) => e.caller !== "assistant").length;
+  // A browser agent counts as "live" for a few seconds after its last call.
+  const lastAgentAt = log.find((e) => e.caller === "browser-agent")?.at ?? 0;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!lastAgentAt) return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [lastAgentAt]);
+  const agentLive = now - lastAgentAt < 6000;
 
   useEffect(() => {
     const el = document.getElementById("chat-scroll");
@@ -168,8 +179,11 @@ export function Chat() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="mb-1 flex items-center justify-between">
-        <span className="text-caption text-muted-foreground">
-          {messages.length === 0 && agentCalls === 0
+        <span className="inline-flex items-center gap-1.5 text-caption text-muted-foreground">
+          {agentLive && <ThinkingOrb state="connecting" size={20} theme="auto" aria-label="Browser agent working" />}
+          {agentLive
+            ? "Browser agent is driving the canvas"
+            : messages.length === 0 && agentCalls === 0
             ? "The architect drives the canvas through the page's tools."
             : [messages.length ? `${messages.length} messages` : null, agentCalls ? `${agentCalls} agent action${agentCalls > 1 ? "s" : ""} via WebMCP` : null].filter(Boolean).join(" · ")}
         </span>
@@ -209,7 +223,10 @@ export function Chat() {
             ),
           )}
           {streaming && messages[messages.length - 1]?.role !== "assistant" && (
-            <ThinkingIndicator />
+            <div className="flex items-center gap-2 px-1 text-caption text-muted-foreground">
+              <ThinkingOrb state="working" size={20} theme="auto" aria-label="Architect thinking" />
+              Thinking
+            </div>
           )}
           {pending && (
             <div className="rounded-xl bg-surface-3 p-2 shadow-surface-2">
@@ -244,6 +261,7 @@ export function Chat() {
         </div>
       </div>
       <div className="pt-2">
+        <BorderBeam size="md" colorVariant="ocean" theme="auto" active={streaming || agentLive} strength={0.8} className="rounded-xl">
         <InputMessage
           value={draft}
           onValueChange={setDraft}
@@ -259,6 +277,7 @@ export function Chat() {
           maxRows={5}
           size="compact"
         />
+        </BorderBeam>
       </div>
     </div>
   );

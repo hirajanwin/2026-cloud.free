@@ -52,6 +52,10 @@ Three layers, all backed by the same tool definitions:
 
 OpenAI, Shopify and Netlify products sit on any canvas as `external` nodes with a `service` attr (`openai.gpt55_chat`, `shopify.storefront_api`, `netlify.functions`). Each meters its own units per request (tokens, calls, GB) from `src/engine/services.json`, priced from the vendor's pricing page with source URLs, and shows up as its own lines on the bill, marked as billed by the vendor rather than the platform. The left sidebar lists them next to Cloudflare and Vercel; the filter narrows by vendor. `list_services` exposes the same catalogue to agents.
 
+## Keyboard shortcuts
+
+Press `?` in the studio for the full sheet. Space plays or pauses, `R` resets the clock, `1` `2` `3` pick a day, month or year, `P` switches provider and `Shift+P` the plan, `S` `V` `H` choose the layout, `E` cycles edge style, `L` re-runs layout, `F` fits the design, `I` `B` `A` open the panels, `T` the tools log, `N` starts a new freenet, `⌘S` saves, `[` `]` toggle the sidebars and `/` searches. The same list is returned by `describe_studio`. When a browser agent calls a tool through WebMCP the AI panel comes forward on its own, with a status orb while the agent is working.
+
 ## How the numbers work
 
 Not a queueing simulator. Each request class is walked through the diagram as a rate; each node blocks it, answers it, or bills it and forwards it along its edges. Rates are computed once per configuration and the clock only accumulates them, so the canvas runs at 60 fps for free.

@@ -26,6 +26,8 @@ export function WebMcpBridge() {
       ...def,
       execute: async (input: unknown) => {
         const started = performance.now();
+        // A browser agent is driving the page: show the conversation so the person can watch.
+        if (!activeCaller) studio.setChatTab("chat");
         try {
           return await def.execute(input as never);
         } finally {
