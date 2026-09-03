@@ -249,7 +249,7 @@ function LayerList() {
           <li key={`g:${it.group.id}`} className="mt-1 first:mt-0">
             <button
               type="button"
-              onClick={() => studio.select(it.group!.id)}
+              onClick={() => studio.focus(it.group!.id)}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-caption font-medium text-muted-foreground hover:bg-hover"
               style={{ paddingLeft: 8 + depth * 14 }}
             >
@@ -269,7 +269,7 @@ function LayerList() {
           <li key={n.id}>
             <button
               type="button"
-              onClick={() => studio.select(n.id)}
+              onClick={() => studio.focus(n.id)}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover"
               style={{ paddingLeft: 8 + depth * 14 }}
             >

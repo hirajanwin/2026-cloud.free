@@ -43,6 +43,9 @@ export type ProductKind =
   | "analytics"
   | "access"
   | "container"
+  | "flags"
+  | "sandbox"
+  | "middleware"
   | "external";
 
 export const PRODUCT_KINDS: readonly ProductKind[] = [
@@ -77,6 +80,9 @@ export const PRODUCT_KINDS: readonly ProductKind[] = [
   "analytics",
   "access",
   "container",
+  "flags",
+  "sandbox",
+  "middleware",
   "external",
 ];
 
@@ -387,6 +393,30 @@ export const KINDS: Record<ProductKind, KindSpec> = {
     name: "Container",
     description: "Run any binary on demand next to your functions. Priced by vCPU and memory seconds.",
     defaults: { cpuSeconds: 0.5 },
+  },
+  flags: {
+    kind: "flags",
+    category: "data",
+    role: "store",
+    name: "Config & feature flags",
+    description: "Tiny, ultra-low-latency reads of config and flags on every request.",
+    defaults: { readsPerRequest: 1 },
+  },
+  sandbox: {
+    kind: "sandbox",
+    category: "compute",
+    role: "compute",
+    name: "Code sandbox",
+    description: "Run untrusted or agent-generated code in an isolated VM or container.",
+    defaults: { cpuSeconds: 2, memGb: 1 },
+  },
+  middleware: {
+    kind: "middleware",
+    category: "edge",
+    role: "compute",
+    name: "Routing middleware",
+    description: "Runs before the cache and the app on every request: rewrites, redirects, auth checks, A/B.",
+    defaults: { cpuMs: 1 },
   },
   external: {
     kind: "external",
@@ -893,6 +923,36 @@ export const PRODUCTS: Record<Provider, Record<ProductKind, ProductSpec>> = {
       limits: "Workers Paid only; billed by vCPU, memory and disk seconds while running.",
       meters: [{ meter: "cf.containers.vcpu_seconds", perRequest: (a) => a.cpuSeconds ?? 0.5, note: "vCPU seconds per request.", estimate: true }],
     }),
+    flags: cf({
+      kind: "flags",
+      name: "Workers KV (config)",
+      tagline: "Flags and config as KV reads, cached at the edge.",
+      docs: "https://developers.cloudflare.com/kv/",
+      whenToUse: "Feature flags, remote config, A/B allocation. Reads are cheap; writes propagate in about a minute.",
+      limits: "Eventual consistency; no first-party flag UI.",
+      meters: [{ meter: "cf.kv.reads", perRequest: (a) => a.readsPerRequest ?? 1 }],
+    }),
+    sandbox: cf({
+      kind: "sandbox",
+      name: "Sandbox SDK (Containers)",
+      tagline: "Isolated containers for agent-generated code, driven from a Worker.",
+      docs: "https://developers.cloudflare.com/sandbox/",
+      whenToUse: "Run code an LLM wrote, build steps, data jobs. Billed as container vCPU, memory and disk time.",
+      limits: "Workers Paid only.",
+      meters: [{ meter: "cf.containers.vcpu_seconds", perRequest: (a) => a.cpuSeconds ?? 2, note: "vCPU seconds per run.", estimate: true }],
+    }),
+    middleware: cf({
+      kind: "middleware",
+      name: "Workers (middleware)",
+      tagline: "A Worker in front of the origin; Snippets for the simplest rules.",
+      docs: "https://developers.cloudflare.com/workers/",
+      whenToUse: "Redirects, header rewrites, auth checks, geo routing before the cache decides.",
+      limits: "Counts as a Worker request per hit.",
+      meters: [
+        { meter: "cf.workers.requests", perRequest: 1 },
+        { meter: "cf.workers.cpu_ms", perRequest: (a) => a.cpuMs ?? 1 },
+      ],
+    }),
     external: cf({
       kind: "external",
       name: "External API",
@@ -1353,6 +1413,36 @@ export const PRODUCTS: Record<Provider, Record<ProductKind, ProductSpec>> = {
       limits: "",
       meters: [],
       gap: { severity: "missing", note: "No container runtime." },
+    }),
+    flags: vc({
+      kind: "flags",
+      name: "Edge Config",
+      tagline: "Ultra-low-latency key-value reads for flags and config.",
+      docs: "https://vercel.com/docs/edge-config",
+      whenToUse: "Feature flags, redirects tables, A/B allocation read in middleware. Reads are near-instant; writes are rare.",
+      limits: "Read and write quotas per plan; small values only.",
+      meters: [{ meter: "vc.edge_config.reads", perRequest: (a) => a.readsPerRequest ?? 1 }],
+    }),
+    sandbox: vc({
+      kind: "sandbox",
+      name: "Vercel Sandbox",
+      tagline: "Ephemeral Firecracker microVMs for untrusted code.",
+      docs: "https://vercel.com/docs/vercel-sandbox",
+      whenToUse: "Run agent-generated code, tests, builds. Billed by active CPU, provisioned memory and creations.",
+      limits: "Per-sandbox duration limits by plan.",
+      meters: [
+        { meter: "vc.sandbox.active_cpu_hrs", perRequest: (a) => (a.cpuSeconds ?? 2) / 3600 },
+        { meter: "vc.sandbox.creations", perRequest: 1 },
+      ],
+    }),
+    middleware: vc({
+      kind: "middleware",
+      name: "Routing Middleware",
+      tagline: "Code that runs before the cache on every matching request.",
+      docs: "https://vercel.com/docs/routing-middleware",
+      whenToUse: "Rewrites, redirects, auth gates, experiments. Keep it thin; it runs on everything it matches.",
+      limits: "Invocations are metered per plan.",
+      meters: [{ meter: "vc.middleware.invocations", perRequest: 1 }],
     }),
     external: vc({
       kind: "external",

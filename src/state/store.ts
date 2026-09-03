@@ -49,6 +49,8 @@ export interface StudioState {
   snapshot: Snapshot;
   rates: Rates;
   selectedId: string | null;
+  /** Bumped when a selection should also be framed on the canvas. */
+  focusNonce: number;
   templateId: string | null;
   /** Saved blueprint this document belongs to, if any. */
   blueprintId: string | null;
@@ -97,6 +99,7 @@ function createInitial(): StudioState {
     snapshot: engine.snapshot(),
     rates: engine.currentRates,
     selectedId: null,
+    focusNonce: 0,
     templateId: DEFAULT_TEMPLATE.id,
     blueprintId: null,
     panel: "inspect",
@@ -226,6 +229,11 @@ export const studio = {
 
   select(id: string | null) {
     set({ selectedId: id });
+  },
+
+  /** Select and ask the canvas to frame it. */
+  focus(id: string) {
+    set({ selectedId: id, focusNonce: state.focusNonce + 1 });
   },
 
   setPanel(panel: PanelId) {

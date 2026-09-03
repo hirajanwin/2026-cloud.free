@@ -11,6 +11,8 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { Pause, Play, RotateCcw } from "lucide-react";
 
 const DAY = 86_400;
+/** One hue per meter so the legend and the markers read together. */
+const METER_TONES = ["var(--info)", "var(--success)", "var(--warning)", "#a78bfa", "#f472b6", "#22d3ee"];
 const MONTH_DAYS = 30;
 
 export function Timeline() {
@@ -151,12 +153,8 @@ export function Timeline() {
                 className={`absolute -translate-x-1/2 rounded-full transition-transform hover:scale-125 ${l.daily ? "top-[2px] size-2 rounded-sm" : "top-1/2 size-2.5 -translate-y-1/2"}`}
                 style={{
                   left: `${left}%`,
-                  background:
-                    within || l.daily
-                      ? over
-                        ? "var(--destructive)"
-                        : "var(--warning)"
-                      : "var(--muted-foreground)",
+                  background: METER_TONES[i % METER_TONES.length],
+                  boxShadow: over ? "0 0 0 2px var(--destructive)" : undefined,
                   opacity: within || l.daily ? 1 : 0.5,
                   zIndex: 2 + i,
                 }}
@@ -171,18 +169,11 @@ export function Timeline() {
         />
       </div>
       <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground">
-        {lines.map((l) => (
-          <span key={l.meter} className="inline-flex items-center gap-1">
+        {lines.map((l, i) => (
+          <span key={l.meter} className={`inline-flex items-center gap-1 ${l.status === "over-free" || l.status === "charged" ? "text-foreground" : ""}`}>
             <span
               className="inline-block size-1.5 rounded-full"
-              style={{
-                background:
-                  l.status === "over-free" || l.status === "charged"
-                    ? "var(--destructive)"
-                    : Number.isFinite(l.crossDay) && l.crossDay <= MONTH_DAYS
-                      ? "var(--warning)"
-                      : "var(--muted-foreground)",
-              }}
+              style={{ background: METER_TONES[i % METER_TONES.length], boxShadow: l.status === "over-free" || l.status === "charged" ? "0 0 0 2px var(--destructive)" : undefined }}
             />
             {l.label}
             {Number.isFinite(l.crossDay) &&

@@ -37,7 +37,7 @@ import { applyPatch } from "@/engine/dsl";
 import { TEMPLATES } from "@/engine/templates";
 import { studio, useStudio, type PanelId } from "@/state/store";
 import { blueprints, useBlueprints } from "@/state/blueprints";
-import { Glyph, ProviderDot } from "./Glyph";
+import { Glyph } from "./Glyph";
 import { Topbar, TrafficStrip } from "./Topbar";
 import { Inspector } from "./Inspector";
 import { TrafficPanel } from "./TrafficPanel";
@@ -141,7 +141,7 @@ function RightRail() {
         <Tabs value={panel} onValueChange={(v) => studio.setPanel(v as PanelId)} size="compact">
           <TabsList className="w-full">
             {PANELS.map((p) => (
-              <TabItem key={p.value} value={p.value} label={p.label} />
+              <TabItem key={p.value} value={p.value} label={p.label} className="flex-1 justify-center" />
             ))}
           </TabsList>
         </Tabs>
@@ -342,9 +342,7 @@ function AppSidebar() {
         {CATEGORY_ORDER.filter((c) => kindsByCategory[c]?.length).map((c) => (
           <SidebarGroup key={c}>
             <SidebarGroupLabel>
-              <span className="inline-flex items-center gap-1.5">
-                <ProviderDot provider={provider} /> {CATEGORY_LABEL[c]}
-              </span>
+              {CATEGORY_LABEL[c]}
             </SidebarGroupLabel>
             <SidebarMenu>
               {kindsByCategory[c].map((k) => {

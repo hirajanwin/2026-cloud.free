@@ -45,6 +45,9 @@ export const CF_ICONS: Partial<Record<string, string | undefined>> = {
   analytics: cfIcon("analytics"),
   access: cfIcon("access"),
   container: cfIcon("containers"),
+  flags: cfIcon("kv"),
+  sandbox: cfIcon("sandbox"),
+  middleware: cfIcon("workers"),
 };
 
 /** Normalise a docs icon: size it, make it inherit colour, strip hard-coded black. */
@@ -239,6 +242,25 @@ export function Glyph({
       return (
         <svg {...common}>
           <path d="M3 12c3-6 6-6 9 0s6 6 9 0" />
+        </svg>
+      );
+    case "flags":
+      return (
+        <svg {...common}>
+          <path d="M6 21V4M6 4h11l-2 4 2 4H6" />
+        </svg>
+      );
+    case "sandbox":
+      return (
+        <svg {...common}>
+          <rect x="4" y="5" width="16" height="14" rx="2" />
+          <path d="m9 10 2 2-2 2M13 14h3" />
+        </svg>
+      );
+    case "middleware":
+      return (
+        <svg {...common}>
+          <path d="M4 12h5l2-4 2 8 2-4h5" />
         </svg>
       );
     case "external":

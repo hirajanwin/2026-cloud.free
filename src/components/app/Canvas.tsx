@@ -104,7 +104,7 @@ const ProductNode = memo(function ProductNode({
     <div
       className={[
         "node-in group/node relative grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-xl bg-surface-3 px-3 shadow-surface-2 transition-[box-shadow,background-color] duration-150",
-        selected ? "ring-1 ring-foreground/70 shadow-surface-4" : "hover:shadow-surface-3",
+        selected ? "node-selected ring-2 ring-[color:var(--focus-ring)] shadow-surface-5" : "hover:shadow-surface-3",
         gap?.severity === "missing" ? "outline outline-1 outline-dashed outline-destructive/60" : "",
       ].join(" ")}
       style={{ width: NODE_W, height: NODE_H }}
@@ -334,6 +334,7 @@ function CanvasInner() {
   const revision = useStudio((s) => s.revision);
   const viewLayout = useStudio((s) => s.viewLayout);
   const selectedId = useStudio((s) => s.selectedId);
+  const focusNonce = useStudio((s) => s.focusNonce);
   const theme = useResolvedTheme();
   const [nodes, setNodes] = useState<RFNode[]>([]);
   const [edges, setEdges] = useState<RFEdge[]>([]);
@@ -456,6 +457,27 @@ function CanvasInner() {
     return changed ? [...next.values()] : all;
   }, []);
 
+  // Frame a node when the layer list (or a tool) asks for focus.
+  useEffect(() => {
+    if (!focusNonce || !selectedId) return;
+    const all = nodesRef.current;
+    const byId = new Map(all.map((n) => [n.id, n]));
+    const target = byId.get(selectedId);
+    if (!target) return;
+    const abs = (n: RFNode): { x: number; y: number } => {
+      const p = n.parentId ? byId.get(n.parentId) : undefined;
+      if (!p) return n.position;
+      const pp = abs(p);
+      return { x: pp.x + n.position.x, y: pp.y + n.position.y };
+    };
+    const { x, y } = abs(target);
+    const w = target.width ?? NODE_W;
+    const h = target.height ?? NODE_H;
+    // Frame the node with generous room, but never zoom past 1.2 so a single card does not fill the screen.
+    fitBounds({ x: x - w * 1.5, y: y - h * 2, width: w * 4, height: h * 5 }, { padding: 0.1, duration: 350 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusNonce]);
+
   // Fit once React has committed a freshly laid-out node set (layout mode or
   // document change). Calling fitView before the commit measures stale nodes.
   useEffect(() => {
@@ -562,7 +584,7 @@ function CanvasInner() {
         <Panel position="top-left">
           <LayoutToggle />
         </Panel>
-        <MiniMap pannable zoomable className="!hidden lg:!block" nodeStrokeWidth={2} />
+        <MiniMap pannable zoomable className="!hidden lg:!block" nodeStrokeWidth={2} style={{ width: 140, height: 90 }} />
       </ReactFlow>
     </div>
   );
